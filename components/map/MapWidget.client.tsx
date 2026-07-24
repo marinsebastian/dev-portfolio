@@ -259,6 +259,25 @@ export default function MapWidgetClient({
           </button>
         </div>
 
+        {/* Floating Layer Metric Intensity Legend Bar */}
+        <div className="absolute top-3 left-3 z-[400] hidden sm:block bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl max-w-xs">
+          <div className="text-teal-400 font-bold tracking-wider uppercase">
+            {t('flagship.legendTitle')}
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-400">{t('flagship.legendLow')}</span>
+            <div
+              className="h-2 w-20 rounded"
+              style={{
+                background: `linear-gradient(to right, #1e293b, ${
+                  CENSUS_LAYERS.find((l) => l.code === activeLayer)?.primaryColor || '#14b8a6'
+                })`,
+              }}
+            />
+            <span className="text-slate-200 font-bold">{t('flagship.legendHigh')}</span>
+          </div>
+        </div>
+
         {/* Bottom Zone Quick Selection Pills */}
         <div className="absolute bottom-3 left-3 right-3 z-[400] flex flex-wrap gap-1.5 bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 max-h-24 overflow-y-auto">
           {filteredZones.map((zone) => (

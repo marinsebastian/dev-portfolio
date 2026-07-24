@@ -78,6 +78,9 @@ export interface TranslationDictionary {
     aiPromptLabel: string;
     aiHeaderTitle: string;
     activeZone: string;
+    legendTitle: string;
+    legendLow: string;
+    legendHigh: string;
   };
   caseStudies: {
     tag: string;
@@ -209,7 +212,10 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       sectorBadge: "SECTOR PREDOMINANTE",
       aiPromptLabel: "Analizar zona urbana con Gemini API",
       aiHeaderTitle: "RESUMEN ESPACIAL GEMINI AI (CENSO 2024)",
-      activeZone: "ZONA URBANA SELECCIONADA:"
+      activeZone: "ZONA URBANA SELECCIONADA:",
+      legendTitle: "ESCALA DE INTENSIDAD",
+      legendLow: "Bajo / En Crecimiento",
+      legendHigh: "Alto / Consolidado"
     },
     caseStudies: {
       tag: "EJECUCIÓN TÉCNICA DEMOSTRADA",
@@ -337,7 +343,10 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       sectorBadge: "PRIMARY ECONOMIC SECTOR",
       aiPromptLabel: "Analyze urban zone with Gemini API",
       aiHeaderTitle: "GEMINI AI SPATIAL SUMMARY (2024 CENSUS)",
-      activeZone: "SELECTED URBAN ZONE:"
+      activeZone: "SELECTED URBAN ZONE:",
+      legendTitle: "METRIC INTENSITY SCALE",
+      legendLow: "Low / Developing",
+      legendHigh: "High / Consolidated"
     },
     caseStudies: {
       tag: "PROVEN TECHNICAL EXECUTION",

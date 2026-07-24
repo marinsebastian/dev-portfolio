@@ -44,9 +44,10 @@ export function FlagshipGeoSection() {
   const scopeZones = URBAN_CENSUS_ZONES.filter((z) => z.metroArea === activeScope);
 
   const chartData = scopeZones.map((z) => ({
-    name: z.name.split(' ')[0], // Short name for chart x-axis
+    name: z.name.split(' ')[0],
     Connectivity: z.metrics.internetCoveragePct,
     Services: z.metrics.basicServicesIndex,
+    DensityIndex: Math.min(100, Math.round((z.metrics.densityHabKm2 / 8000) * 100)),
   }));
 
   return (
@@ -189,8 +190,27 @@ export function FlagshipGeoSection() {
                         fontFamily: 'monospace',
                       }}
                     />
-                    <Bar dataKey="Connectivity" fill="#06b6d4" name="Internet %" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Services" fill="#f59e0b" name="Servicios Index" radius={[4, 4, 0, 0]} />
+                    {activeLayer === 'DENSITY' ? (
+                      <>
+                        <Bar dataKey="DensityIndex" fill="#10b981" name="Densidad Index" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Connectivity" fill="#06b6d4" name="Internet %" radius={[4, 4, 0, 0]} />
+                      </>
+                    ) : activeLayer === 'HOUSING_SERVICES' ? (
+                      <>
+                        <Bar dataKey="Services" fill="#f59e0b" name="Servicios Index" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Connectivity" fill="#06b6d4" name="Internet %" radius={[4, 4, 0, 0]} />
+                      </>
+                    ) : activeLayer === 'ECONOMIC_HUBS' ? (
+                      <>
+                        <Bar dataKey="Services" fill="#14b8a6" name="Nodos Index" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="DensityIndex" fill="#10b981" name="Densidad Index" radius={[4, 4, 0, 0]} />
+                      </>
+                    ) : (
+                      <>
+                        <Bar dataKey="Connectivity" fill="#06b6d4" name="Internet %" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Services" fill="#f59e0b" name="Servicios Index" radius={[4, 4, 0, 0]} />
+                      </>
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
