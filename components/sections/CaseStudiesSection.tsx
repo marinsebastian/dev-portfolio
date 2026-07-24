@@ -1,0 +1,170 @@
+'use client';
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { SectionReveal } from '../motion/SectionReveal';
+import { CASE_STUDIES, CaseStudy } from '@/data/portfolioData';
+import { CodeBlock } from '../ui/CodeBlock';
+import { ShoppingBag, Calendar, Server, MapPin, CheckCircle2, ChevronRight, ArrowUpRight } from 'lucide-react';
+
+const VoronoiLabClient = dynamic(() => import('../map/VoronoiLab.client'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[360px] w-full bg-slate-900 rounded-xl flex items-center justify-center font-mono-tech text-xs text-slate-400">
+      Loading Voronoi Spatial Engine...
+    </div>
+  ),
+});
+
+const CATEGORY_ICONS: Record<string, any> = {
+  commercial: ShoppingBag,
+  operational: Calendar,
+  backend: Server,
+  'spatial-lab': MapPin,
+};
+
+export function CaseStudiesSection() {
+  const supportingStudies = CASE_STUDIES.filter((c) => c.category !== 'flagship');
+  const [activeStudyId, setActiveStudyId] = useState(supportingStudies[0].id);
+
+  const activeStudy = supportingStudies.find((s) => s.id === activeStudyId) || supportingStudies[0];
+
+  return (
+    <section id="projects" className="py-20 bg-[#090d14] relative border-t border-slate-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Section Header */}
+        <SectionReveal className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
+            <span className="text-slate-600">//</span>
+            <span className="uppercase tracking-widest font-semibold">SUPPORTING CASE STUDIES</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            Proven Engineering Execution
+          </h2>
+          <p className="text-slate-400 text-base leading-relaxed">
+            Real commercial platforms, university operational software, PHP microservices, and interactive spatial labs.
+          </p>
+        </SectionReveal>
+
+        {/* Case Study Tab Navigation */}
+        <div className="flex flex-wrap justify-center gap-2 mb-10">
+          {supportingStudies.map((study) => {
+            const Icon = CATEGORY_ICONS[study.category] || Server;
+            const isActive = study.id === activeStudyId;
+
+            return (
+              <button
+                key={study.id}
+                onClick={() => setActiveStudyId(study.id)}
+                className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg border text-xs font-mono-tech transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-teal-500/15 border-teal-500 text-teal-300 font-bold shadow-[0_0_15px_rgba(20,184,166,0.2)]'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                <Icon className="w-4 h-4 text-teal-400" />
+                <span>{study.title}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Case Study Detail Card */}
+        <SectionReveal key={activeStudy.id} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-8">
+          
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-6 gap-4">
+            <div className="space-y-1">
+              <span className="px-2.5 py-1 rounded bg-slate-800 text-teal-400 border border-slate-700 text-xs font-mono-tech">
+                {activeStudy.badge}
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white pt-2">{activeStudy.title}</h3>
+              <p className="text-slate-400 text-sm font-mono-tech">{activeStudy.subtitle}</p>
+            </div>
+
+            {/* Metrics pills if present */}
+            {activeStudy.metrics && (
+              <div className="flex flex-wrap gap-2">
+                {activeStudy.metrics.map((m, i) => (
+                  <div key={i} className="px-3 py-1.5 rounded bg-slate-950/80 border border-slate-800 font-mono-tech text-xs">
+                    <span className="text-slate-500 block text-[10px]">{m.label}</span>
+                    <span className="text-teal-300 font-bold">{m.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Problem & Solution Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+              <h4 className="text-xs font-bold font-mono-tech uppercase text-rose-400 flex items-center space-x-1.5">
+                <span>PROBLEM & CHALLENGE</span>
+              </h4>
+              <p className="text-sm text-slate-300 leading-relaxed">{activeStudy.problem}</p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+              <h4 className="text-xs font-bold font-mono-tech uppercase text-emerald-400 flex items-center space-x-1.5">
+                <span>ENGINEERED SOLUTION</span>
+              </h4>
+              <p className="text-sm text-slate-300 leading-relaxed">{activeStudy.solution}</p>
+            </div>
+          </div>
+
+          {/* Tech Stack Pills */}
+          <div className="space-y-2">
+            <span className="text-xs font-mono-tech text-slate-400 block">TECHNOLOGY STACK:</span>
+            <div className="flex flex-wrap gap-2">
+              {activeStudy.techStack.map((tech) => (
+                <span key={tech} className="px-3 py-1 rounded bg-slate-800 text-slate-200 border border-slate-700 text-xs font-mono-tech">
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Key Proof Bullet Points */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold font-mono-tech text-slate-300 uppercase">Key Technical Proof Points</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {activeStudy.proofPoints.map((point, idx) => (
+                <div key={idx} className="flex items-start space-x-2.5 p-3 rounded bg-slate-950/40 border border-slate-800 text-xs text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+                  <span>{point}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Interactive Feature Demo OR Code Snippet */}
+          {activeStudy.id === 'voronoi-coverage-lab' ? (
+            <div className="pt-2">
+              <VoronoiLabClient />
+            </div>
+          ) : activeStudy.codeSnippet ? (
+            <div className="space-y-2 pt-2">
+              <span className="text-xs font-mono-tech text-slate-400 block">PRODUCTION CODE SAMPLE:</span>
+              <CodeBlock
+                filename={activeStudy.codeSnippet.filename}
+                language={activeStudy.codeSnippet.language}
+                code={activeStudy.codeSnippet.code}
+              />
+            </div>
+          ) : null}
+
+          {/* Relevance for target hiring team */}
+          <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 font-mono-tech text-xs text-slate-200 flex items-start space-x-3">
+            <ArrowUpRight className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="text-teal-400 font-bold block mb-1">RELEVANCE FOR ENGINEERING ROLE:</span>
+              <p className="text-slate-300 text-xs leading-relaxed font-sans">{activeStudy.geolabsRelevance}</p>
+            </div>
+          </div>
+
+        </SectionReveal>
+
+      </div>
+    </section>
+  );
+}

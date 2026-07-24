@@ -1,0 +1,649 @@
+You are acting as a senior product designer, portfolio strategist, frontend architect and technical career positioning advisor.
+
+We are building a premium portfolio website for Sebastian Marin, a Full-Stack Developer applying to a developer role at Geolabs Cloud.
+
+The goal is not to create a generic personal website.
+
+The goal is to create a portfolio that quietly proves Sebastian can build:
+- operational web interfaces;
+- API-driven systems;
+- map/data visualizations;
+- SQL-backed tools;
+- automation-friendly workflows;
+- AI-assisted product features;
+- clean, maintainable, responsive frontend experiences.
+
+The portfolio must align with a developer role that values:
+- PHP intermediate/advanced;
+- interactive responsive web interfaces;
+- MySQL/PostgreSQL, ideally PostGIS;
+- cURL and REST API integrations;
+- Linux CLI, cron jobs and process debugging;
+- AI tools and agents in the development workflow;
+- geospatial systems, maps, photogrammetry or GIS;
+- Git and clean documented code;
+- MCP or AI-to-tool/data integrations.
+
+However, do NOT make the portfolio look like it was artificially made only for Geolabs.
+
+It should look like a premium full-stack engineering portfolio with a strong data, maps, automation and AI angle.
+
+## Sebastian's factual background
+
+Use this as factual grounding. Do not exaggerate.
+
+Sebastian has experience with:
+- Next.js, React, TypeScript, JavaScript, HTML, CSS;
+- responsive interfaces, UI/UX refinement, animation and SEO basics;
+- Node.js, Python, Django, APIs REST, JSON;
+- previous PHP experience with CRUD and secure MySQLi integration;
+- MySQL, PostgreSQL, Supabase, SQL Server;
+- SQL queries, joins, filters, aggregations and integration with apps/APIs;
+- Linux CLI, Bash, PowerShell, Git, SSH, Docker, Docker Compose, cron jobs, environment variables, logs and remote deployment;
+- Playwright for local functional validation;
+- Gemini API;
+- AI-assisted development tools such as Antigravity, Gemini CLI and Hermes Agent;
+- Leaflet and spatial information visualization;
+- Awtu Commerce: Next.js/TypeScript/MySQL/Firebase, catalog management, product filtering, BCP QR payment verification via polling/webhook, Gemini support assistant through an internal API;
+- UMSS IT automation with PowerShell and Bash;
+- freelance portfolios with Next.js/Firebase, CSS animations, SEO and Vercel deployment;
+- a reservation system with CRUD and business logic for rooms/classrooms, schedules, constraints and availability;
+- ongoing training in Data Science and AI.
+
+Do not claim advanced production PostGIS unless implemented.
+Do not claim advanced PHP unless a project proves it.
+Do not claim MCP experience unless actually implemented.
+Do not invent companies, metrics, clients, links or private repositories.
+
+## Desired portfolio positioning
+
+Primary positioning:
+
+“Full-Stack Developer focused on interfaces, APIs, data and automation.”
+
+Spanish version:
+
+“Desarrollador Full-Stack enfocado en interfaces, APIs, datos y automatización.”
+
+Core message:
+
+“I build web systems that turn data, APIs and workflows into usable operational tools.”
+
+Spanish:
+
+“Construyo sistemas web que convierten datos, APIs y procesos en herramientas operativas simples de usar.”
+
+## Recommended project strategy
+
+The portfolio should include one strong flagship project and several supporting case studies.
+
+### Flagship project
+
+Create a plan for a flagship project called either:
+
+- GeoInsights Bolivia
+- Bolivia Data Explorer
+- GeoData Bolivia
+
+Concept:
+
+An interactive web map and dashboard that transforms public Bolivian data into an operational, explorable interface.
+
+It should demonstrate:
+- map interaction;
+- data filtering;
+- public dataset processing;
+- REST API design;
+- SQL or static data architecture depending on chosen scope;
+- Leaflet or MapLibre;
+- responsive dashboard UI;
+- clear documentation;
+- optional AI assistant that summarizes selected public data.
+
+Preferred tech stack:
+- Next.js
+- TypeScript
+- Tailwind CSS or CSS Modules
+- Motion for animations
+- Leaflet or MapLibre
+- PostgreSQL/PostGIS if feasible, otherwise static GeoJSON/JSON with a clear upgrade path
+- API routes or small backend layer
+- Playwright smoke tests
+- Vercel deployment
+
+### Supporting project 1
+
+Awtu Commerce case study.
+
+Focus:
+- real commercial web work;
+- frontend with Next.js/TypeScript;
+- catalog admin;
+- product filters;
+- QR payments through BCP API;
+- polling/webhook verification;
+- Gemini API support assistant through a secure backend/internal API;
+- manual and Playwright validation.
+
+Do not expose private client details, credentials or sensitive screenshots.
+
+### Supporting project 2
+
+Sistema de Reserva de Ambientes.
+
+Focus:
+- CRUD;
+- business logic;
+- restrictions;
+- schedule conflict validation;
+- database-backed app;
+- practical operational software.
+
+### Supporting project 3
+
+PHP Data Sync API or PHP Mini Service.
+
+Purpose:
+Show direct relevance to the PHP/cURL/REST/Linux/cron side of the Geolabs job ad.
+
+Concept:
+A small PHP service that fetches public data with cURL, stores or normalizes it, and exposes a REST-style endpoint.
+
+Requirements:
+- PHP;
+- PDO or MySQLi;
+- cURL;
+- `.env.example`;
+- error handling;
+- cron-ready sync script;
+- README;
+- simple API documentation;
+- no overengineering.
+
+### Optional lab
+
+Coverage Planner / Voronoi Map Lab.
+
+Purpose:
+Show map/spatial curiosity without overpromising advanced GIS.
+
+Features:
+- place service points on a map;
+- generate approximate Voronoi zones;
+- export GeoJSON;
+- responsive UI;
+- short technical explanation.
+
+## Design target
+
+The site must feel premium, enterprise-grade and product-oriented.
+
+It should NOT feel like:
+- a student portfolio;
+- a template portfolio;
+- a generic developer landing page;
+- a crypto/AI neon site;
+- a Geolabs clone.
+
+Visual tone:
+- dark enterprise data product;
+- matte charcoal/navy;
+- restrained teal/cyan accents;
+- subtle map grid / contour / coordinate motifs;
+- clean typography;
+- polished spacing;
+- high contrast;
+- large screenshots and case studies;
+- smooth but restrained animation;
+- very responsive mobile experience.
+
+The site should feel like a developer who understands operational systems, not just visual design.
+
+## Animation requirements
+
+Use Motion for React using patterns like:
+- `whileInView` for scroll-triggered reveal;
+- `useScroll` and `useTransform` for subtle scroll-linked effects;
+- `useSpring` to smooth scroll progress;
+- staggered reveals for project cards;
+- subtle parallax in the hero;
+- scroll progress indicator;
+- hover microinteractions on project cards;
+- animated data/map lines;
+- section transitions.
+
+Important:
+- animations must be premium and subtle;
+- no excessive bouncing;
+- no childish effects;
+- no motion that hurts readability;
+- avoid animating layout-triggering properties;
+- prefer transforms and opacity;
+- respect `prefers-reduced-motion`;
+- use `viewport={{ once: true }}` for reveal animations unless a repeated effect is intentional;
+- animations must remain smooth on mid-range phones.
+
+Use the following reference patterns:
+
+- `whileInView` for fade-up reveal.
+- staggered children for grouped project cards.
+- `useScroll` for top progress indicator.
+- `useTransform` for subtle parallax.
+- `useSpring` for smoothing scroll values.
+- transforms: x, y, scale, opacity.
+- avoid expensive computations in scroll callbacks.
+
+## Responsiveness
+
+The site must be 100% responsive.
+
+Explicitly design for:
+
+- 360px mobile width;
+- 390px mobile width;
+- 768px tablet;
+- 1024px laptop;
+- 1440px desktop;
+- 1920px large display.
+
+Mobile is not an afterthought.
+
+Mobile requirements:
+- readable hero;
+- no horizontal overflow;
+- nav collapses cleanly;
+- project cards become stacked case-study previews;
+- maps and screenshots adapt;
+- touch targets at least 44px;
+- animations reduced or simplified where necessary;
+- heavy visual layers removed or simplified on small screens;
+- performance remains strong.
+
+## Technical expectations
+
+Recommended stack:
+- Next.js App Router
+- TypeScript
+- Tailwind CSS or CSS Modules
+- Motion for React
+- React Icons or inline SVG icons
+- MDX or structured project data
+- next/image
+- ESLint
+- Prettier
+- Playwright smoke tests
+- Vercel-ready deployment
+
+Do not add unnecessary heavy dependencies.
+
+If using Leaflet/MapLibre, isolate it properly for Next.js SSR/client behavior.
+
+## Output required from this planning phase
+
+Create exactly four Markdown files:
+
+1. `01_PORTFOLIO_STRATEGY.md`
+2. `02_CREATIVE_DIRECTION_REVIEW.md`
+3. `03_DEVELOPMENT_SPEC.md`
+4. `04_FINAL_REVIEW_QA.md`
+
+Do not implement the portfolio yet.
+
+Do not write code yet.
+
+The goal of this phase is to produce a complete, high-quality planning and execution pack.
+
+## File 1: 01_PORTFOLIO_STRATEGY.md
+
+Include:
+
+### Purpose
+
+What the portfolio must achieve.
+
+### Audience
+
+Primary:
+- CEO / CTO / developer hiring team at Geolabs Cloud.
+
+Secondary:
+- other technical employers and clients.
+
+### Positioning
+
+Headline options in Spanish and English.
+
+### Core narrative
+
+Explain the story:
+interfaces → APIs → data → automation → AI → maps.
+
+### Homepage structure
+
+Detailed section-by-section plan:
+1. Hero
+2. Proof strip
+3. What I build
+4. Featured project
+5. Case studies
+6. Technical stack
+7. Process / engineering habits
+8. About
+9. Contact
+
+For each section include:
+- objective;
+- visible copy;
+- visual idea;
+- interaction/animation idea;
+- mobile behavior.
+
+### Project case studies
+
+Define the case-study structure for:
+- GeoInsights Bolivia
+- Awtu Commerce
+- Sistema de Reserva de Ambientes
+- PHP Data Sync API
+- optional Coverage Planner / Voronoi Lab
+
+For each:
+- problem;
+- solution;
+- stack;
+- proof points;
+- screenshots needed;
+- repo/demo status;
+- what it proves for the Geolabs role.
+
+### Risks
+
+Identify ways the portfolio could look too obvious, too generic, too flashy or too shallow.
+
+### Success criteria
+
+Define what “ready to send with the email” means.
+
+## File 2: 02_CREATIVE_DIRECTION_REVIEW.md
+
+Act as a senior creative director.
+
+Include:
+
+### Visual concept
+
+Define one strong visual concept.
+
+Possible direction:
+“Operational Data Console”
+or
+“Data-to-Decision Engineering Portfolio.”
+
+Choose the best.
+
+### Visual personality
+
+5–7 adjectives with explanation.
+
+### Visual system
+
+Specify:
+- colors;
+- typography;
+- grid;
+- spacing;
+- background motif;
+- project-card system;
+- map/data visuals;
+- icon style;
+- screenshot treatment;
+- hover style;
+- motion style.
+
+### Animation system
+
+Create a precise animation language.
+
+Include:
+- hero parallax;
+- scroll progress;
+- staggered reveal;
+- card hover;
+- section entrance;
+- map/data line animation;
+- reduced-motion behavior.
+
+Use Motion patterns:
+- whileInView;
+- useScroll;
+- useTransform;
+- useSpring;
+- viewport once;
+- transform/opacity only where possible.
+
+### Responsive design direction
+
+Explain desktop, tablet and mobile layout behavior.
+
+### Anti-patterns
+
+Ban:
+- generic portfolio template look;
+- excessive neon;
+- glassmorphism overload;
+- fake 3D;
+- too many cards;
+- animations that look like a template;
+- unreadable mobile layouts;
+- AI buzzword overload;
+- copying Geolabs too directly.
+
+### Creative review checklist
+
+A checklist a second agent can use to evaluate the design before development.
+
+## File 3: 03_DEVELOPMENT_SPEC.md
+
+Act as a frontend architect.
+
+Include:
+
+### Recommended stack
+
+Explain why each tool is used.
+
+### File structure
+
+Propose full project structure.
+
+Example:
+- app/
+- components/
+- components/sections/
+- components/ui/
+- components/motion/
+- data/
+- lib/
+- styles/
+- public/
+- tests/
+
+### Data model
+
+Define project data structure for case studies.
+
+### Components
+
+Define required components:
+- Header
+- Hero
+- ScrollProgress
+- SectionReveal
+- TechBadge
+- ProjectCard
+- CaseStudySection
+- MapPreview
+- ArchitectureDiagram
+- Timeline
+- ContactCTA
+- Footer
+
+For each:
+- responsibility;
+- props;
+- responsive behavior;
+- animation behavior;
+- accessibility concerns.
+
+### Motion implementation
+
+Define reusable motion components and variants.
+
+Include example code snippets for:
+- `SectionReveal`
+- staggered project list;
+- scroll progress indicator;
+- hero parallax;
+- hover card.
+
+Use Motion for React syntax.
+
+### Performance
+
+Include:
+- image optimization;
+- lazy loading;
+- map loading strategy;
+- dynamic import for heavy map components;
+- reduced motion;
+- Lighthouse targets;
+- bundle considerations.
+
+### Accessibility
+
+Include:
+- semantic HTML;
+- focus states;
+- keyboard navigation;
+- contrast;
+- prefers-reduced-motion;
+- alt text;
+- aria labels where appropriate.
+
+### SEO
+
+Include:
+- metadata;
+- Open Graph;
+- structured content;
+- project pages;
+- Spanish/English considerations.
+
+### Testing
+
+Include:
+- Playwright smoke tests;
+- responsive screenshot tests;
+- lint/build checks;
+- manual QA checklist.
+
+### Implementation phases
+
+Break development into phases:
+1. scaffold;
+2. design system;
+3. core sections;
+4. project data;
+5. flagship case study;
+6. animations;
+7. responsive QA;
+8. polish;
+9. deploy.
+
+## File 4: 04_FINAL_REVIEW_QA.md
+
+Act as the final reviewer.
+
+Include:
+
+### Review process
+
+A step-by-step process for another agent to review the final implementation.
+
+### Visual QA
+
+Check:
+- premium feel;
+- spacing;
+- typography;
+- visual rhythm;
+- card hierarchy;
+- animation smoothness;
+- map/data visuals;
+- screenshot quality.
+
+### Responsive QA
+
+Define exact breakpoints:
+- 360
+- 390
+- 768
+- 1024
+- 1440
+- 1920
+
+For each breakpoint specify what to inspect.
+
+### Technical QA
+
+Check:
+- `npm run build`;
+- lint;
+- TypeScript;
+- Playwright;
+- console errors;
+- network errors;
+- image optimization;
+- Lighthouse where possible.
+
+### Content QA
+
+Check:
+- no false claims;
+- no exaggerated PHP/PostGIS/MCP experience;
+- all project descriptions match actual work;
+- Spanish accents and punctuation;
+- email-ready contact info;
+- GitHub and CV links.
+
+### Animation QA
+
+Check:
+- reduced motion;
+- no excessive scroll jank;
+- no layout shift;
+- hover states on touch devices;
+- animations do not delay content comprehension.
+
+### Final reviewer output format
+
+Define the final review report format:
+- SHIP / FIX BEFORE SEND / BLOCKED
+- top 5 fixes;
+- screenshots to review;
+- desktop verdict;
+- mobile verdict;
+- technical verdict;
+- content honesty verdict.
+
+## Final instruction
+
+After creating the four files, stop.
+
+Do not implement.
+
+Do not create a Next.js app yet.
+
+Do not install dependencies.
+
+Wait for human review of the planning pack.
