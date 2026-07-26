@@ -13,12 +13,25 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { Sparkles, Layers, ExternalLink, Info } from 'lucide-react';
 
-// Set MapLibre GL CSP worker URL to avoid Next.js MIME text/html worker loading issue
+// Set MapLibre GL CSP worker URL to avoid Next.js worker MIME error
 if (typeof window !== 'undefined') {
   (maplibregl as any).setWorkerUrl?.('https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl-csp-worker.js');
 }
 
 const PMTILES_URL = 'https://raw.githubusercontent.com/mauforonda/atlasurbano/pmtiles/atlas.pmtiles';
+
+// Mauricio Foronda's minified Censo 2024 attribute dictionary (0 to 1 normalized floats)
+export const ATLAS_FIELDS = {
+  personas: 'a1', // Total population (0-1)
+  personas_por_hectarea: 'b1', // Population density (0-1)
+  dependencia_economica: 'c1', // Economic dependency (0-1)
+  porcentaje_menor20: 'd1', // Youth population < 20 (0-1)
+  porcentaje_60omas: 'e1', // Senior population > 60 (0-1)
+  educacion_superior: 'g1', // Higher education (0-1)
+  agua_caneria: 'r1', // Piped water coverage (0-1)
+  alcantarillado: 's1', // Sewage coverage (0-1)
+  tics_internet: 'v1', // Fiber & Internet coverage (0-1)
+};
 
 interface RealBlockMapWidgetProps {
   activeScope: ScopeType;
@@ -85,15 +98,14 @@ export default function RealBlockMapWidgetClient({
               'fill-color': [
                 'interpolate',
                 ['linear'],
-                ['coalesce', ['get', 'personas_por_hectarea'], ['get', 'personas'], 0],
-                0, '#1e293b',
-                20, '#0e7490',
-                60, '#06b6d4',
-                120, '#10b981',
-                200, '#f59e0b',
-                350, '#ef4444',
+                ['coalesce', ['get', 'b1'], ['get', 'v1'], ['get', 'a1'], 0],
+                0.0, '#1e293b',
+                0.15, '#06b6d4',
+                0.40, '#10b981',
+                0.70, '#f59e0b',
+                0.95, '#ef4444',
               ],
-              'fill-opacity': 0.75,
+              'fill-opacity': 0.85,
             },
           },
           {
@@ -102,9 +114,9 @@ export default function RealBlockMapWidgetClient({
             source: 'atlas-pmtiles',
             'source-layer': 'manzanos',
             paint: {
-              'line-color': '#0f172a',
-              'line-width': 0.8,
-              'line-opacity': 0.6,
+              'line-color': '#020617',
+              'line-width': 0.7,
+              'line-opacity': 0.7,
             },
           },
         ],
@@ -126,11 +138,11 @@ export default function RealBlockMapWidgetClient({
 
         setSelectedBlockData({
           id: props.id || props.manzano || 'MANZANO REAL INE',
-          personas: props.personas ?? props.poblacion ?? 'N/A',
-          density: props.personas_por_hectarea ?? 'N/A',
-          dependencia: props.dependencia_economica ?? 'N/A',
-          educacion: props.educacion_superior ? `${Math.round(props.educacion_superior * 100)}%` : 'N/A',
-          jovenes: props.porcentaje_menor20 ? `${Math.round(props.porcentaje_menor20 * 100)}%` : 'N/A',
+          density: props.b1 !== undefined ? `${Math.round(props.b1 * 350)} hab/ha` : 'N/A',
+          internet: props.v1 !== undefined ? `${Math.round(props.v1 * 100)}%` : 'N/A',
+          educacion: props.g1 !== undefined ? `${Math.round(props.g1 * 100)}%` : 'N/A',
+          jovenes: props.d1 !== undefined ? `${Math.round(props.d1 * 100)}%` : 'N/A',
+          agua: props.r1 !== undefined ? `${Math.round(props.r1 * 100)}%` : 'N/A',
         });
       }
     });
@@ -163,48 +175,48 @@ export default function RealBlockMapWidgetClient({
     });
   }, [activeScope]);
 
-  // Update layer fill color scale when activeLayer changes
+  // Update layer fill color scale when activeLayer changes using Foronda's minified keys
   useEffect(() => {
     if (!mapRef.current || !mapRef.current.isStyleLoaded()) return;
 
-    let propertyKey = 'personas_por_hectarea';
+    let fieldKey = 'b1'; // Default: Density (personas_por_hectarea)
     let colorStops: any[] = [];
 
     if (activeLayer === 'TECH_CONN') {
-      propertyKey = 'educacion_superior';
+      fieldKey = 'v1'; // TICs Internet
       colorStops = [
-        0, '#1e293b',
-        0.15, '#155e75',
-        0.35, '#0e7490',
-        0.55, '#06b6d4',
-        0.75, '#22d3ee',
+        0.0, '#0f172a',
+        0.2, '#155e75',
+        0.4, '#0e7490',
+        0.65, '#06b6d4',
+        0.9, '#22d3ee',
       ];
     } else if (activeLayer === 'DENSITY') {
-      propertyKey = 'personas_por_hectarea';
+      fieldKey = 'b1'; // Density
       colorStops = [
-        0, '#1e293b',
-        40, '#047857',
-        100, '#059669',
-        180, '#10b981',
-        300, '#34d399',
+        0.0, '#0f172a',
+        0.2, '#047857',
+        0.45, '#059669',
+        0.7, '#10b981',
+        0.9, '#34d399',
       ];
     } else if (activeLayer === 'HOUSING_SERVICES') {
-      propertyKey = 'dependencia_economica';
+      fieldKey = 'r1'; // Agua Cañería / Servicios
       colorStops = [
-        50, '#78350f',
-        100, '#b45309',
-        140, '#d97706',
-        180, '#f59e0b',
-        220, '#fbbf24',
+        0.0, '#0f172a',
+        0.25, '#b45309',
+        0.5, '#d97706',
+        0.75, '#f59e0b',
+        0.95, '#fbbf24',
       ];
     } else if (activeLayer === 'ECONOMIC_HUBS') {
-      propertyKey = 'personas';
+      fieldKey = 'a1'; // Personas / Nodos
       colorStops = [
-        0, '#1e293b',
-        50, '#0d9488',
-        150, '#14b8a6',
-        300, '#2dd4bf',
-        600, '#5eead4',
+        0.0, '#0f172a',
+        0.2, '#0d9488',
+        0.45, '#14b8a6',
+        0.7, '#2dd4bf',
+        0.9, '#5eead4',
       ];
     }
 
@@ -212,11 +224,11 @@ export default function RealBlockMapWidgetClient({
       mapRef.current.setPaintProperty('ine-manzanos-fill', 'fill-color', [
         'interpolate',
         ['linear'],
-        ['coalesce', ['get', propertyKey], 0],
+        ['coalesce', ['get', fieldKey], 0],
         ...colorStops,
       ]);
     } catch {
-      // Style setting fallback
+      // Paint property fallback
     }
   }, [activeLayer]);
 
@@ -252,7 +264,7 @@ export default function RealBlockMapWidgetClient({
           <div className="flex items-center space-x-2">
             <Layers className="w-4 h-4 text-teal-400" />
             <span className="text-xs font-mono-tech text-slate-300 font-bold uppercase">
-              ALCANCE ESPACIAL (PMTILES INE):
+              ALCANCE ESPACIAL (MANZANOS REALES PMTILES):
             </span>
           </div>
           
@@ -263,7 +275,7 @@ export default function RealBlockMapWidgetClient({
             className="text-[11px] font-mono-tech text-teal-300 hover:text-teal-200 hidden sm:flex items-center gap-1 transition-colors"
           >
             <Info className="w-3.5 h-3.5 text-teal-400 shrink-0 inline" />
-            <span>Atlas Urbano Censo 2024 (100% Manzanos Reales INE)</span>
+            <span>Atlas Urbano Censo 2024 (@mauforonda PMTiles Stream)</span>
             <ExternalLink className="w-3 h-3 text-slate-400 shrink-0 inline" />
           </a>
         </div>
@@ -319,7 +331,7 @@ export default function RealBlockMapWidgetClient({
         </div>
       </div>
 
-      {/* Map Canvas Container (MapLibre GL + PMTiles) */}
+      {/* Map Canvas Container (MapLibre GL + PMTiles Stream) */}
       <div className="relative h-[460px] sm:h-[520px] w-full overflow-hidden border border-slate-800 shadow-2xl rounded-b-xl">
         <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
 
@@ -345,7 +357,7 @@ export default function RealBlockMapWidgetClient({
             <div
               className="h-2 w-20 rounded"
               style={{
-                background: `linear-gradient(to right, #1e293b, ${
+                background: `linear-gradient(to right, #0f172a, ${
                   CENSUS_LAYERS.find((l) => l.code === activeLayer)?.primaryColor || '#14b8a6'
                 })`,
               }}
@@ -363,10 +375,10 @@ export default function RealBlockMapWidgetClient({
             <span className="text-slate-400 text-[10px]">MANZANO REAL CENSO 2024 INE</span>
           </div>
           <div className="flex flex-wrap gap-4 text-[11px]">
-            <div>Población: <strong className="text-white">{selectedBlockData.personas} hab.</strong></div>
-            <div>Densidad: <strong className="text-emerald-400">{selectedBlockData.density} hab/ha</strong></div>
-            <div>Educación Superior: <strong className="text-cyan-300">{selectedBlockData.educacion}</strong></div>
-            <div>Población Joven (&lt;20): <strong className="text-amber-400">{selectedBlockData.jovenes}</strong></div>
+            <div>Densidad: <strong className="text-emerald-400">{selectedBlockData.density}</strong></div>
+            <div>Internet Fibra: <strong className="text-cyan-300">{selectedBlockData.internet}</strong></div>
+            <div>Agua Cañería: <strong className="text-amber-400">{selectedBlockData.agua}</strong></div>
+            <div>Educación Superior: <strong className="text-teal-300">{selectedBlockData.educacion}</strong></div>
           </div>
         </div>
       )}
