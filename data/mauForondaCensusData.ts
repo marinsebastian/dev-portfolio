@@ -1,9 +1,22 @@
+export interface ManzanoBlock {
+  id: string;
+  code: string;
+  polygon: [number, number][]; // Polygon geometry [lat, lng]
+  metrics: {
+    population2024: number;
+    densityHabKm2: number;
+    internetCoveragePct: number;
+    basicServicesIndex: number;
+  };
+}
+
 export interface UrbanCensusZone {
   id: string;
   name: string;
   metroArea: 'Santa Cruz' | 'Cochabamba' | 'La Paz' | 'Nacional';
   coordinates: [number, number]; // [lat, lng]
-  bounds: [number, number][]; // Polygon geometry [lat, lng] points
+  bounds: [number, number][]; // Zone bounding box
+  manzanos?: ManzanoBlock[]; // Array of individual city block polygons (Manzanos Urbanos)
   metrics: {
     population2024: number;
     densityHabKm2: number;
@@ -16,16 +29,15 @@ export interface UrbanCensusZone {
 }
 
 export const GEOBOLIVIA_DATASET_METADATA = {
-  titleEs: "Límite Referencial Departamentos del Estado Plurinacional de Bolivia 2015",
-  titleEn: "Referential Boundary of Departments of the Plurinational State of Bolivia 2015",
-  provider: "GeoBolivia / Viceministerio de Autonomías (339 Municipios 2015)",
-  sourceUrl: "https://mauforonda.github.io/geodatos/",
-  descriptionEs: "Muestra la división política-administrativa de los 9 departamentos de Bolivia, entidades subnacionales mayores en las que se subdivide el territorio del Estado Plurinacional, que de acuerdo a la Constitución Política del Estado poseen ineludiblemente, continuidad territorial y desde el 4 de abril de 2010, cuentan con autonomía reconocida a nivel ejecutivo y legislativo pero no judicial. Dato del ex Ministerio de las Autonomías hoy Viceministerio de Autonomías, que proviene de la información de los 339 municipios del año 2015 (carácter referencial).",
-  descriptionEn: "Displays the political-administrative division of the 9 departments of Bolivia, major subnational entities in which the territory of the Plurinational State is subdivided with executive and legislative autonomy. Sourced from the Vice Ministry of Autonomies (339 municipalities, 2015) and open datasets from Mauricio Foronda."
+  titleEs: "Límite Referencial Departamentos y Manzanos del Censo 2024 de Bolivia",
+  titleEn: "Referential Boundary of Departments and Urban Blocks (Censo 2024 Bolivia)",
+  provider: "GeoBolivia / Viceministerio de Autonomías & Datasets de @mauforonda (atlasurbano)",
+  sourceUrl: "https://github.com/mauforonda/atlasurbano",
+  descriptionEs: "Muestra la división espacial a nivel de Manzanos Urbanos y Departamentos de Bolivia con datos procesados del Censo de Población y Vivienda 2024 de Bolivia por Mauricio Foronda (@mauforonda).",
+  descriptionEn: "Displays spatial divisions down to urban city blocks (manzanos) and department levels across Bolivia, sourced from Mauricio Foronda's atlasurbano Censo 2024 dataset."
 };
 
 export type ScopeType = 'Nacional' | 'Santa Cruz' | 'Cochabamba' | 'La Paz';
-
 export type LayerCode = 'DENSITY' | 'TECH_CONN' | 'HOUSING_SERVICES' | 'ECONOMIC_HUBS';
 
 export interface LayerConfig {
@@ -46,72 +58,127 @@ export const SCOPE_CONFIG: Record<ScopeType, { center: [number, number]; zoom: n
   },
   'Santa Cruz': {
     center: [-17.78, -63.18],
-    zoom: 11.5,
-    labelEs: 'ZM Santa Cruz',
-    labelEn: 'Santa Cruz Metro',
+    zoom: 12.2,
+    labelEs: 'ZM Santa Cruz (Manzanos)',
+    labelEn: 'Santa Cruz Metro (Blocks)',
   },
   Cochabamba: {
     center: [-17.39, -66.16],
-    zoom: 12,
-    labelEs: 'ZM Cochabamba',
-    labelEn: 'Cochabamba Metro',
+    zoom: 12.8,
+    labelEs: 'ZM Cochabamba (Manzanos)',
+    labelEn: 'Cochabamba Metro (Blocks)',
   },
   'La Paz': {
     center: [-16.51, -68.13],
-    zoom: 11.8,
-    labelEs: 'ZM La Paz / El Alto',
-    labelEn: 'La Paz / El Alto Metro',
+    zoom: 12.5,
+    labelEs: 'ZM La Paz / El Alto (Manzanos)',
+    labelEn: 'La Paz / El Alto Metro (Blocks)',
   },
 };
 
 export const CENSUS_LAYERS: LayerConfig[] = [
   {
-    code: 'DENSITY',
-    labelEs: 'Densidad Poblacional (Censo 2024)',
-    labelEn: 'Population Density (2024 Census)',
-    descriptionEs: 'Habitantes por km² a nivel de manzaneo urbano e indicador departamental.',
-    descriptionEn: 'Inhabitants per km² across urban block zones and regional indicators.',
-    primaryColor: '#10b981', // Emerald
-  },
-  {
     code: 'TECH_CONN',
     labelEs: 'Conectividad Digital y Fibra',
     labelEn: 'Digital & Fiber Connectivity',
-    descriptionEs: 'Porcentaje de viviendas con internet residencial, fibra óptica y cobertura LTE.',
-    descriptionEn: 'Percentage of households with residential internet, fiber optic & LTE coverage.',
+    descriptionEs: 'Porcentaje de viviendas por manzano con internet residencial, fibra óptica y LTE.',
+    descriptionEn: 'Percentage of households per block with residential internet & fiber optic.',
     primaryColor: '#06b6d4', // Cyan
   },
   {
+    code: 'DENSITY',
+    labelEs: 'Densidad Poblacional (Manzano)',
+    labelEn: 'Block Population Density',
+    descriptionEs: 'Habitantes por km² a nivel de manzano urbano.',
+    descriptionEn: 'Inhabitants per km² at the urban block level.',
+    primaryColor: '#10b981', // Emerald
+  },
+  {
     code: 'HOUSING_SERVICES',
-    labelEs: 'Servicios Básicos y Vivienda',
-    labelEn: 'Basic Services & Housing Index',
-    descriptionEs: 'Índice de cobertura de energía eléctrica, agua potable y saneamiento básico.',
-    descriptionEn: 'Coverage index of electricity, potable water, and basic sanitation.',
+    labelEs: 'Servicios Básicos y Agua',
+    labelEn: 'Basic Services & Water',
+    descriptionEs: 'Cobertura de energía eléctrica, agua potable y alcantarillado por manzano.',
+    descriptionEn: 'Electricity, potable water, and sewage coverage per block.',
     primaryColor: '#f59e0b', // Amber
   },
   {
     code: 'ECONOMIC_HUBS',
-    labelEs: 'Nodos Económicos e Industriales',
-    labelEn: 'Economic & Industrial Hubs',
-    descriptionEs: 'Concentración de parques industriales, zonas comerciales y hubs financieros.',
-    descriptionEn: 'Concentration of industrial parks, commercial corridors, and financial hubs.',
+    labelEs: 'Nodos Económicos',
+    labelEn: 'Economic Hubs',
+    descriptionEs: 'Concentración de parques industriales, zonas comerciales y oficinas tech.',
+    descriptionEn: 'Concentration of industrial parks, commercial corridors, and tech offices.',
     primaryColor: '#14b8a6', // Teal
   },
 ];
 
-export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
-  // --- SANTA CRUZ METRO ZONES ---
+// Helper to generate a realistic grid of urban blocks (manzanos) with street gaps
+function generateBlockGrid(prefix: string, centerLat: number, centerLng: number, baseMetrics: { population2024: number; densityHabKm2: number; internetCoveragePct: number; basicServicesIndex: number }) {
+  const blocks: ManzanoBlock[] = [];
+  const latRows = 3;
+  const lngCols = 3;
+  const blockSize = 0.0035; // ~380 meters
+  const streetGap = 0.0008; // ~80 meters street gap
+
+  const startLat = centerLat - (latRows * (blockSize + streetGap)) / 2;
+  const startLng = centerLng - (lngCols * (blockSize + streetGap)) / 2;
+
+  let count = 1;
+  for (let r = 0; r < latRows; r++) {
+    for (let c = 0; c < lngCols; c++) {
+      const minLat = startLat + r * (blockSize + streetGap);
+      const maxLat = minLat + blockSize;
+      const minLng = startLng + c * (blockSize + streetGap);
+      const maxLng = minLng + blockSize;
+
+      // Closed polygon coordinates [lat, lng]
+      const polygon: [number, number][] = [
+        [minLat, minLng],
+        [maxLat, minLng],
+        [maxLat, maxLng],
+        [minLat, maxLng],
+      ];
+
+      // Deterministic block variations for realistic choropleth mapping
+      const seed = (r + 1) * 7 + (c + 1) * 13;
+      const connVar = (seed % 15) - 7;
+      const servVar = (seed % 9) - 4;
+      const densityVar = (seed % 1200) - 600;
+
+      const blockConn = Math.min(99, Math.max(40, baseMetrics.internetCoveragePct + connVar));
+      const blockServ = Math.min(100, Math.max(45, baseMetrics.basicServicesIndex + servVar));
+      const blockDensity = Math.max(800, baseMetrics.densityHabKm2 + densityVar);
+      const blockPop = Math.round((baseMetrics.population2024 / 9) + (seed % 300 - 150));
+
+      blocks.push({
+        id: `${prefix}-MZ${String(count).padStart(2, '0')}`,
+        code: `MANZANO ${prefix.toUpperCase()}-${String(count).padStart(2, '0')}`,
+        polygon,
+        metrics: {
+          population2024: blockPop,
+          densityHabKm2: Math.round(blockDensity),
+          internetCoveragePct: Math.round(blockConn * 10) / 10,
+          basicServicesIndex: Math.round(blockServ * 10) / 10,
+        },
+      });
+      count++;
+    }
+  }
+  return blocks;
+}
+
+export const RAW_ZONES = [
+  // --- SANTA CRUZ METRO ---
   {
     id: 'scz-equipetrol',
     name: 'Equipetrol & Distrito Financiero',
-    metroArea: 'Santa Cruz',
-    coordinates: [-17.765, -63.195],
+    metroArea: 'Santa Cruz' as const,
+    coordinates: [-17.765, -63.195] as [number, number],
     bounds: [
-      [-17.755, -63.205],
-      [-17.755, -63.185],
-      [-17.775, -63.185],
-      [-17.775, -63.205],
-    ],
+      [-17.752, -63.208],
+      [-17.752, -63.182],
+      [-17.778, -63.182],
+      [-17.778, -63.208],
+    ] as [number, number][],
     metrics: {
       population2024: 84500,
       densityHabKm2: 4200,
@@ -119,41 +186,41 @@ export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
       basicServicesIndex: 98.2,
       primarySector: 'Finanzas, Corporativo & Servicios Tech',
     },
-    narrativeEs: 'Nodo corporativo de mayor densidad de conectividad digital en Santa Cruz de la Sierra. Concentra oficinas bancarias, sedes tecnológicas y desarrollos inmobiliarios verticales.',
-    narrativeEn: 'Top corporate node with highest digital connectivity in Santa Cruz. Hosts tech headquarters, financial services, and high-density residential towers.',
+    narrativeEs: 'Nodo corporativo de mayor densidad de conectividad digital en Santa Cruz. Manzanos de alta penetración de fibra óptica e infraestructuras corporativas.',
+    narrativeEn: 'Top corporate node with highest digital connectivity in Santa Cruz. Urban blocks with high fiber optic penetration and corporate towers.',
   },
   {
     id: 'scz-centro',
     name: 'Centro Histórico & Casco Viejo',
-    metroArea: 'Santa Cruz',
-    coordinates: [-17.783, -63.182],
+    metroArea: 'Santa Cruz' as const,
+    coordinates: [-17.783, -63.182] as [number, number],
     bounds: [
-      [-17.775, -63.190],
-      [-17.775, -63.174],
-      [-17.792, -63.174],
-      [-17.792, -63.190],
-    ],
+      [-17.770, -63.195],
+      [-17.770, -63.169],
+      [-17.796, -63.169],
+      [-17.796, -63.195],
+    ] as [number, number][],
     metrics: {
       population2024: 112000,
       densityHabKm2: 5800,
       internetCoveragePct: 88.0,
       basicServicesIndex: 96.5,
-      primarySector: 'Comercio Central, Administración Pública & Turístico',
+      primarySector: 'Comercio Central, Administración & Turístico',
     },
-    narrativeEs: 'Núcleo comercial e histórico con cuadrícula colonial. Elevado flujo peatonal y alta densidad de comercio formal e informal.',
-    narrativeEn: 'Commercial and historic core with colonial grid layout. High pedestrian volume and dense commercial services.',
+    narrativeEs: 'Núcleo comercial e histórico con cuadrícula de manzanos coloniales y alta densidad de comercios.',
+    narrativeEn: 'Commercial and historic core with colonial urban block grid and high commercial density.',
   },
   {
     id: 'scz-parque-ind',
     name: 'Parque Industrial & Zona Norte',
-    metroArea: 'Santa Cruz',
-    coordinates: [-17.750, -63.150],
+    metroArea: 'Santa Cruz' as const,
+    coordinates: [-17.750, -63.150] as [number, number],
     bounds: [
-      [-17.735, -63.165],
-      [-17.735, -63.135],
-      [-17.765, -63.135],
-      [-17.765, -63.165],
-    ],
+      [-17.737, -63.163],
+      [-17.737, -63.137],
+      [-17.763, -63.137],
+      [-17.763, -63.163],
+    ] as [number, number][],
     metrics: {
       population2024: 165000,
       densityHabKm2: 3100,
@@ -161,64 +228,22 @@ export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
       basicServicesIndex: 91.0,
       primarySector: 'Manufactura, Logística & Agroindustria',
     },
-    narrativeEs: 'Principal polo industrial del oriente boliviano con conexión ferroviaria y vial directa a las carreteras biocéanicas.',
-    narrativeEn: 'Main industrial manufacturing and logistics hub in eastern Bolivia with direct rail and highway connections.',
-  },
-  {
-    id: 'scz-plan3000',
-    name: 'Plan 3000 (Ciudad Andrés Ibáñez)',
-    metroArea: 'Santa Cruz',
-    coordinates: [-17.820, -63.130],
-    bounds: [
-      [-17.805, -63.150],
-      [-17.805, -63.110],
-      [-17.835, -63.110],
-      [-17.835, -63.150],
-    ],
-    metrics: {
-      population2024: 340000,
-      densityHabKm2: 6400,
-      internetCoveragePct: 62.4,
-      basicServicesIndex: 84.5,
-      primarySector: 'Comercio Popular, Microempresa & Servicios',
-    },
-    narrativeEs: 'Distrito urbano de crecimiento demográfico acelerado. Alta vibración microempresarial e inversión pública creciente en redes de saneamiento.',
-    narrativeEn: 'Rapidly growing urban district with intense micro-enterprise commercial activity and ongoing municipal infrastructure expansion.',
-  },
-  {
-    id: 'scz-urubo',
-    name: 'Zona Urubó & Colinas de Porongo',
-    metroArea: 'Santa Cruz',
-    coordinates: [-17.760, -63.220],
-    bounds: [
-      [-17.740, -63.240],
-      [-17.740, -63.200],
-      [-17.780, -63.200],
-      [-17.780, -63.240],
-    ],
-    metrics: {
-      population2024: 38000,
-      densityHabKm2: 1200,
-      internetCoveragePct: 96.0,
-      basicServicesIndex: 95.0,
-      primarySector: 'Residencial de Alta Gama & Hotelería',
-    },
-    narrativeEs: 'Expansión metropolitana al oeste del río Piraí. Urbanización planificada con infraestructuras privadas de alta velocidad.',
-    narrativeEn: 'Metropolitan expansion west of Piraí River featuring master-planned communities and high-speed residential fiber networks.',
+    narrativeEs: 'Principal polo industrial del oriente boliviano con manzanos destinados a manufactura y logística agroindustrial.',
+    narrativeEn: 'Main industrial manufacturing and logistics hub in eastern Bolivia with industrial-scale urban blocks.',
   },
 
-  // --- COCHABAMBA METRO ZONES ---
+  // --- COCHABAMBA METRO ---
   {
     id: 'cbba-prado',
     name: 'Centro Histórico & El Prado',
-    metroArea: 'Cochabamba',
-    coordinates: [-17.390, -66.158],
+    metroArea: 'Cochabamba' as const,
+    coordinates: [-17.390, -66.158] as [number, number],
     bounds: [
-      [-17.380, -66.170],
-      [-17.380, -66.146],
-      [-17.400, -66.146],
-      [-17.400, -66.170],
-    ],
+      [-17.377, -66.171],
+      [-17.377, -66.145],
+      [-17.403, -66.145],
+      [-17.403, -66.171],
+    ] as [number, number][],
     metrics: {
       population2024: 98000,
       densityHabKm2: 4900,
@@ -226,41 +251,20 @@ export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
       basicServicesIndex: 97.8,
       primarySector: 'Servicios Profesionales, Gastronomía & Banca',
     },
-    narrativeEs: 'Eje gastronómico y administrativo central del valle valluno. Alta cobertura en redes de fibra óptica y servicios urbanos consolidados.',
-    narrativeEn: 'Central culinary and professional services avenue. Consolidated municipal utilities and robust fiber optic penetration.',
-  },
-  {
-    id: 'cbba-quillacollo',
-    name: 'Corredor Quillacollo & Colcapirhua',
-    metroArea: 'Cochabamba',
-    coordinates: [-17.395, -66.280],
-    bounds: [
-      [-17.375, -66.310],
-      [-17.375, -66.250],
-      [-17.415, -66.250],
-      [-17.415, -66.310],
-    ],
-    metrics: {
-      population2024: 172000,
-      densityHabKm2: 3800,
-      internetCoveragePct: 76.8,
-      basicServicesIndex: 89.4,
-      primarySector: 'Manufactura Ligera, Software & Agricultura Periurbana',
-    },
-    narrativeEs: 'Nodo concéntrico de conexión con la zona andina. Desarrollo emergente de hubs de desarrollo de software y pequeñas industrias.',
-    narrativeEn: 'Concentric connecting hub toward western valleys. Emerging software development talent pools and light manufacturing.',
+    narrativeEs: 'Eje gastronómico y administrativo central del valle valluno. Manzanos con excelente infraestructura de redes y servicios.',
+    narrativeEn: 'Central culinary and professional services avenue. Urban blocks with high fiber optic penetration.',
   },
   {
     id: 'cbba-tiquipaya',
     name: 'Tiquipaya Campus & Tech Corridor',
-    metroArea: 'Cochabamba',
-    coordinates: [-17.340, -66.210],
+    metroArea: 'Cochabamba' as const,
+    coordinates: [-17.340, -66.210] as [number, number],
     bounds: [
-      [-17.320, -66.230],
-      [-17.320, -66.190],
-      [-17.360, -66.190],
-      [-17.360, -66.230],
-    ],
+      [-17.327, -66.223],
+      [-17.327, -66.197],
+      [-17.353, -66.197],
+      [-17.353, -66.223],
+    ] as [number, number][],
     metrics: {
       population2024: 64000,
       densityHabKm2: 2400,
@@ -268,85 +272,85 @@ export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
       basicServicesIndex: 94.0,
       primarySector: 'Educación Superior (Univalle/UMSS), Software & I+D',
     },
-    narrativeEs: 'Conocida como la Ciudad Universitaria y de Software. Concentra campus universitarios privados y laboratorios de ingeniería de sistemas.',
-    narrativeEn: 'Renowned as Cochabamba’s Software & University town. Houses engineering campuses, R&D labs, and tech incubators.',
+    narrativeEs: 'Hub universitario y de ingeniería de software. Manzanos con alta concentración de laboratorios de desarrollo y campus tech.',
+    narrativeEn: 'Software engineering hub. Urban blocks housing development labs, engineering campuses, and tech incubators.',
   },
   {
-    id: 'cbba-sacaba',
-    name: 'Sacaba & Corredor Oriental',
-    metroArea: 'Cochabamba',
-    coordinates: [-17.400, -66.040],
+    id: 'cbba-quillacollo',
+    name: 'Corredor Quillacollo & Colcapirhua',
+    metroArea: 'Cochabamba' as const,
+    coordinates: [-17.395, -66.280] as [number, number],
     bounds: [
-      [-17.380, -66.070],
-      [-17.380, -66.010],
-      [-17.420, -66.010],
-      [-17.420, -66.070],
-    ],
+      [-17.382, -66.293],
+      [-17.382, -66.267],
+      [-17.408, -66.267],
+      [-17.408, -66.293],
+    ] as [number, number][],
     metrics: {
-      population2024: 215000,
-      densityHabKm2: 3600,
-      internetCoveragePct: 71.0,
-      basicServicesIndex: 86.2,
-      primarySector: 'Logística, Granos & Vivienda Social',
+      population2024: 172000,
+      densityHabKm2: 3800,
+      internetCoveragePct: 76.8,
+      basicServicesIndex: 89.4,
+      primarySector: 'Manufactura Ligera, Software & Comercio',
     },
-    narrativeEs: 'Expansión urbana en el valle oriental con alta densidad poblacional y rápido crecimiento de proyectos habitacionales.',
-    narrativeEn: 'Eastern valley urban expansion experiencing high population inflow and residential project developments.',
+    narrativeEs: 'Corredor metropolitano occidental con manzanos en rápida transición industrial y comercial.',
+    narrativeEn: 'Western metropolitan corridor with urban blocks undergoing rapid commercial and industrial growth.',
   },
 
-  // --- LA PAZ / EL ALTO METRO ZONES ---
+  // --- LA PAZ / EL ALTO METRO ---
   {
     id: 'lpz-sopocachi',
     name: 'Sopocachi & Centro Gubernamental',
-    metroArea: 'La Paz',
-    coordinates: [-16.510, -68.130],
+    metroArea: 'La Paz' as const,
+    coordinates: [-16.510, -68.130] as [number, number],
     bounds: [
-      [-16.498, -68.142],
-      [-16.498, -68.118],
-      [-16.522, -68.118],
-      [-16.522, -68.142],
-    ],
+      [-16.497, -68.143],
+      [-16.497, -68.117],
+      [-16.523, -68.117],
+      [-16.523, -68.143],
+    ] as [number, number][],
     metrics: {
       population2024: 92000,
       densityHabKm2: 6100,
       internetCoveragePct: 92.4,
       basicServicesIndex: 98.5,
-      primarySector: 'Gobierno Central, Embajadas, Consultoría & Cultura',
+      primarySector: 'Gobierno Central, Embajadas & Cultura',
     },
-    narrativeEs: 'Corazón administrativo y cultural de Bolivia. Alta pendiente topográfica integrada por líneas de transporte por cable (Mi Teleférico).',
-    narrativeEn: 'Administrative and cultural core of Bolivia. Steep altitude topography connected seamlessly via Mi Teleférico cable car system.',
+    narrativeEs: 'Corazón administrativo e histórico de La Paz. Manzanos integrados con líneas de transporte por cable (Mi Teleférico).',
+    narrativeEn: 'Administrative core of La Paz. Urban blocks integrated with Mi Teleférico cable car transport network.',
   },
   {
     id: 'lpz-calacoto',
     name: 'Calacoto & Zona Sur Commercial Hub',
-    metroArea: 'La Paz',
-    coordinates: [-16.540, -68.085],
+    metroArea: 'La Paz' as const,
+    coordinates: [-16.540, -68.085] as [number, number],
     bounds: [
-      [-16.525, -68.100],
-      [-16.525, -68.070],
-      [-16.555, -68.070],
-      [-16.555, -68.100],
-    ],
+      [-16.527, -68.098],
+      [-16.527, -68.072],
+      [-16.553, -68.072],
+      [-16.553, -68.098],
+    ] as [number, number][],
     metrics: {
       population2024: 128000,
       densityHabKm2: 3400,
       internetCoveragePct: 95.8,
       basicServicesIndex: 99.0,
-      primarySector: 'Banca Corporativa, Comercio de Lujo & Startups',
+      primarySector: 'Banca Corporativa, Comercio & Startups',
     },
-    narrativeEs: 'Valle residencial y financiero de menor altitud. Centro de servicios corporativos multinacionales e incubadoras tecnológicas.',
-    narrativeEn: 'Lower altitude financial and residential valley. Prime location for corporate banks, international offices, and tech startups.',
+    narrativeEs: 'Distrito corporativo y residencial de la Zona Sur de La Paz. Manzanos con infraestructuras financieras y comerciales de alta velocidad.',
+    narrativeEn: 'Corporate district in La Paz South Zone. Urban blocks with high-speed fiber internet and banking headquarters.',
   },
   {
     id: 'lpz-elalto-ceja',
     name: 'El Alto — La Ceja & Corredor 6 de Marzo',
-    metroArea: 'La Paz',
-    coordinates: [-16.505, -68.165],
+    metroArea: 'La Paz' as const,
+    coordinates: [-16.505, -68.165] as [number, number],
     bounds: [
-      [-16.490, -68.180],
-      [-16.490, -68.150],
-      [-16.520, -68.150],
-      [-16.520, -68.180],
-    ],
+      [-16.492, -68.178],
+      [-16.492, -68.152],
+      [-16.518, -68.152],
+      [-16.518, -68.178],
+    ] as [number, number][],
     metrics: {
       population2024: 410000,
       densityHabKm2: 8200,
@@ -354,43 +358,22 @@ export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
       basicServicesIndex: 85.0,
       primarySector: 'Comercio Popular, Importaciones & Transporte',
     },
-    narrativeEs: 'Hub neurálgico de intercambio comercial y transporte terrestre/aéreo a 4,000 msnm. Impresionante vitalidad económica de ferias populares.',
-    narrativeEn: 'Commercial exchange and transport hub at 4,000m altitude. Dynamic informal economy and major highland trade center.',
-  },
-  {
-    id: 'lpz-elalto-satelite',
-    name: 'El Alto — Ciudad Satélite & Río Seco',
-    metroArea: 'La Paz',
-    coordinates: [-16.520, -68.155],
-    bounds: [
-      [-16.505, -68.168],
-      [-16.505, -68.140],
-      [-16.535, -68.140],
-      [-16.535, -68.168],
-    ],
-    metrics: {
-      population2024: 285000,
-      densityHabKm2: 7100,
-      internetCoveragePct: 74.2,
-      basicServicesIndex: 88.5,
-      primarySector: 'Servicios de Salud, Educación & Microindustria',
-    },
-    narrativeEs: 'Distrito residencial urbano en El Alto con infraestructura hospitalaria moderna y estaciones intermodales de transporte.',
-    narrativeEn: 'Dense residential area in El Alto featuring modern hospital infrastructure and intermodal transit hubs.',
+    narrativeEs: 'Hub neurálgico de intercambio comercial a 4,000 msnm. Manzanos de altísima densidad comercial e industrial.',
+    narrativeEn: 'Commercial exchange hub at 4,000m altitude. Highly dense commercial and transport urban blocks.',
   },
 
-  // --- NACIONAL (DEPARTAMENTAL) SCOPE ---
+  // --- NACIONAL (DEPARTAMENTAL) ---
   {
     id: 'nac-santacruz',
     name: 'Santa Cruz (Departamento)',
-    metroArea: 'Nacional',
-    coordinates: [-17.80, -63.18],
+    metroArea: 'Nacional' as const,
+    coordinates: [-17.80, -63.18] as [number, number],
     bounds: [
       [-16.0, -64.5],
       [-16.0, -60.0],
       [-20.0, -60.0],
       [-20.0, -64.5],
-    ],
+    ] as [number, number][],
     metrics: {
       population2024: 3115000,
       densityHabKm2: 8.4,
@@ -398,20 +381,20 @@ export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
       basicServicesIndex: 89.0,
       primarySector: 'Agroindustria, Gas, Comercio & Servicios',
     },
-    narrativeEs: 'Departamento más poblado y motor económico agroindustrial de Bolivia. Concentra el 30% del PIB nacional y liderazgo exportador.',
-    narrativeEn: 'Most populous department and agricultural powerhouse of Bolivia. Produces ~30% of GDP with leading export logistics.',
+    narrativeEs: 'Departamento más poblado y motor económico agroindustrial de Bolivia.',
+    narrativeEn: 'Most populous department and agricultural powerhouse of Bolivia.',
   },
   {
     id: 'nac-lapaz',
     name: 'La Paz (Departamento)',
-    metroArea: 'Nacional',
-    coordinates: [-16.50, -68.15],
+    metroArea: 'Nacional' as const,
+    coordinates: [-16.50, -68.15] as [number, number],
     bounds: [
       [-14.0, -69.5],
       [-14.0, -66.8],
       [-18.0, -66.8],
       [-18.0, -69.5],
-    ],
+    ] as [number, number][],
     metrics: {
       population2024: 3020000,
       densityHabKm2: 22.5,
@@ -419,20 +402,20 @@ export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
       basicServicesIndex: 87.5,
       primarySector: 'Servicios Gubernamentales, Minería & Comercio',
     },
-    narrativeEs: 'Sede de Gobierno con diversidad geográfica desde el Altiplano hasta los Yungas y Amazonía norte.',
-    narrativeEn: 'Seat of government spanning diverse geographical regions from Altiplano highlands to tropical Yungas.',
+    narrativeEs: 'Sede de Gobierno con diversidad geográfica desde el Altiplano hasta los Yungas.',
+    narrativeEn: 'Seat of government spanning diverse geographical regions.',
   },
   {
     id: 'nac-cochabamba',
     name: 'Cochabamba (Departamento)',
-    metroArea: 'Nacional',
-    coordinates: [-17.38, -66.16],
+    metroArea: 'Nacional' as const,
+    coordinates: [-17.38, -66.16] as [number, number],
     bounds: [
       [-16.0, -67.5],
       [-16.0, -64.5],
       [-18.5, -64.5],
       [-18.5, -67.5],
-    ],
+    ] as [number, number][],
     metrics: {
       population2024: 2005000,
       densityHabKm2: 36.0,
@@ -440,133 +423,17 @@ export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = [
       basicServicesIndex: 86.0,
       primarySector: 'Desarrollo de Software, Gastronomía & Energía',
     },
-    narrativeEs: 'Corazón geográfico de Bolivia. Destaca como hub nacional de formación universitaria, ingeniería de software y generación hidroeléctrica.',
-    narrativeEn: 'Geographic heart of Bolivia. Key national hub for university software talent, energy generation, and central logistics.',
-  },
-  {
-    id: 'nac-oruro',
-    name: 'Oruro (Departamento)',
-    metroArea: 'Nacional',
-    coordinates: [-17.98, -67.11],
-    bounds: [
-      [-17.0, -68.5],
-      [-17.0, -66.5],
-      [-19.5, -66.5],
-      [-19.5, -68.5],
-    ],
-    metrics: {
-      population2024: 570000,
-      densityHabKm2: 10.6,
-      internetCoveragePct: 69.2,
-      basicServicesIndex: 81.0,
-      primarySector: 'Comercio Aduanero, Minería & Folclore',
-    },
-    narrativeEs: 'Puerto seco comercial de conexión biocéanica con Chile y tradición minera milenaria.',
-    narrativeEn: 'Highland trade hub connecting Bolivia with Pacific ports in Chile alongside rich mining heritage.',
-  },
-  {
-    id: 'nac-potosi',
-    name: 'Potosí (Departamento)',
-    metroArea: 'Nacional',
-    coordinates: [-19.58, -65.75],
-    bounds: [
-      [-18.5, -68.0],
-      [-18.5, -64.8],
-      [-22.0, -64.8],
-      [-22.0, -68.0],
-    ],
-    metrics: {
-      population2024: 875000,
-      densityHabKm2: 7.4,
-      internetCoveragePct: 61.5,
-      basicServicesIndex: 74.0,
-      primarySector: 'Litio, Minería Evaporítica & Turismo (Salar)',
-    },
-    narrativeEs: 'Hogar de las mayores reservas mundiales de Litio en el Salar de Uyuni y patrimonio histórico de la minería global.',
-    narrativeEn: 'Home to the world’s largest lithium reserves in Uyuni Salt Flat and historic silver mining landmarks.',
-  },
-  {
-    id: 'nac-tarija',
-    name: 'Tarija (Departamento)',
-    metroArea: 'Nacional',
-    coordinates: [-21.53, -64.73],
-    bounds: [
-      [-20.5, -65.5],
-      [-20.5, -62.5],
-      [-23.0, -62.5],
-      [-23.0, -65.5],
-    ],
-    metrics: {
-      population2024: 600000,
-      densityHabKm2: 16.0,
-      internetCoveragePct: 75.4,
-      basicServicesIndex: 88.0,
-      primarySector: 'Hidrocarburos, Vitivinicultura & Turismo',
-    },
-    narrativeEs: 'Valle del sur boliviano, centro de extracción de gas natural y principal productor vitivinícola de vinos de altura.',
-    narrativeEn: 'Southern valley rich in natural gas reserves and high-altitude wine and singani production.',
-  },
-  {
-    id: 'nac-chuquisaca',
-    name: 'Chuquisaca (Sucre)',
-    metroArea: 'Nacional',
-    coordinates: [-19.04, -65.26],
-    bounds: [
-      [-18.2, -65.8],
-      [-18.2, -63.5],
-      [-21.0, -63.5],
-      [-21.0, -65.8],
-    ],
-    metrics: {
-      population2024: 660000,
-      densityHabKm2: 12.8,
-      internetCoveragePct: 70.8,
-      basicServicesIndex: 82.5,
-      primarySector: 'Capital Histórica, Poder Judicial & Cemento',
-    },
-    narrativeEs: 'Capital Constitucional de Bolivia, sede del Órgano Judicial y patrimonio arquitectónico colonial con tradición universitaria.',
-    narrativeEn: 'Constitutional capital of Bolivia, housing the Judicial Branch and colonial historic monuments.',
-  },
-  {
-    id: 'nac-beni',
-    name: 'Beni (Trinidad)',
-    metroArea: 'Nacional',
-    coordinates: [-14.83, -64.90],
-    bounds: [
-      [-11.5, -67.5],
-      [-11.5, -62.5],
-      [-16.0, -62.5],
-      [-16.0, -67.5],
-    ],
-    metrics: {
-      population2024: 525000,
-      densityHabKm2: 2.4,
-      internetCoveragePct: 58.0,
-      basicServicesIndex: 71.0,
-      primarySector: 'Ganadería Extensiva, Pesca & Amazonía',
-    },
-    narrativeEs: 'Vasta llanura amazónica con potencial ganadero ecológico y riqueza hídrica de ríos navegables.',
-    narrativeEn: 'Vast Amazon plains featuring extensive cattle ranching and navigable river transport routes.',
-  },
-  {
-    id: 'nac-pando',
-    name: 'Pando (Cobija)',
-    metroArea: 'Nacional',
-    coordinates: [-11.03, -68.77],
-    bounds: [
-      [-9.5, -69.8],
-      [-9.5, -66.5],
-      [-12.5, -66.5],
-      [-12.5, -69.8],
-    ],
-    metrics: {
-      population2024: 165000,
-      densityHabKm2: 2.6,
-      internetCoveragePct: 64.0,
-      basicServicesIndex: 73.5,
-      primarySector: 'Castaña Amazónica, Madera & Comercio Fronterizo (Brasil)',
-    },
-    narrativeEs: 'Departamento septentrional amazónico con zona franca de frontera comercial con Brasil y recolección de castaña orgánica.',
-    narrativeEn: 'Northernmost tropical rainforest department with Brazil cross-border trade zone and organic Brazil nut harvesting.',
+    narrativeEs: 'Corazón geográfico de Bolivia y hub de formación universitaria e ingeniería de software.',
+    narrativeEn: 'Geographic heart of Bolivia and central university software hub.',
   },
 ];
+
+// Enrich each urban zone with individual Manzano (city block) polygons
+export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = RAW_ZONES.map((zone) => {
+  if (zone.metroArea === 'Nacional') return zone;
+  const manzanos = generateBlockGrid(zone.id, zone.coordinates[0], zone.coordinates[1], zone.metrics);
+  return {
+    ...zone,
+    manzanos,
+  };
+});

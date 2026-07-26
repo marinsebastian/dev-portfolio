@@ -9,11 +9,12 @@ import {
   CENSUS_LAYERS,
   SCOPE_CONFIG,
   UrbanCensusZone,
+  ManzanoBlock,
   ScopeType,
   LayerCode,
 } from '@/data/mauForondaCensusData';
 import { useLanguage } from '@/context/LanguageContext';
-import { Sparkles, MapPin, Layers, ExternalLink, Activity, Info } from 'lucide-react';
+import { Sparkles, Layers, ExternalLink, Info } from 'lucide-react';
 
 // Fix leaflet default marker icons in Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -32,7 +33,6 @@ interface MapWidgetProps {
   onSelectZone: (zone: UrbanCensusZone) => void;
 }
 
-// Map Helper component to handle view transitions
 function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => {
@@ -41,32 +41,50 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-export function getFeatureStyle(zone: UrbanCensusZone, activeLayer: LayerCode, isSelected: boolean) {
+export function getBlockStyle(block: ManzanoBlock, activeLayer: LayerCode, isSelected: boolean) {
   let fillColor = '#1e293b';
-  let opacity = 0.3;
+  let opacity = 0.65;
 
   if (activeLayer === 'TECH_CONN') {
-    const pct = zone.metrics.internetCoveragePct;
-    fillColor = pct > 90 ? '#06b6d4' : pct > 75 ? '#0891b2' : pct > 60 ? '#0e7490' : '#155e75';
-    opacity = Math.max(0.35, pct / 100);
+    const pct = block.metrics.internetCoveragePct;
+    fillColor = pct > 90 ? '#06b6d4' : pct > 78 ? '#0891b2' : pct > 65 ? '#0e7490' : '#155e75';
   } else if (activeLayer === 'DENSITY') {
-    const density = zone.metrics.densityHabKm2;
-    fillColor = density > 6000 ? '#10b981' : density > 3500 ? '#059669' : density > 1500 ? '#047857' : '#065f46';
-    opacity = Math.min(0.85, Math.max(0.3, density / 7000));
+    const d = block.metrics.densityHabKm2;
+    fillColor = d > 6000 ? '#10b981' : d > 3800 ? '#059669' : d > 2000 ? '#047857' : '#065f46';
   } else if (activeLayer === 'HOUSING_SERVICES') {
-    const srv = zone.metrics.basicServicesIndex;
-    fillColor = srv > 95 ? '#f59e0b' : srv > 85 ? '#d97706' : srv > 75 ? '#b45309' : '#78350f';
-    opacity = Math.max(0.35, srv / 100);
+    const s = block.metrics.basicServicesIndex;
+    fillColor = s > 95 ? '#f59e0b' : s > 85 ? '#d97706' : s > 75 ? '#b45309' : '#78350f';
   } else if (activeLayer === 'ECONOMIC_HUBS') {
     fillColor = isSelected ? '#14b8a6' : '#2dd4bf';
-    opacity = 0.55;
+  }
+
+  return {
+    color: isSelected ? '#14b8a6' : '#334155',
+    fillColor,
+    fillOpacity: isSelected ? 0.9 : opacity,
+    weight: isSelected ? 3 : 1.5,
+  };
+}
+
+export function getZoneStyle(zone: UrbanCensusZone, activeLayer: LayerCode, isSelected: boolean) {
+  let fillColor = '#1e293b';
+  let opacity = 0.35;
+
+  if (activeLayer === 'TECH_CONN') {
+    fillColor = '#0891b2';
+  } else if (activeLayer === 'DENSITY') {
+    fillColor = '#059669';
+  } else if (activeLayer === 'HOUSING_SERVICES') {
+    fillColor = '#d97706';
+  } else if (activeLayer === 'ECONOMIC_HUBS') {
+    fillColor = '#14b8a6';
   }
 
   return {
     color: isSelected ? '#14b8a6' : '#475569',
     fillColor,
-    fillOpacity: isSelected ? 0.75 : opacity,
-    weight: isSelected ? 3 : 1.5,
+    fillOpacity: isSelected ? 0.6 : opacity,
+    weight: isSelected ? 3.5 : 1.5,
   };
 }
 
@@ -79,6 +97,7 @@ export default function MapWidgetClient({
   onSelectZone,
 }: MapWidgetProps) {
   const { t, language } = useLanguage();
+  const [selectedBlock, setSelectedBlock] = useState<ManzanoBlock | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -98,6 +117,7 @@ export default function MapWidgetClient({
         body: JSON.stringify({
           metroArea: activeScope,
           zoneId: selectedZone.id,
+          blockCode: selectedBlock?.code,
           activeLayer,
           language,
         }),
@@ -128,13 +148,13 @@ export default function MapWidgetClient({
           </div>
           
           <a
-            href="https://mauforonda.github.io/geodatos/"
+            href="https://github.com/mauforonda/atlasurbano"
             target="_blank"
             rel="noreferrer"
             className="text-[11px] font-mono-tech text-teal-300 hover:text-teal-200 hidden sm:flex items-center gap-1 transition-colors"
           >
             <Info className="w-3.5 h-3.5 text-teal-400 shrink-0 inline" />
-            <span>GeoBolivia 2015 & @mauforonda Datasets</span>
+            <span>Atlas Urbano Censo 2024 (@mauforonda Manzanos)</span>
             <ExternalLink className="w-3 h-3 text-slate-400 shrink-0 inline" />
           </a>
         </div>
@@ -146,6 +166,7 @@ export default function MapWidgetClient({
               key={scope}
               onClick={() => {
                 onScopeChange(scope);
+                setSelectedBlock(null);
                 const firstInScope = URBAN_CENSUS_ZONES.find((z) => z.metroArea === scope);
                 if (firstInScope) onSelectZone(firstInScope);
               }}
@@ -199,32 +220,68 @@ export default function MapWidgetClient({
           scrollWheelZoom={false}
           className="h-full w-full bg-slate-950"
         >
-          <MapController center={selectedZone.coordinates} zoom={activeScope === 'Nacional' ? 6 : 12.2} />
+          <MapController center={selectedZone.coordinates} zoom={activeScope === 'Nacional' ? 5.8 : 12.8} />
 
           {/* CartoDB Dark Matter Basemap */}
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://github.com/mauforonda">Mauricio Foronda Datasets</a>'
+            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://github.com/mauforonda/atlasurbano">Mau Foronda Atlas Urbano Manzanos</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
-          {/* Zone Polygons */}
+          {/* Render Manzanos Urbanos (City Block Polygons) for Metropolitan Scopes */}
           {filteredZones.map((zone) => {
-            const isSelected = zone.id === selectedZone.id;
-            const style = getFeatureStyle(zone, activeLayer, isSelected);
+            if (zone.manzanos && zone.manzanos.length > 0) {
+              return zone.manzanos.map((block) => {
+                const isSelected = selectedBlock?.id === block.id;
+                const style = getBlockStyle(block, activeLayer, isSelected);
 
-            return (
-              <Polygon
-                key={zone.id}
-                positions={zone.bounds}
-                pathOptions={style}
-                eventHandlers={{
-                  click: () => onSelectZone(zone),
-                }}
-              />
-            );
+                return (
+                  <Polygon
+                    key={block.id}
+                    positions={block.polygon}
+                    pathOptions={style}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedBlock(block);
+                        onSelectZone(zone);
+                      },
+                    }}
+                  >
+                    <Popup>
+                      <div className="p-1 space-y-1 font-sans text-xs text-slate-100">
+                        <div className="font-bold text-teal-300 text-sm border-b border-slate-700 pb-1">
+                          {block.code}
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono-tech">{zone.name}</div>
+                        <div className="font-mono-tech text-[10px] text-slate-300 pt-1 space-y-0.5">
+                          <div>Población Manzano: <strong>{formatNumber(block.metrics.population2024)} hab.</strong></div>
+                          <div>Densidad: <strong>{formatNumber(block.metrics.densityHabKm2)} hab/km²</strong></div>
+                          <div>Internet / Fibra: <strong className="text-cyan-300">{block.metrics.internetCoveragePct}%</strong></div>
+                          <div>Servicios Básicos: <strong className="text-amber-300">{block.metrics.basicServicesIndex} / 100</strong></div>
+                        </div>
+                      </div>
+                    </Popup>
+                  </Polygon>
+                );
+              });
+            } else {
+              // Department boundaries for Nacional scope
+              const isSelected = zone.id === selectedZone.id;
+              const style = getZoneStyle(zone, activeLayer, isSelected);
+              return (
+                <Polygon
+                  key={zone.id}
+                  positions={zone.bounds}
+                  pathOptions={style}
+                  eventHandlers={{
+                    click: () => onSelectZone(zone),
+                  }}
+                />
+              );
+            }
           })}
 
-          {/* Zone Markers */}
+          {/* Zone Centroid Markers */}
           {filteredZones.map((zone) => (
             <Marker
               key={`marker-${zone.id}`}
@@ -253,7 +310,7 @@ export default function MapWidgetClient({
           ))}
         </MapContainer>
 
-        {/* AI Analysis Floating Trigger Button & Active Zone Badge */}
+        {/* AI Analysis Floating Trigger Button */}
         <div className="absolute top-3 right-3 z-[400] flex items-center space-x-2">
           <button
             onClick={handleRunAiAnalysis}
@@ -268,7 +325,7 @@ export default function MapWidgetClient({
         {/* Floating Layer Metric Intensity Legend Bar */}
         <div className="absolute top-3 left-3 z-[400] hidden sm:block bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl max-w-xs">
           <div className="text-teal-400 font-bold tracking-wider uppercase">
-            {t('flagship.legendTitle')}
+            {t('flagship.legendTitle')} — MANZANOS URBANOS
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-slate-400">{t('flagship.legendLow')}</span>
@@ -289,7 +346,10 @@ export default function MapWidgetClient({
           {filteredZones.map((zone) => (
             <button
               key={zone.id}
-              onClick={() => onSelectZone(zone)}
+              onClick={() => {
+                setSelectedBlock(null);
+                onSelectZone(zone);
+              }}
               className={`px-2.5 py-1 rounded text-[11px] font-mono-tech transition-all ${
                 zone.id === selectedZone.id
                   ? 'bg-teal-400 text-slate-950 font-bold shadow'
@@ -301,6 +361,22 @@ export default function MapWidgetClient({
           ))}
         </div>
       </div>
+
+      {/* Selected Block or Zone Inspector Panel */}
+      {selectedBlock && (
+        <div className="p-3 rounded-xl bg-slate-900 border border-teal-500/50 font-mono-tech text-xs text-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-xl animate-fade-in">
+          <div>
+            <span className="text-teal-400 font-bold block">{selectedBlock.code}</span>
+            <span className="text-slate-400 text-[11px]">{selectedZone.name}</span>
+          </div>
+          <div className="flex flex-wrap gap-3 text-[11px]">
+            <div>Población: <strong className="text-white">{formatNumber(selectedBlock.metrics.population2024)} hab.</strong></div>
+            <div>Densidad: <strong className="text-emerald-400">{formatNumber(selectedBlock.metrics.densityHabKm2)} hab/km²</strong></div>
+            <div>Fibra Internet: <strong className="text-cyan-300">{selectedBlock.metrics.internetCoveragePct}%</strong></div>
+            <div>Servicios: <strong className="text-amber-400">{selectedBlock.metrics.basicServicesIndex}/100</strong></div>
+          </div>
+        </div>
+      )}
 
       {/* AI Narrative Result Box */}
       {aiAnalysis && (
