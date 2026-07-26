@@ -1,34 +1,35 @@
-# AGENT_HANDOVER_INSTRUCTIONS_V2.md — Complete Agent Handover & Iterative Improvement Protocol
+# AGENT_HANDOVER_INSTRUCTIONS_V2.md — Complete Agent Handover, Review Context & Round 2 Review Protocol
 
 **Project:** Sebastian Marin — Full-Stack Developer Portfolio & Engineering Console  
 **Live Vercel Site:** `https://dev-portfolio-lilac-chi.vercel.app`  
 **GitHub Repository:** `https://github.com/marinsebastian/dev-portfolio.git`  
 **Target Organization:** Geolabs Cloud (`https://geolabs.cloud/developer/`)  
 **Target Audience:** CEO, CFO, CTO, Graphic Designer, Community Manager  
-**Document Version:** 2.0.0 (Post-Step 3 PMTiles & Review Synthesis Implementation)  
+**Document Version:** 2.1.0 (Iterative Review Protocol & Round 2 Mandate)  
 
 ---
 
-## 1. Executive Context & Target Organization
+## 1. Context & Review Team Target Matrix
 
 This portfolio is custom-engineered for **Sebastian Marin**, a Systems Engineer and Full-Stack Developer skilled in Next.js, React, TypeScript, PHP/cURL, MySQL/PostgreSQL, Leaflet/MapLibre GIS, Linux CLI, and Playwright QA.
 
-### The Geolabs Cloud Review Persona Matrix
+### Review Team Persona Expectations
 1. **CEO & CFO:** Look for business value, clear positioning, commercial e-commerce proof (Awtu Commerce with BCP QR payments), low-overhead tech stack, and controlled AI API costs.
 2. **Graphic Designer & Community Manager:** Look for *Operational Data Console* visual elegance (`#0B0F17`), crisp monospace/sans typography, high contrast, smooth Framer Motion reveals, and bilingual shareability (`ES` default / `EN`).
-3. **CTO:** Looks for clean Next.js 14 App Router architecture, TypeScript strict typing (`0 errors`), REST APIs (`/api/spatial`, `/api/php-sync`, `/api/gemini-assistant`), PHP 8 cURL sync handlers, secure Gemini API key proxies, and automated Playwright E2E test suites.
+3. **CTO:** Looks for clean Next.js 14 App Router architecture, TypeScript strict typing (`0 errors`), REST APIs (`/api/spatial`, `/api/php-sync`, `/api/gemini-assistant`), PHP 8 cURL sync handlers, secure Gemini API key proxies, MapLibre GL + PMTiles vector GIS engine, and automated Playwright E2E test suites.
 
 ---
 
-## 2. Work Completed & Current Status
+## 2. Summary of Round 1 Executive Reviews (`reviews/round-1/`)
 
-| Feature / Step | Status | Implementation Details |
-| :--- | :---: | :--- |
-| **Step 1: i18n Bilingual System** | ✅ **COMPLETED** | Created `context/LanguageContext.tsx` and `data/translations.ts`. **Spanish (`ES`) is default**, with header pill toggle to `EN`. |
-| **Step 2: Executive Redesign** | ✅ **COMPLETED** | Redesigned `components/sections/HeroSection.tsx` with an Executive Product Overview Card displaying candidate credentials, commercial metrics, and quick CTAs. |
-| **Step 3: Mau Foronda Urban Census Map** | ✅ **COMPLETED** | Built `components/map/RealBlockMapWidget.client.tsx` using **MapLibre GL + PMTiles vector tiles** streaming real-world INE census city blocks (*Manzanos Reales*). |
-| **5-Reviewer Portfolio Review & Fixes** | ✅ **COMPLETED** | Executed 5 executive review evaluations (`reviews/round-1/`), generated synthesis report (`REVIEW_SYNTHESIS.md`), and applied code fixes. |
-| **Automated Testing & Build** | ✅ **COMPLETED** | Passed Next.js production build (`npm run build` static prerender in 4.3s) and 5/5 Playwright E2E smoke tests (`npx playwright test`). |
+Round 1 reviews were conducted across 5 independent executive perspectives:
+
+- **CEO Review ([`01_CEO_REVIEW_RESULT.md`](file:///C:/Users/marin/Documents/Programming/dev-portfolio/reviews/round-1/01_CEO_REVIEW_RESULT.md)):** *Verdict: INTERESTING CANDIDATE — Forward to CTO.* Highlights clear value proposition, executive hero card, and honest experience grounding.
+- **CTO Review ([`02_CTO_REVIEW_RESULT.md`](file:///C:/Users/marin/Documents/Programming/dev-portfolio/reviews/round-1/02_CTO_REVIEW_RESULT.md)):** *Verdict: STRONG TECHNICAL SIGNAL.* Verified 0 TypeScript errors, static Next.js prerendering, REST APIs, SQL logic, PHP cURL sync handlers, and 100% Playwright test suite passing.
+- **CFO Review ([`03_CFO_REVIEW_RESULT.md`](file:///C:/Users/marin/Documents/Programming/dev-portfolio/reviews/round-1/03_CFO_REVIEW_RESULT.md)):** *Verdict: YES — Approve Interview Time.* Praised practical operational tools (Awtu Commerce, BCP QR payments, UMSS IT automation) and controlled AI token costs via server-side proxies.
+- **Community Manager Review ([`04_COMMUNITY_MANAGER_REVIEW_RESULT.md`](file:///C:/Users/marin/Documents/Programming/dev-portfolio/reviews/round-1/04_COMMUNITY_MANAGER_REVIEW_RESULT.md)):** *Verdict: STRONG BRAND SIGNAL.* Highlighted Spanish default with instant English header toggle (`ES | EN`), natural human copy, and internal shareability.
+- **UI/UX Portfolio Expert Review ([`05_UI_UX_PORTFOLIO_EXPERT_REVIEW_RESULT.md`](file:///C:/Users/marin/Documents/Programming/dev-portfolio/reviews/round-1/05_UI_UX_PORTFOLIO_EXPERT_REVIEW_RESULT.md)):** *Verdict: SHIP.* Praised *Operational Data Console* visual identity (`#0B0F17`), high-contrast typography, GPU-accelerated reveals, and zero horizontal overflow on mobile (360px–1920px).
+- **Master Synthesis ([`REVIEW_SYNTHESIS.md`](file:///C:/Users/marin/Documents/Programming/dev-portfolio/reviews/round-1/REVIEW_SYNTHESIS.md)):** Synthesized findings, confirmed Geolabs requirement coverage, and established top 10 prioritized fixes.
 
 ---
 
@@ -71,102 +72,60 @@ if (typeof window !== 'undefined') {
 
 ---
 
-## 4. Key Codebase Files
+## 4. Instructions for Incoming Agent: Execute Round 2 Portfolio Reviews
+
+Any agent taking over this project MUST execute **Round 2 Portfolio Reviews** using the prompts in `portfolio_review_prompts/`:
 
 ```
-dev-portfolio/
-├── context/
-│   └── LanguageContext.tsx              # Global language state (ES default / EN toggle)
-├── data/
-│   ├── translations.ts                  # Bilingual dictionaries for all site sections
-│   ├── mauForondaCensusData.ts          # Urban census metadata & scope configs
-│   ├── portfolioData.ts                 # Case studies, capabilities, stack matrix
-│   ├── boliviaGeoJson.ts                # Departmental GeoJSON coordinates
-│   └── cvData.ts                        # Resume data matching CV PDF
-├── components/
-│   ├── layout/
-│   │   ├── Header.tsx                   # Navbar with ES/EN switcher & CV modal trigger
-│   │   └── Footer.tsx                   # Console footer
-│   ├── sections/
-│   │   ├── HeroSection.tsx              # Redesigned executive hero with bilingual support
-│   │   ├── FlagshipGeoSection.tsx       # Flagship map section hosting RealBlockMapWidget
-│   │   ├── CaseStudiesSection.tsx       # Awtu Commerce, Room Reservation, PHP Sync, Voronoi Lab
-│   │   ├── InteractiveCVSection.tsx     # Tabbed resume viewer + PDF modal
-      └── ContactSection.tsx           # Contact form
-├── map/
-│   ├── RealBlockMapWidget.client.tsx    # MapLibre GL + PMTiles vector tile map engine
-│   └── VoronoiLab.client.tsx            # Client-side Voronoi spatial lab
-├── portfolio_review_prompts/            # Master 5-reviewer evaluation prompts
-│   ├── pro.md                           # Orchestration prompt
-│   ├── 01_CEO_REVIEW.md                 # CEO review prompt
-│   ├── 02_CTO_REVIEW.md                 # CTO review prompt
-│   ├── 03_CFO_REVIEW.md                 # CFO review prompt
-│   ├── 04_COMMUNITY_MANAGER_REVIEW.md   # Community Manager review prompt
-│   └── 05_UI_UX_PORTFOLIO_EXPERT_REVIEW.md # UI/UX review prompt
-├── reviews/round-1/                     # Round 1 review results & synthesis
-│   ├── 01_CEO_REVIEW_RESULT.md
-│   ├── 02_CTO_REVIEW_RESULT.md
-│   ├── 03_CFO_REVIEW_RESULT.md
-│   ├── 04_COMMUNITY_MANAGER_REVIEW_RESULT.md
-│   ├── 05_UI_UX_PORTFOLIO_EXPERT_REVIEW_RESULT.md
-│   └── REVIEW_SYNTHESIS.md              # Master synthesis & prioritized fix list
-├── tests/
-│   └── smoke.spec.ts                    # Playwright E2E smoke test suite (5 tests)
-├── AGENT_HANDOVER_INSTRUCTIONS_V2.md    # This document
-└── README.md
+                  ┌──────────────────────────────────────────┐
+                  │ 1. Read Master Prompts                   │
+                  │    (portfolio_review_prompts/*.md)       │
+                  └──────────────────┬───────────────────────┘
+                                     │
+                                     ▼
+                  ┌──────────────────────────────────────────┐
+                  │ 2. Conduct Round 2 Evaluations           │
+                  │    (Write reviews/round-2/01_CEO..05_UX)  │
+                  └──────────────────┬───────────────────────┘
+                                     │
+                                     ▼
+                  ┌──────────────────────────────────────────┐
+                  │ 3. Create Round 2 REVIEW_SYNTHESIS.md    │
+                  │    (Rank new top 10 fixes)               │
+                  └──────────────────┬───────────────────────┘
+                                     │
+                                     ▼
+                  ┌──────────────────────────────────────────┐
+                  │ 4. Implement Code Improvements           │
+                  │    (components/ data/ app/)              │
+                  └──────────────────┬───────────────────────┘
+                                     │
+                                     ▼
+                  ┌──────────────────────────────────────────┐
+                  │ 5. Run Empirical Verification            │
+                  │    (npx tsc, npm run build, playwright)  │
+                  └──────────────────────────────────────────┘
 ```
 
----
-
-## 5. Iterative Review & Continuous Improvement Loop Protocol
-
-To run a new evaluation and improvement round on the portfolio:
-
-```
-                  ┌──────────────────────────────┐
-                  │ 1. Read Review Prompts       │
-                  │    (portfolio_review_prompts)│
-                  └──────────────┬───────────────┘
-                                 │
-                                 ▼
-                  ┌──────────────────────────────┐
-                  │ 2. Evaluate & Write Reports  │
-                  │    (reviews/round-N/*.md)    │
-                  └──────────────┬───────────────┘
-                                 │
-                                 ▼
-                  ┌──────────────────────────────┐
-                  │ 3. Generate REVIEW_SYNTHESIS │
-                  │    (Rank top 10 fixes)       │
-                  └──────────────┬───────────────┘
-                                 │
-                                 ▼
-                  ┌──────────────────────────────┐
-                  │ 4. Implement Code Updates    │
-                  │    (components/ data/ app/)  │
-                  └──────────────┬───────────────┘
-                                 │
-                                 ▼
-                  ┌──────────────────────────────┐
-                  │ 5. Run Empirical QA          │
-                  │    (tsc, build, playwright)  │
-                  └──────────────────────────────┘
-```
-
-### Execution Steps:
-1. **Load Prompt Templates:** Read `portfolio_review_prompts/01_CEO_REVIEW.md` through `05_UI_UX_PORTFOLIO_EXPERT_REVIEW.md`.
-2. **Conduct Perspective Reviews:** Write review evaluation result files in `reviews/round-N/` following the required markdown table schemas.
-3. **Synthesize Findings:** Create `reviews/round-N/REVIEW_SYNTHESIS.md` with:
+### Protocol Details:
+1. **Create Output Directory:** Initialize `reviews/round-2/`.
+2. **Execute 5-Perspective Review:** Evaluate the current codebase against each prompt:
+   - `01_CEO_REVIEW.md` → `reviews/round-2/01_CEO_REVIEW_RESULT.md`
+   - `02_CTO_REVIEW.md` → `reviews/round-2/02_CTO_REVIEW_RESULT.md`
+   - `03_CFO_REVIEW.md` → `reviews/round-2/03_CFO_REVIEW_RESULT.md`
+   - `04_COMMUNITY_MANAGER_REVIEW.md` → `reviews/round-2/04_COMMUNITY_MANAGER_REVIEW_RESULT.md`
+   - `05_UI_UX_PORTFOLIO_EXPERT_REVIEW.md` → `reviews/round-2/05_UI_UX_PORTFOLIO_EXPERT_REVIEW_RESULT.md`
+3. **Synthesize & Rank Fixes:** Write `reviews/round-2/REVIEW_SYNTHESIS.md` with:
    - Overall Verdict (*SHIP / SENDABLE AFTER FIXES / DO NOT SEND*)
-   - Blockers & High-Impact Fixes
+   - Consolidated Reviewer Findings & Blockers
    - Geolabs Requirement Coverage Table
    - Ranked Top 10 Fixes table (Rank, Task, Rationale, Branch, Impact, Difficulty).
-4. **Apply Code Edits:** Implement top-ranked fixes across components, styling, and data files.
+4. **Apply Code Edits:** Implement the top-ranked fixes across components, styling, and data files.
 5. **Verify Empirically:** Run `npx tsc --noEmit`, `npm run build`, and `npx playwright test` before declaring completion.
 
 ---
 
-## 6. Verification Commands
+## 5. Verification Commands
 
 Run these three commands to verify project health:
 
@@ -183,18 +142,22 @@ npx playwright test
 
 ---
 
-## 7. Short Prompt for Handover to Future Agents
+## 6. Short Prompt Template for Future Agent Handovers
 
-When directing a new AI agent to take over or iterate on this project, copy and paste the following prompt:
+Copy and paste the following prompt block to direct any incoming agent:
 
-> **Copy & Paste Prompt for Next Agent:**
+> **Copy & Paste Handover Prompt for Next Agent:**
 > ```markdown
-> Please read `AGENT_HANDOVER_INSTRUCTIONS_V2.md` and review `reviews/round-1/REVIEW_SYNTHESIS.md` in the root of `dev-portfolio`. 
+> Please read `AGENT_HANDOVER_INSTRUCTIONS_V2.md` and review the previous Round 1 synthesis in `reviews/round-1/REVIEW_SYNTHESIS.md` for context.
 > 
-> Continue developing and polishing the portfolio for Sebastian Marin applying to Geolabs Cloud.
-> 
-> Key Rules:
-> 1. Preserve Spanish (`ES`) as default language with English (`EN`) header switcher.
-> 2. Maintain MapLibre GL + PMTiles vector tile integration in `components/map/RealBlockMapWidget.client.tsx` using minified keys (`b1` for density, `v1` for internet, `r1` for services, `a1` for population, `g1` for education).
-> 3. Verify all changes using `npx tsc --noEmit`, `npm run build`, and `npx playwright test` before finishing.
+> YOUR MANDATE:
+> 1. Conduct a complete **Round 2 Executive Review** of this portfolio using the master prompt files in `portfolio_review_prompts/`:
+>    - `portfolio_review_prompts/01_CEO_REVIEW.md` → Write `reviews/round-2/01_CEO_REVIEW_RESULT.md`
+>    - `portfolio_review_prompts/02_CTO_REVIEW.md` → Write `reviews/round-2/02_CTO_REVIEW_RESULT.md`
+>    - `portfolio_review_prompts/03_CFO_REVIEW.md` → Write `reviews/round-2/03_CFO_REVIEW_RESULT.md`
+>    - `portfolio_review_prompts/04_COMMUNITY_MANAGER_REVIEW.md` → Write `reviews/round-2/04_COMMUNITY_MANAGER_REVIEW_RESULT.md`
+>    - `portfolio_review_prompts/05_UI_UX_PORTFOLIO_EXPERT_REVIEW.md` → Write `reviews/round-2/05_UI_UX_PORTFOLIO_EXPERT_REVIEW_RESULT.md`
+> 2. Generate `reviews/round-2/REVIEW_SYNTHESIS.md` containing the overall verdict, consolidated blockers, Geolabs requirement coverage table, and ranked top 10 fixes.
+> 3. Implement the top-ranked code improvements across the codebase.
+> 4. Verify all edits using `npx tsc --noEmit`, `npm run build`, and `npx playwright test` before completing your turn.
 > ```
