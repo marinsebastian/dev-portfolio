@@ -73,6 +73,27 @@ export function FlagshipGeoSection() {
           <p className="text-slate-300 text-base max-w-3xl leading-relaxed">
             {t('flagship.summary')}
           </p>
+
+          {/* Official GeoBolivia 2015 Dataset Reference Banner */}
+          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 font-mono-tech text-xs space-y-1.5 max-w-4xl text-slate-300">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
+              <span className="text-teal-300 font-bold flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-teal-400" />
+                {t('flagship.geoBoliviaTitle')}
+              </span>
+              <a
+                href="https://mauforonda.github.io/geodatos/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-cyan-400 hover:underline inline-flex items-center gap-1"
+              >
+                <span>GeoBolivia / @mauforonda</span>
+              </a>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+              {t('flagship.geoBoliviaDesc')}
+            </p>
+          </div>
         </SectionReveal>
 
         {/* Main Console Grid: Map Viewer & Urban Analytics */}
@@ -102,7 +123,7 @@ export function FlagshipGeoSection() {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div>
                   <span className="text-[10px] font-mono-tech text-slate-400 uppercase">
-                    ACTIVE REGION: {t('flagship.activeZone')}
+                    {t('flagship.activeZone')}
                   </span>
                   <h3 className="text-lg font-bold text-teal-300">{selectedZone.name}</h3>
                 </div>

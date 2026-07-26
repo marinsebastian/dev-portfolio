@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup, Polygon, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Download, RefreshCw, PlusCircle, MapPin } from 'lucide-react';

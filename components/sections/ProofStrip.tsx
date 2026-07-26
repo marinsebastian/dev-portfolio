@@ -1,8 +1,9 @@
 'use client';
 import { SectionReveal } from '../motion/SectionReveal';
+import { useLanguage } from '@/context/LanguageContext';
 
 const TECH_ITEMS = [
-  { name: 'Next.js 14 App Router', category: 'Frontend' },
+  { name: 'Next.js 16 App Router', category: 'Frontend' },
   { name: 'TypeScript', category: 'Core' },
   { name: 'PHP 8 (PDO / cURL)', category: 'Backend' },
   { name: 'MySQL & PostgreSQL', category: 'SQL Data' },
@@ -14,6 +15,8 @@ const TECH_ITEMS = [
 ];
 
 export function ProofStrip() {
+  const { t } = useLanguage();
+
   return (
     <section className="py-6 bg-[#090d14] border-y border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,7 +24,7 @@ export function ProofStrip() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-2 font-mono-tech text-xs text-slate-400 shrink-0">
               <span className="w-2 h-2 rounded-full bg-teal-400" />
-              <span className="uppercase tracking-widest text-slate-300 font-semibold">CORE TECHNICAL PROOF:</span>
+              <span className="uppercase tracking-widest text-slate-300 font-semibold">{t('proofStrip.title')}</span>
             </div>
 
             <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-xs font-mono-tech">

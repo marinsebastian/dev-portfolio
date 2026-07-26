@@ -31,7 +31,7 @@ test.describe('Sebastian Marin Engineering Portfolio Smoke Tests', () => {
   test('should verify Flagship GeoInsights Bolivia section renders', async ({ page }) => {
     await page.goto('http://localhost:3000');
     await expect(page.locator('#flagship')).toBeVisible();
-    await expect(page.getByText('ACTIVE REGION:')).toBeVisible();
+    await expect(page.getByText('ZONA URBANA SELECCIONADA:')).toBeVisible();
   });
 
   test('should verify Interactive CV tab switching works', async ({ page }) => {
@@ -39,5 +39,26 @@ test.describe('Sebastian Marin Engineering Portfolio Smoke Tests', () => {
     await page.click('button:has-text("Experiencia Laboral")');
     await expect(page.locator('#cv').getByText('Awtu Commerce').first()).toBeVisible();
     await expect(page.getByText('Facultad de Ciencias y Tecnología')).toBeVisible();
+  });
+
+  test('should verify site-wide language switching across all sections', async ({ page }) => {
+    await page.goto('http://localhost:3000');
+    
+    // Default Spanish checks
+    await expect(page.getByText('Lo Que Construyo: Sistemas Web Operativos')).toBeVisible();
+    await expect(page.getByText('Casos de Estudio y Proyectos Destacados')).toBeVisible();
+    await expect(page.getByText('Experiencia en Herramientas y Stack de Ingeniería')).toBeVisible();
+    await expect(page.getByText('Construyamos Sistemas Confiables')).toBeVisible();
+
+    // Toggle to EN
+    await page.click('button:has-text("EN")');
+    await expect(page.getByText('What I Build: Operational Web Systems')).toBeVisible();
+    await expect(page.getByText('Featured Case Studies & Projects')).toBeVisible();
+    await expect(page.getByText('Engineering Tooling & Stack Experience')).toBeVisible();
+    await expect(page.getByText("Let's Build Reliable Systems Together")).toBeVisible();
+
+    // Toggle back to ES
+    await page.click('button:has-text("ES")');
+    await expect(page.getByText('Lo Que Construyo: Sistemas Web Operativos')).toBeVisible();
   });
 });

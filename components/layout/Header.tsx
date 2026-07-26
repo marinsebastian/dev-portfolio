@@ -28,50 +28,44 @@ export function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 ${
         scrolled
           ? 'bg-[#0b0f17]/95 backdrop-blur-md border-b border-slate-800/80 py-3 shadow-xl'
           : 'bg-transparent py-5'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between h-10">
           
-          {/* Logo & Operational Status */}
-          <Link href="#overview" className="flex items-center space-x-3 group">
+          {/* Logo */}
+          <Link href="#overview" className="flex items-center space-x-3 group whitespace-nowrap shrink-0">
             <div className="w-8 h-8 rounded-md bg-slate-900 border border-teal-500/40 flex items-center justify-center text-teal-400 font-mono-tech font-bold text-sm group-hover:border-teal-400 group-hover:shadow-[0_0_10px_rgba(20,184,166,0.3)] transition-all">
               SM
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight text-slate-100 group-hover:text-teal-400 transition-colors">
-                Sebastian Marin
-              </span>
-              <div className="flex items-center space-x-1.5 font-mono-tech text-[10px] text-slate-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{t('nav.operationalStatus')}</span>
-              </div>
-            </div>
+            <span className="text-sm font-semibold tracking-tight text-slate-100 group-hover:text-teal-400 transition-colors">
+              Sebastian Marin
+            </span>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center space-x-1 bg-slate-900/80 p-1 rounded-lg border border-slate-800/80 text-xs font-medium">
+          <nav className="hidden lg:flex items-center space-x-1 bg-slate-900/80 p-1 rounded-lg border border-slate-800/80 text-xs font-medium whitespace-nowrap">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors whitespace-nowrap"
                 >
-                  <Icon className="w-3.5 h-3.5 text-teal-400/80" />
-                  <span>{link.label}</span>
+                  <Icon className="w-3.5 h-3.5 text-teal-400/80 shrink-0" />
+                  <span className="whitespace-nowrap">{link.label}</span>
                 </Link>
               );
             })}
           </nav>
 
           {/* Right Action: Language Switcher & Download CV Button */}
-          <div className="hidden sm:flex items-center space-x-3">
+          <div className="hidden sm:flex items-center space-x-3 whitespace-nowrap shrink-0">
             
             {/* Language Switcher Pill Toggle (ES default / EN) */}
             <div className="flex items-center p-1 rounded-lg bg-slate-900 border border-slate-800 font-mono-tech text-xs">

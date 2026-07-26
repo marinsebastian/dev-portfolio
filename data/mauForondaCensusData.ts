@@ -15,6 +15,15 @@ export interface UrbanCensusZone {
   narrativeEn: string;
 }
 
+export const GEOBOLIVIA_DATASET_METADATA = {
+  titleEs: "Límite Referencial Departamentos del Estado Plurinacional de Bolivia 2015",
+  titleEn: "Referential Boundary of Departments of the Plurinational State of Bolivia 2015",
+  provider: "GeoBolivia / Viceministerio de Autonomías (339 Municipios 2015)",
+  sourceUrl: "https://mauforonda.github.io/geodatos/",
+  descriptionEs: "Muestra la división política-administrativa de los 9 departamentos de Bolivia, entidades subnacionales mayores en las que se subdivide el territorio del Estado Plurinacional, que de acuerdo a la Constitución Política del Estado poseen ineludiblemente, continuidad territorial y desde el 4 de abril de 2010, cuentan con autonomía reconocida a nivel ejecutivo y legislativo pero no judicial. Dato del ex Ministerio de las Autonomías hoy Viceministerio de Autonomías, que proviene de la información de los 339 municipios del año 2015 (carácter referencial).",
+  descriptionEn: "Displays the political-administrative division of the 9 departments of Bolivia, major subnational entities in which the territory of the Plurinational State is subdivided with executive and legislative autonomy. Sourced from the Vice Ministry of Autonomies (339 municipalities, 2015) and open datasets from Mauricio Foronda."
+};
+
 export type ScopeType = 'Nacional' | 'Santa Cruz' | 'Cochabamba' | 'La Paz';
 
 export type LayerCode = 'DENSITY' | 'TECH_CONN' | 'HOUSING_SERVICES' | 'ECONOMIC_HUBS';

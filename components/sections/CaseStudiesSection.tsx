@@ -4,7 +4,8 @@ import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
 import { CASE_STUDIES, CaseStudy } from '@/data/portfolioData';
 import { CodeBlock } from '../ui/CodeBlock';
-import { ShoppingBag, Calendar, Server, MapPin, CheckCircle2, ChevronRight, ArrowUpRight } from 'lucide-react';
+import { ShoppingBag, Calendar, Server, MapPin, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 const VoronoiLabClient = dynamic(() => import('../map/VoronoiLab.client'), {
   ssr: false,
@@ -23,10 +24,19 @@ const CATEGORY_ICONS: Record<string, any> = {
 };
 
 export function CaseStudiesSection() {
+  const { t, language } = useLanguage();
   const supportingStudies = CASE_STUDIES.filter((c) => c.category !== 'flagship');
   const [activeStudyId, setActiveStudyId] = useState(supportingStudies[0].id);
 
   const activeStudy = supportingStudies.find((s) => s.id === activeStudyId) || supportingStudies[0];
+
+  const title = language === 'es' && activeStudy.titleEs ? activeStudy.titleEs : activeStudy.title;
+  const subtitle = language === 'es' && activeStudy.subtitleEs ? activeStudy.subtitleEs : activeStudy.subtitle;
+  const badge = language === 'es' && activeStudy.badgeEs ? activeStudy.badgeEs : activeStudy.badge;
+  const problem = language === 'es' && activeStudy.problemEs ? activeStudy.problemEs : activeStudy.problem;
+  const solution = language === 'es' && activeStudy.solutionEs ? activeStudy.solutionEs : activeStudy.solution;
+  const proofPoints = language === 'es' && activeStudy.proofPointsEs ? activeStudy.proofPointsEs : activeStudy.proofPoints;
+  const geolabsRelevance = language === 'es' && activeStudy.geolabsRelevanceEs ? activeStudy.geolabsRelevanceEs : activeStudy.geolabsRelevance;
 
   return (
     <section id="projects" className="py-20 bg-[#090d14] relative border-t border-slate-800">
@@ -36,13 +46,13 @@ export function CaseStudiesSection() {
         <SectionReveal className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
             <span className="text-slate-600">//</span>
-            <span className="uppercase tracking-widest font-semibold">SUPPORTING CASE STUDIES</span>
+            <span className="uppercase tracking-widest font-semibold">{t('caseStudies.tag')}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            Proven Engineering Execution
+            {t('caseStudies.title')}
           </h2>
           <p className="text-slate-400 text-base leading-relaxed">
-            Real commercial platforms, university operational software, PHP microservices, and interactive spatial labs.
+            {t('caseStudies.subtitle')}
           </p>
         </SectionReveal>
 
@@ -51,6 +61,7 @@ export function CaseStudiesSection() {
           {supportingStudies.map((study) => {
             const Icon = CATEGORY_ICONS[study.category] || Server;
             const isActive = study.id === activeStudyId;
+            const tabTitle = language === 'es' && study.titleEs ? study.titleEs : study.title;
 
             return (
               <button
@@ -62,8 +73,8 @@ export function CaseStudiesSection() {
                     : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                 }`}
               >
-                <Icon className="w-4 h-4 text-teal-400" />
-                <span>{study.title}</span>
+                <Icon className="w-4 h-4 text-teal-400 shrink-0" />
+                <span>{tabTitle}</span>
               </button>
             );
           })}
@@ -76,45 +87,48 @@ export function CaseStudiesSection() {
           <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-6 gap-4">
             <div className="space-y-1">
               <span className="px-2.5 py-1 rounded bg-slate-800 text-teal-400 border border-slate-700 text-xs font-mono-tech">
-                {activeStudy.badge}
+                {badge}
               </span>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-white pt-2">{activeStudy.title}</h3>
-              <p className="text-slate-400 text-sm font-mono-tech">{activeStudy.subtitle}</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white pt-2">{title}</h3>
+              <p className="text-slate-400 text-sm font-mono-tech">{subtitle}</p>
             </div>
 
             {/* Metrics pills if present */}
             {activeStudy.metrics && (
               <div className="flex flex-wrap gap-2">
-                {activeStudy.metrics.map((m, i) => (
-                  <div key={i} className="px-3 py-1.5 rounded bg-slate-950/80 border border-slate-800 font-mono-tech text-xs">
-                    <span className="text-slate-500 block text-[10px]">{m.label}</span>
-                    <span className="text-teal-300 font-bold">{m.value}</span>
-                  </div>
-                ))}
+                {activeStudy.metrics.map((m, i) => {
+                  const mLabel = language === 'es' && m.labelEs ? m.labelEs : m.label;
+                  return (
+                    <div key={i} className="px-3 py-1.5 rounded bg-slate-950/80 border border-slate-800 font-mono-tech text-xs">
+                      <span className="text-slate-500 block text-[10px]">{mLabel}</span>
+                      <span className="text-teal-300 font-bold">{m.value}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Problem & Solution Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+          {/* Problem & Solution Grid with equal height stretch */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2 h-full flex flex-col justify-start">
               <h4 className="text-xs font-bold font-mono-tech uppercase text-rose-400 flex items-center space-x-1.5">
-                <span>PROBLEM & CHALLENGE</span>
+                <span>{t('caseStudies.problemTitle')}</span>
               </h4>
-              <p className="text-sm text-slate-300 leading-relaxed">{activeStudy.problem}</p>
+              <p className="text-sm text-slate-300 leading-relaxed pt-1">{problem}</p>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+            <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2 h-full flex flex-col justify-start">
               <h4 className="text-xs font-bold font-mono-tech uppercase text-emerald-400 flex items-center space-x-1.5">
-                <span>ENGINEERED SOLUTION</span>
+                <span>{t('caseStudies.solutionTitle')}</span>
               </h4>
-              <p className="text-sm text-slate-300 leading-relaxed">{activeStudy.solution}</p>
+              <p className="text-sm text-slate-300 leading-relaxed pt-1">{solution}</p>
             </div>
           </div>
 
           {/* Tech Stack Pills */}
           <div className="space-y-2">
-            <span className="text-xs font-mono-tech text-slate-400 block">TECHNOLOGY STACK:</span>
+            <span className="text-xs font-mono-tech text-slate-400 block">{t('caseStudies.stackTitle')}</span>
             <div className="flex flex-wrap gap-2">
               {activeStudy.techStack.map((tech) => (
                 <span key={tech} className="px-3 py-1 rounded bg-slate-800 text-slate-200 border border-slate-700 text-xs font-mono-tech">
@@ -126,12 +140,12 @@ export function CaseStudiesSection() {
 
           {/* Key Proof Bullet Points */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold font-mono-tech text-slate-300 uppercase">Key Technical Proof Points</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {activeStudy.proofPoints.map((point, idx) => (
-                <div key={idx} className="flex items-start space-x-2.5 p-3 rounded bg-slate-950/40 border border-slate-800 text-xs text-slate-300">
+            <h4 className="text-xs font-bold font-mono-tech text-slate-300 uppercase">{t('caseStudies.proofTitle')}</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
+              {proofPoints.map((point, idx) => (
+                <div key={idx} className="flex items-start space-x-2.5 p-3 rounded bg-slate-950/40 border border-slate-800 text-xs text-slate-300 h-full">
                   <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                  <span>{point}</span>
+                  <span className="leading-relaxed">{point}</span>
                 </div>
               ))}
             </div>
@@ -144,7 +158,7 @@ export function CaseStudiesSection() {
             </div>
           ) : activeStudy.codeSnippet ? (
             <div className="space-y-2 pt-2">
-              <span className="text-xs font-mono-tech text-slate-400 block">PRODUCTION CODE SAMPLE:</span>
+              <span className="text-xs font-mono-tech text-slate-400 block">{t('caseStudies.codeSampleTitle')}</span>
               <CodeBlock
                 filename={activeStudy.codeSnippet.filename}
                 language={activeStudy.codeSnippet.language}
@@ -157,8 +171,8 @@ export function CaseStudiesSection() {
           <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 font-mono-tech text-xs text-slate-200 flex items-start space-x-3">
             <ArrowUpRight className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
             <div>
-              <span className="text-teal-400 font-bold block mb-1">RELEVANCE FOR ENGINEERING ROLE:</span>
-              <p className="text-slate-300 text-xs leading-relaxed font-sans">{activeStudy.geolabsRelevance}</p>
+              <span className="text-teal-400 font-bold block mb-1">{t('caseStudies.relevanceTitle')}</span>
+              <p className="text-slate-300 text-xs leading-relaxed font-sans">{geolabsRelevance}</p>
             </div>
           </div>
 

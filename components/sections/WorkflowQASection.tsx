@@ -2,22 +2,26 @@
 import { useState } from 'react';
 import { SectionReveal } from '../motion/SectionReveal';
 import { CodeBlock } from '../ui/CodeBlock';
-import { Terminal, Shield, Cpu, Play } from 'lucide-react';
+import { Terminal, Shield } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
-const WORKFLOW_FILES = [
-  {
-    id: 'playwright',
-    title: 'Playwright Smoke Test',
-    subtitle: 'Automated QA & E2E Validation',
-    filename: 'tests/smoke.spec.ts',
-    language: 'typescript',
-    code: `import { test, expect } from '@playwright/test';
+export function WorkflowQASection() {
+  const { t, language } = useLanguage();
+
+  const WORKFLOW_FILES = [
+    {
+      id: 'playwright',
+      title: 'Playwright Smoke Test',
+      subtitle: language === 'es' ? 'QA Automatizado & Pruebas E2E' : 'Automated QA & E2E Validation',
+      filename: 'tests/smoke.spec.ts',
+      language: 'typescript',
+      code: `import { test, expect } from '@playwright/test';
 
 test.describe('Portfolio Engineering Smoke Test Suite', () => {
   test('should load homepage and verify hero telemetry', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('h1')).toContainText('Full-Stack Developer');
-    await expect(page.getByText('OPERATIONAL / AVAILABLE')).toBeVisible();
+    await expect(page.locator('h1')).toContainText('Full-Stack');
+    await expect(page.getByText('DISPONIBLE / OPERATIVO')).toBeVisible();
   });
 
   test('should verify CV download link returns HTTP 200', async ({ request }) => {
@@ -31,14 +35,14 @@ test.describe('Portfolio Engineering Smoke Test Suite', () => {
     await expect(page.getByText('Cochabamba (CBB)')).toBeVisible();
   });
 });`
-  },
-  {
-    id: 'php-cron',
-    title: 'PHP Background Cron Sync',
-    subtitle: 'cURL API Sync & PDO Storage',
-    filename: 'backend/php/cron_sync.php',
-    language: 'php',
-    code: `<?php
+    },
+    {
+      id: 'php-cron',
+      title: 'PHP Background Cron Sync',
+      subtitle: language === 'es' ? 'Sincronización cURL API & Registro PDO' : 'cURL API Sync & PDO Storage',
+      filename: 'backend/php/cron_sync.php',
+      language: 'php',
+      code: `<?php
 // Linux CLI background cron job script for external dataset synchronization
 declare(strict_types=1);
 
@@ -70,14 +74,14 @@ foreach ($records['items'] as $item) {
 }
 
 fwrite(STDOUT, "[" . date('Y-m-d H:i:s') . "] Synced " . count($records['items']) . " records successfully.\n");`
-  },
-  {
-    id: 'docker',
-    title: 'Docker Compose Stack',
-    subtitle: 'Isolated Environment Deployment',
-    filename: 'docker-compose.yml',
-    language: 'yaml',
-    code: `version: '3.8'
+    },
+    {
+      id: 'docker',
+      title: 'Docker Compose Stack',
+      subtitle: language === 'es' ? 'Despliegue de Entorno Aislado' : 'Isolated Environment Deployment',
+      filename: 'docker-compose.yml',
+      language: 'yaml',
+      code: `version: '3.8'
 
 services:
   web:
@@ -107,12 +111,10 @@ services:
 
 volumes:
   postgres_data:`
-  }
-];
+    }
+  ];
 
-export function WorkflowQASection() {
   const [activeFileId, setActiveFileId] = useState(WORKFLOW_FILES[0].id);
-
   const activeFile = WORKFLOW_FILES.find((f) => f.id === activeFileId) || WORKFLOW_FILES[0];
 
   return (
@@ -122,56 +124,58 @@ export function WorkflowQASection() {
         <SectionReveal className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
             <span className="text-slate-600">//</span>
-            <span className="uppercase tracking-widest font-semibold">AUTOMATION & QA RIGOR</span>
+            <span className="uppercase tracking-widest font-semibold">{t('workflow.tag')}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            Engineering Habits & Automation
+            {t('workflow.title')}
           </h2>
           <p className="text-slate-400 text-base leading-relaxed">
-            I write clean, documented code backed by automated testing, containerized setups, and cron-driven background scripts.
+            {t('workflow.subtitle')}
           </p>
         </SectionReveal>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
           {/* File Switcher */}
-          <div className="lg:col-span-4 space-y-3">
-            {WORKFLOW_FILES.map((file) => {
-              const isActive = file.id === activeFileId;
-              return (
-                <button
-                  key={file.id}
-                  onClick={() => setActiveFileId(file.id)}
-                  className={`w-full text-left p-4 rounded-xl border transition-all ${
-                    isActive
-                      ? 'bg-slate-900 border-teal-500 text-teal-300 font-bold shadow-lg'
-                      : 'bg-slate-900/40 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3 font-mono-tech text-xs">
-                    <Terminal className="w-4 h-4 text-teal-400 shrink-0" />
-                    <div>
-                      <div className="text-slate-100 font-bold">{file.title}</div>
-                      <div className="text-[11px] text-slate-400">{file.subtitle}</div>
+          <div className="lg:col-span-4 flex flex-col justify-between space-y-3 h-full">
+            <div className="space-y-3">
+              {WORKFLOW_FILES.map((file) => {
+                const isActive = file.id === activeFileId;
+                return (
+                  <button
+                    key={file.id}
+                    onClick={() => setActiveFileId(file.id)}
+                    className={`w-full text-left p-4 rounded-xl border transition-all ${
+                      isActive
+                        ? 'bg-slate-900 border-teal-500 text-teal-300 font-bold shadow-lg'
+                        : 'bg-slate-900/40 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3 font-mono-tech text-xs">
+                      <Terminal className="w-4 h-4 text-teal-400 shrink-0" />
+                      <div>
+                        <div className="text-slate-100 font-bold">{file.title}</div>
+                        <div className="text-[11px] text-slate-400">{file.subtitle}</div>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
 
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 font-mono-tech text-xs text-slate-300 space-y-2">
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 font-mono-tech text-xs text-slate-300 space-y-2 mt-auto">
               <div className="flex items-center space-x-2 text-emerald-400 font-bold">
-                <Shield className="w-4 h-4" />
-                <span>QUALITY ASSURANCE VERIFIED</span>
+                <Shield className="w-4 h-4 shrink-0" />
+                <span>{t('workflow.qaVerified')}</span>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Playwright tests validate responsive layouts and API endpoints locally before deployment.
+                {t('workflow.qaDescription')}
               </p>
             </div>
           </div>
 
           {/* Active File Viewer */}
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 h-full">
             <CodeBlock
               filename={activeFile.filename}
               language={activeFile.language}

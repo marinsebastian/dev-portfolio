@@ -27,22 +27,16 @@ export interface TranslationDictionary {
     telemetryWork: string;
     telemetryStatus: string;
   };
+  proofStrip: {
+    title: string;
+  };
   pillars: {
     tag: string;
     title: string;
     subtitle: string;
-    item1Title: string;
-    item1Subtitle: string;
-    item1Desc: string;
-    item2Title: string;
-    item2Subtitle: string;
-    item2Desc: string;
-    item3Title: string;
-    item3Subtitle: string;
-    item3Desc: string;
-    item4Title: string;
-    item4Subtitle: string;
-    item4Desc: string;
+    verifiedPattern: string;
+    keyTechnologies: string;
+    implementationSample: string;
   };
   flagship: {
     badge: string;
@@ -81,6 +75,9 @@ export interface TranslationDictionary {
     legendTitle: string;
     legendLow: string;
     legendHigh: string;
+    geoBoliviaTitle: string;
+    geoBoliviaProvider: string;
+    geoBoliviaDesc: string;
   };
   caseStudies: {
     tag: string;
@@ -91,6 +88,19 @@ export interface TranslationDictionary {
     stackTitle: string;
     proofTitle: string;
     relevanceTitle: string;
+    codeSampleTitle: string;
+  };
+  techStack: {
+    tag: string;
+    title: string;
+    subtitle: string;
+  };
+  workflow: {
+    tag: string;
+    title: string;
+    subtitle: string;
+    qaVerified: string;
+    qaDescription: string;
   };
   cv: {
     tag: string;
@@ -109,6 +119,7 @@ export interface TranslationDictionary {
     academicTitle: string;
     certsTitle: string;
     languagesTitle: string;
+    officialDoc: string;
   };
   contact: {
     tag: string;
@@ -127,6 +138,12 @@ export interface TranslationDictionary {
     messagePlaceholder: string;
     sendButton: string;
     sentSuccess: string;
+    sentSuccessDesc: string;
+  };
+  footer: {
+    tagline: string;
+    builtWith: string;
+    location: string;
   };
 }
 
@@ -162,22 +179,16 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       telemetryWork: "Awtu Commerce (BCP QR, Gemini API, Next.js)",
       telemetryStatus: "LISTO PARA DESPLIEGUE"
     },
+    proofStrip: {
+      title: "PRUEBAS TÉCNICAS CLAVE:"
+    },
     pillars: {
       tag: "ARQUITECTURA DE SISTEMAS",
       title: "Lo Que Construyo: Sistemas Web Operativos",
       subtitle: "Desarrollo de interfaces responsivas, servicios backend REST, visualizadores de datos espaciales y automatización de procesos.",
-      item1Title: "Interfaces Web Operativas",
-      item1Subtitle: "Next.js • React • TypeScript • UI/UX",
-      item1Desc: "Paneles de control e interfaces responsivas diseñadas para velocidad, baja latencia y exploración fluida de información.",
-      item2Title: "APIs e Integraciones Backend",
-      item2Subtitle: "Node.js • PHP • REST • Webhooks • Pagos QR",
-      item2Desc: "Endpoints REST robustos, proxys seguros de API, procesamiento de pagos QR (BCP), webhooks y motores de sincronización cURL.",
-      item3Title: "Sistemas Espaciales y Mapas",
-      item3Subtitle: "Leaflet • GeoJSON • Datos Censales y Urbanos",
-      item3Desc: "Mapas interactivos, capas GeoJSON por departamentos y municipios, cálculo de zonas espaciales e indicadores socioeconómicos.",
-      item4Title: "Linux y Automatización",
-      item4Subtitle: "Bash • PowerShell • Cron Jobs • Docker • Playwright QA",
-      item4Desc: "Administración de servidores, scripts automatizados de respaldo en segundo plano, contenedores Docker y pruebas automatizadas."
+      verifiedPattern: "PATRÓN VERIFICADO",
+      keyTechnologies: "TECNOLOGÍAS CLAVE:",
+      implementationSample: "EJEMPLO DE IMPLEMENTACIÓN:"
     },
     flagship: {
       badge: "PROYECTO DESTACADO GIS Y DATOS",
@@ -215,7 +226,10 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       activeZone: "ZONA URBANA SELECCIONADA:",
       legendTitle: "ESCALA DE INTENSIDAD",
       legendLow: "Bajo / En Crecimiento",
-      legendHigh: "Alto / Consolidado"
+      legendHigh: "Alto / Consolidado",
+      geoBoliviaTitle: "Límite Referencial Departamentos del Estado Plurinacional de Bolivia 2015",
+      geoBoliviaProvider: "GeoBolivia / Viceministerio de Autonomías (339 Municipios)",
+      geoBoliviaDesc: "Muestra la división política-administrativa de los 9 departamentos de Bolivia, entidades subnacionales mayores en las que se subdivide el territorio del Estado Plurinacional, que cuentan con autonomía reconocida a nivel ejecutivo y legislativo. Dato referencial de GeoBolivia y Censo 2024 de Mauricio Foronda (@mauforonda)."
     },
     caseStudies: {
       tag: "EJECUCIÓN TÉCNICA DEMOSTRADA",
@@ -225,7 +239,20 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       solutionTitle: "SOLUCIÓN DESARROLLADA",
       stackTitle: "TECNOLOGÍAS UTILIZADAS:",
       proofTitle: "Puntos Clave de Prueba Técnica",
-      relevanceTitle: "RELEVANCIA PARA EL EQUIPO DE INGENIERÍA:"
+      relevanceTitle: "RELEVANCIA PARA EL EQUIPO DE INGENIERÍA:",
+      codeSampleTitle: "MUESTRA DE CÓDIGO EN PRODUCCIÓN:"
+    },
+    techStack: {
+      tag: "MATRIZ TÉCNICA DE HERRAMIENTAS",
+      title: "Experiencia en Herramientas y Stack de Ingeniería",
+      subtitle: "Desglose verificado de competencias en frontend, backend, bases de datos, administración Linux y datos espaciales con IA."
+    },
+    workflow: {
+      tag: "RIGOR DE AUTOMATIZACIÓN Y QA",
+      title: "Hábitos de Ingeniería y Automatización",
+      subtitle: "Escribo código limpio y documentado respaldado por pruebas automatizadas, entornos dockerizados y scripts en segundo plano.",
+      qaVerified: "GARANTÍA DE CALIDAD VERIFICADA",
+      qaDescription: "Las pruebas de Playwright validan interfaces responsivas y endpoints de API localmente antes de cada despliegue."
     },
     cv: {
       tag: "CURRICULUM VITAE",
@@ -243,7 +270,8 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       summaryEnTitle: "Professional Summary (English)",
       academicTitle: "Formación Académica",
       certsTitle: "Cursos y Certificaciones Relevantes",
-      languagesTitle: "Idiomas"
+      languagesTitle: "Idiomas",
+      officialDoc: "DOCUMENTO OFICIAL"
     },
     contact: {
       tag: "CONTACTO DIRECTO",
@@ -254,14 +282,20 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       phoneLabel: "TELÉFONO / WHATSAPP",
       locationLabel: "UBICACIÓN PRINCIPAL",
       githubLabel: "PERFIL GITHUB",
-      formTitle: "Mensaje Directo",
+      formTitle: "Mensaje Directo al Desarrollador",
       nameLabel: "NOMBRE O EMPRESA",
       namePlaceholder: "Ej. Líder de Ingeniería / Reclutador",
       emailPlaceholder: "nombre@empresa.com",
       messageLabel: "DETALLES DE LA CONSULTA O ROL",
       messagePlaceholder: "Describa la oportunidad o consulta técnica...",
       sendButton: "ENVIAR MENSAJE",
-      sentSuccess: "MENSAJE ENVIADO CORRECTAMENTE"
+      sentSuccess: "MENSAJE ENVIADO CORRECTAMENTE",
+      sentSuccessDesc: "¡Gracias! Sebastian revisará tu mensaje y responderá a la brevedad."
+    },
+    footer: {
+      tagline: "Consola de Ingeniería Operativa v1.0",
+      builtWith: "Construido con Next.js 16, TypeScript, Tailwind CSS, Leaflet y Framer Motion",
+      location: "Cochabamba, Bolivia"
     }
   },
   en: {
@@ -293,22 +327,16 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       telemetryWork: "Awtu Commerce (BCP QR, Gemini API, Next.js)",
       telemetryStatus: "READY TO DEPLOY"
     },
+    proofStrip: {
+      title: "CORE TECHNICAL PROOF:"
+    },
     pillars: {
       tag: "SYSTEMS ARCHITECTURE",
       title: "What I Build: Operational Web Systems",
       subtitle: "Building responsive frontends, REST backend microservices, spatial data visualizers, and process automation.",
-      item1Title: "Operational Web Interfaces",
-      item1Subtitle: "Next.js • React • TypeScript • UI/UX",
-      item1Desc: "Responsive dashboards and user interfaces engineered for speed, low latency, and intuitive data exploration.",
-      item2Title: "APIs & Integration Backend",
-      item2Subtitle: "Node.js • PHP • REST • Webhooks • QR Payments",
-      item2Desc: "Robust REST endpoints, secure API proxies, QR payment processing (BCP), webhooks, and cURL sync engines.",
-      item3Title: "Spatial & Map Systems",
-      item3Subtitle: "Leaflet • GeoJSON • Census & Urban Datasets",
-      item3Desc: "Interactive web maps, GeoJSON layers across departments and municipalities, spatial zone calculation, and socio-demographic metrics.",
-      item4Title: "Linux & Process Automation",
-      item4Subtitle: "Bash • PowerShell • Cron Jobs • Docker • Playwright QA",
-      item4Desc: "Server administration, automated background backup scripts, Docker containers, and end-to-end testing."
+      verifiedPattern: "VERIFIED PATTERN",
+      keyTechnologies: "KEY TECHNOLOGIES:",
+      implementationSample: "IMPLEMENTATION SAMPLE:"
     },
     flagship: {
       badge: "FLAGSHIP GIS & DATA EXPLORER",
@@ -346,7 +374,10 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       activeZone: "SELECTED URBAN ZONE:",
       legendTitle: "METRIC INTENSITY SCALE",
       legendLow: "Low / Developing",
-      legendHigh: "High / Consolidated"
+      legendHigh: "High / Consolidated",
+      geoBoliviaTitle: "Referential Boundary of Departments of the Plurinational State of Bolivia 2015",
+      geoBoliviaProvider: "GeoBolivia / Viceministerio de Autonomías (339 Municipalities)",
+      geoBoliviaDesc: "Displays the political-administrative division of the 9 departments of Bolivia, major subnational entities with executive and legislative autonomy. Sourced from GeoBolivia referential datasets & Mauricio Foronda (@mauforonda) 2024 Census open data."
     },
     caseStudies: {
       tag: "PROVEN TECHNICAL EXECUTION",
@@ -356,7 +387,20 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       solutionTitle: "ENGINEERED SOLUTION",
       stackTitle: "TECHNOLOGY STACK:",
       proofTitle: "Key Technical Proof Points",
-      relevanceTitle: "RELEVANCE FOR ENGINEERING ROLE:"
+      relevanceTitle: "RELEVANCE FOR ENGINEERING ROLE:",
+      codeSampleTitle: "PRODUCTION CODE SAMPLE:"
+    },
+    techStack: {
+      tag: "TECHNICAL MATRIX",
+      title: "Engineering Tooling & Stack Experience",
+      subtitle: "Honest, verified breakdown of tech proficiency across frontend, backend, databases, Linux administration, and spatial AI."
+    },
+    workflow: {
+      tag: "AUTOMATION & QA RIGOR",
+      title: "Engineering Habits & Automation",
+      subtitle: "I write clean, documented code backed by automated testing, containerized setups, and cron-driven background scripts.",
+      qaVerified: "QUALITY ASSURANCE VERIFIED",
+      qaDescription: "Playwright tests validate responsive layouts and API endpoints locally before deployment."
     },
     cv: {
       tag: "CURRICULUM VITAE",
@@ -374,7 +418,8 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       summaryEnTitle: "Professional Summary (English)",
       academicTitle: "Academic Education",
       certsTitle: "Relevant Courses & Certifications",
-      languagesTitle: "Languages"
+      languagesTitle: "Languages",
+      officialDoc: "OFFICIAL DOCUMENT"
     },
     contact: {
       tag: "DIRECT CONTACT",
@@ -385,14 +430,20 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       phoneLabel: "PHONE / WHATSAPP",
       locationLabel: "PRIMARY LOCATION",
       githubLabel: "GITHUB PROFILE",
-      formTitle: "Direct Message",
+      formTitle: "Direct Console Message",
       nameLabel: "YOUR NAME OR COMPANY",
       namePlaceholder: "e.g. Engineering Lead / Recruiter",
       emailPlaceholder: "name@company.com",
       messageLabel: "INQUIRY OR ROLE DETAILS",
       messagePlaceholder: "Describe role opportunities or technical inquiry...",
       sendButton: "DISPATCH MESSAGE",
-      sentSuccess: "MESSAGE SENT SUCCESSFULLY"
+      sentSuccess: "MESSAGE SENT SUCCESSFULLY",
+      sentSuccessDesc: "Thank you! Sebastian will review your message and reply promptly."
+    },
+    footer: {
+      tagline: "Operational Engineering Console v1.0",
+      builtWith: "Built with Next.js 16, TypeScript, Tailwind CSS, Leaflet & Framer Motion",
+      location: "Cochabamba, Bolivia"
     }
   }
 };

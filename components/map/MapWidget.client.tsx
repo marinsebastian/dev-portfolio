@@ -127,10 +127,16 @@ export default function MapWidgetClient({
             </span>
           </div>
           
-          <span className="text-[11px] font-mono-tech text-slate-400 hidden sm:inline flex items-center gap-1">
-            <Info className="w-3 h-3 text-teal-400 inline" />
-            {t('flagship.sourceAttribution')}
-          </span>
+          <a
+            href="https://mauforonda.github.io/geodatos/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] font-mono-tech text-teal-300 hover:text-teal-200 hidden sm:flex items-center gap-1 transition-colors"
+          >
+            <Info className="w-3.5 h-3.5 text-teal-400 shrink-0 inline" />
+            <span>GeoBolivia 2015 & @mauforonda Datasets</span>
+            <ExternalLink className="w-3 h-3 text-slate-400 shrink-0 inline" />
+          </a>
         </div>
 
         {/* Scope Tabs */}
