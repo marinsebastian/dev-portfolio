@@ -12,26 +12,26 @@ import {
 import { CASE_STUDIES } from '@/data/portfolioData';
 import { CodeBlock } from '../ui/CodeBlock';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { MapPin, Activity, Database, Server, CheckCircle2, Globe, Cpu } from 'lucide-react';
+import { MapPin, Database, Server, CheckCircle2, Globe } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
-// Dynamic import for Leaflet map component to isolate client rendering
-const MapWidgetClient = dynamic(() => import('../map/MapWidget.client'), {
+// Dynamic import for MapLibre GL + PMTiles map component
+const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget.client'), {
   ssr: false,
   loading: () => (
-    <div className="h-[460px] w-full rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center space-y-3 font-mono-tech text-xs text-slate-400">
+    <div className="h-[480px] w-full rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center space-y-3 font-mono-tech text-xs text-slate-400">
       <div className="w-8 h-8 rounded-full border-2 border-teal-400 border-t-transparent animate-spin" />
-      <span>Loading Mau Foronda Bolivian Urban & Census Spatial Engine...</span>
+      <span>Loading Mauricio Foronda Censo 2024 PMTiles Vector Engine (100% Real INE Block Geometry)...</span>
     </div>
   ),
 });
 
 export function FlagshipGeoSection() {
   const { t, language } = useLanguage();
-  const [activeScope, setActiveScope] = useState<ScopeType>('Cochabamba');
+  const [activeScope, setActiveScope] = useState<ScopeType>('Santa Cruz');
   const [activeLayer, setActiveLayer] = useState<LayerCode>('DENSITY');
   const [selectedZone, setSelectedZone] = useState<UrbanCensusZone>(
-    URBAN_CENSUS_ZONES.find((z) => z.metroArea === 'Cochabamba') || URBAN_CENSUS_ZONES[0]
+    URBAN_CENSUS_ZONES.find((z) => z.metroArea === 'Santa Cruz') || URBAN_CENSUS_ZONES[0]
   );
 
   const flagshipData = CASE_STUDIES.find((c) => c.id === 'geoinsights-bolivia')!;
@@ -63,7 +63,7 @@ export function FlagshipGeoSection() {
             </div>
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono-tech text-xs">
               <Globe className="w-3.5 h-3.5 text-cyan-400" />
-              <span>@mauforonda Open Datasets (Censo 2024)</span>
+              <span>PMTiles Vector Tiles (@mauforonda atlasurbano)</span>
             </div>
           </div>
 
@@ -74,24 +74,24 @@ export function FlagshipGeoSection() {
             {t('flagship.summary')}
           </p>
 
-          {/* Official GeoBolivia 2015 Dataset Reference Banner */}
+          {/* Official GeoBolivia 2015 & PMTiles Dataset Reference Banner */}
           <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 font-mono-tech text-xs space-y-1.5 max-w-4xl text-slate-300">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
               <span className="text-teal-300 font-bold flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5 text-teal-400" />
-                {t('flagship.geoBoliviaTitle')}
+                Manzanos Reales INE — Censo 2024 (PMTiles Vector Stream)
               </span>
               <a
-                href="https://mauforonda.github.io/geodatos/"
+                href="https://mauforonda.github.io/atlasurbano/"
                 target="_blank"
                 rel="noreferrer"
                 className="text-[11px] text-cyan-400 hover:underline inline-flex items-center gap-1"
               >
-                <span>GeoBolivia / @mauforonda</span>
+                <span>mauforonda/atlasurbano</span>
               </a>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              {t('flagship.geoBoliviaDesc')}
+              Consume directamente los archivos vectoriales PMTiles producidos por Mauricio Foronda (@mauforonda) a partir del Censo de Población y Vivienda 2024 del INE Bolivia. Representa cada manzano urbano con su geometría irregular real y sus correspondientes indicadores demográficos y de vivienda.
             </p>
           </div>
         </SectionReveal>
@@ -99,9 +99,9 @@ export function FlagshipGeoSection() {
         {/* Main Console Grid: Map Viewer & Urban Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Interactive Leaflet Map with Multi-Scope Switcher */}
+          {/* Left Column: Interactive MapLibre GL PMTiles Map with Multi-Scope Switcher */}
           <div className="lg:col-span-7">
-            <MapWidgetClient
+            <RealBlockMapWidgetClient
               activeScope={activeScope}
               onScopeChange={(scope) => {
                 setActiveScope(scope);
@@ -110,8 +110,6 @@ export function FlagshipGeoSection() {
               }}
               activeLayer={activeLayer}
               onLayerChange={(layer) => setActiveLayer(layer)}
-              selectedZone={selectedZone}
-              onSelectZone={(zone) => setSelectedZone(zone)}
             />
           </div>
 
@@ -123,7 +121,7 @@ export function FlagshipGeoSection() {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div>
                   <span className="text-[10px] font-mono-tech text-slate-400 uppercase">
-                    {t('flagship.activeZone')}
+                    ZONA URBANA SELECCIONADA
                   </span>
                   <h3 className="text-lg font-bold text-teal-300">{selectedZone.name}</h3>
                 </div>
@@ -269,9 +267,9 @@ export function FlagshipGeoSection() {
 
             <div className="pt-2">
               <CodeBlock
-                filename="components/map/UrbanCensusExplorer.client.tsx"
-                language={flagshipData.codeSnippet?.language}
-                code={`// Dynamic polygon style handler based on Censo 2024 metrics\nexport function getFeatureStyle(zone: UrbanCensusZone, activeLayer: LayerCode, isSelected: boolean) {\n  let fillColor = '#1e293b';\n  if (activeLayer === 'TECH_CONN') {\n    fillColor = zone.metrics.internetCoveragePct > 80 ? '#06b6d4' : '#1e293b';\n  }\n  return { color: isSelected ? '#14b8a6' : '#475569', fillColor, weight: isSelected ? 3 : 1.5 };\n}`}
+                filename="components/map/RealBlockMapWidget.client.tsx"
+                language="typescript"
+                code={`// Protocol registration for PMTiles vector tile stream\nconst protocol = new pmtiles.Protocol();\nmaplibregl.addProtocol('pmtiles', protocol.tile);\n\nconst PMTILES_URL = 'https://raw.githubusercontent.com/mauforonda/atlasurbano/pmtiles/atlas.pmtiles';`}
               />
             </div>
           </div>
