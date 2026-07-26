@@ -13,6 +13,11 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { Sparkles, Layers, ExternalLink, Info } from 'lucide-react';
 
+// Set MapLibre GL CSP worker URL to avoid Next.js MIME text/html worker loading issue
+if (typeof window !== 'undefined') {
+  (maplibregl as any).setWorkerUrl?.('https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl-csp-worker.js');
+}
+
 const PMTILES_URL = 'https://raw.githubusercontent.com/mauforonda/atlasurbano/pmtiles/atlas.pmtiles';
 
 interface RealBlockMapWidgetProps {
