@@ -117,7 +117,6 @@ export default function GeolocationConsent() {
   // Escape closes the prompt and records the decision, same as the X button.
   useEffect(() => {
     if (phase !== 'asking') return;
-    primaryRef.current?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleDismiss();

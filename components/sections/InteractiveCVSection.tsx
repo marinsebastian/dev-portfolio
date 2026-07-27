@@ -315,7 +315,6 @@ export function InteractiveCVSection() {
                 </a>
                 <button
                   type="button"
-                  autoFocus
                   onClick={() => setPdfModalOpen(false)}
                   aria-label="Cerrar / Close"
                   className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
