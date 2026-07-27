@@ -2,7 +2,7 @@
 
 **Target Candidate:** Sebastian Marin — Systems Engineer & Full-Stack Developer  
 **Target Organization:** Geolabs Cloud (`https://geolabs.cloud/developer/`)  
-**Design Philosophy:** *Operational Enterprise Data Console* — Premium dark slate aesthetic (`#0B0F17`), liquid glass modals, interactive micro-apps, AI Map Copilot with function calling, zero static code clutter.
+**Design Philosophy:** *Operational Enterprise Data Console* — Premium dark slate aesthetic (`#0B0F17`), liquid glass modals, interactive micro-apps, Multi-Provider AI Map Copilot with function calling, zero static code clutter.
 
 ---
 
@@ -12,7 +12,7 @@
 | :--- | :--- | :--- |
 | **Map Clean-up & Attribution** | Watermarks, repetitive `@mauforonda` mentions, standard Leaflet controls. | Clean MapLibre GL canvas, zero watermark clutter, sleek bottom-overlay controls, discrete dataset attribution. |
 | **Block Selection Highlight** | Static tile boundary. | Glowing teal/cyan stroke (`#14b8a6`, line-width 3.5, 0.9 opacity) on selected INE block (*manzano*). |
-| **AI Copilot & Focused Mode** | Static text prompt box returning Gemini API reply. | **AI Map Copilot with Animated Gradient Border:**<br>- Triggers **Focused Mode** (Desktop: Side-by-side Map + Chat; Mobile: 50% Map Top / 50% Chat Bottom).<br>- **Function Calling:** Chatbot mutates map state (changes layers, metric colors, zooms to user location/department).<br>- **Dynamic Action Chips:** Suggested queries (`[Analizar mi zona]`, `[Ver áreas con fibra > 80%]`). |
+| **Multi-Provider AI Copilot** | Single Gemini API call. | **Multi-LLM Streaming AI Copilot (NVIDIA, Gemini, OpenAI):**<br>- Based on [`AI_CHATBOT_ARCHITECTURE.md`](file:///C:/Users/marin/Documents/Programming/dev-portfolio/AI_CHATBOT_ARCHITECTURE.md).<br>- **Provider Selector:** `[NVIDIA NIM]` `[Google Gemini]` `[OpenAI]`.<br>- **Animated Gradient Border:** Triggers **Focused Mode** (Desktop: Side-by-side Map + Chat; Mobile: 50% Map Top / 50% Chat Bottom).<br>- **Function Calling:** Chatbot mutates map state (changes layers, metric colors, zooms to user location/department).<br>- **Dynamic Action Chips:** Suggested queries (`[Analizar mi zona]`, `[Ver áreas con fibra > 80%]`). |
 | **User Geolocation & Privacy** | Fixed department center coordinates. | **Liquid Glass Geolocation Modal:**<br>- Requests browser/IP location to center map on user's department/neighborhood.<br>- Subtle discardable map banner.<br>- Privacy & cookie consent logger (`localStorage` state). |
 | **"Lo Que Construyo" Capability Pillars** | Static syntax code blocks. | **Live Working Micro-Apps (No Code Blocks!):**<br>1. *Web Interfaces:* Real-time website telemetry dashboard (live visitor ticker, latency, click counter).<br>2. *APIs & Backend:* Interactive REST API Tester for `/api/spatial` and `/api/php-sync`.<br>3. *Spatial Systems:* Mini-map auto-focused on user's inferred department.<br>4. *Linux & CLI:* Interactive terminal simulating `cron` sync execution and Docker status. |
 | **GeoInsights Bolivia Map** | Categorized layer pills. | **Categorized Dropdown Selector:**<br>- Demografía y Densidad (`b1`, `a1`)<br>- Conectividad y TICs (`v1`, `g1`)<br>- Vivienda y Servicios (`r1`, `s1`)<br>- Nodos Económicos (`c1`)<br>- Metric system units in Spanish (`hab/ha`). |
@@ -22,21 +22,29 @@
 
 ---
 
-## 2. AI Map Copilot & Focused Mode Specifications
+## 2. Multi-Provider AI Map Copilot Specifications (`AI_CHATBOT_ARCHITECTURE.md`)
 
-### 2.1 Visual Styling & Trigger Button
+Refer to [`AI_CHATBOT_ARCHITECTURE.md`](file:///C:/Users/marin/Documents/Programming/dev-portfolio/AI_CHATBOT_ARCHITECTURE.md) for full server-side proxy architecture and streaming SSE implementation.
+
+### 2.1 Supported AI Providers & Models
+- **NVIDIA NIM:** `z-ai/glm-5.2`, `meta/llama-3.3-70b-instruct`, `nvidia/llama-3.1-nemotron-70b-instruct` (`https://integrate.api.nvidia.com/v1`).
+- **Google Gemini:** `gemini-3.1-flash-lite`, `gemini-2.0-flash` (`https://generativelanguage.googleapis.com/v1beta/openai`).
+- **OpenAI:** `gpt-4o-mini`, `gpt-4o` (`https://api.openai.com/v1`).
+
+### 2.2 Visual Styling & Provider Switcher
 - **Button Design:** Sleek rounded glass button with an animated gradient border (`conic-gradient` rotating teal, cyan, and indigo glow).
-- **Label:** `AI Map Copilot` with a moving spark icon.
+- **Provider Selector:** Client pill dropdown allowing the user to select `[NVIDIA NIM]`, `[Gemini]`, or `[OpenAI]`.
+- **Badge:** Displays active provider badge (`X-AI-Provider` and `X-AI-Model`) on streamed chat responses.
 
-### 2.2 Focused Mode Layout Architecture
+### 2.3 Focused Mode Layout Architecture
 - **Desktop Viewport (≥ 1024px):** Split 50/50 2-column layout.
   - *Left Column (50%):* Full-height MapLibre GL map canvas.
-  - *Right Column (50%):* Interactive Chatbot Console with message history and quick suggestion chips.
+  - *Right Column (50%):* Interactive Chatbot Console with message history, provider selector, and quick suggestion chips.
 - **Mobile Viewport (< 1024px):** Stacked 50/50 vertical layout.
   - *Top Half (50% vh):* Sticky MapLibre GL map canvas.
   - *Bottom Half (50% vh):* Scrollable Chatbot drawer with fixed input field.
 
-### 2.3 AI Chatbot Function Calling Capabilities
+### 2.4 AI Chatbot Function Calling Capabilities
 The AI Copilot interprets natural language and returns structured action commands to mutate the map:
 1. `setLayer(layerCode)` — Switches map metric layer (e.g. `TECH_CONN`, `DENSITY`).
 2. `flyToLocation(lat, lng, zoom)` — Zooms map to user's neighborhood, department, or city block.
