@@ -20,6 +20,115 @@
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Apple Intelligence Style Loading Glow Button */
+@keyframes appleGlowRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes appleDotPulse {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.apple-intelligence-glow-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem; /* 12px / rounded-xl */
+  background: #090d16; /* Contenedor central oscuro */
+  color: #f8fafc;
+  font-family: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 700;
+  text-decoration: none;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-intelligence-glow-btn:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px rgba(99, 102, 241, 0.4);
+}
+
+/* Anillo externo circular resplandeciente (Glow) con gradiente Cobalto - Violeta rotando */
+.apple-intelligence-glow-btn::before {
+  content: "";
+  position: absolute;
+  inset: -65%;
+  background: conic-gradient(
+    from 0deg,
+    #1d4ed8, /* Azul cobalto */
+    #3b82f6, 
+    #7c3aed, /* Violeta */
+    #c084fc,
+    #1d4ed8
+  );
+  animation: appleGlowRotate 6s linear infinite;
+  filter: blur(14px);
+  opacity: 0.7;
+  z-index: -2;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.apple-intelligence-glow-btn:hover::before {
+  opacity: 0.95;
+  filter: blur(18px);
+}
+
+/* Capa interior de contenedor oscuro para aislamiento del resplandor (Borde animado más grueso de 2.5px) */
+.apple-intelligence-glow-btn::after {
+  content: "";
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 0.6rem;
+  background: #090d16;
+  z-index: -1;
+}
+
+/* Typing Indicator: 3 puntos blancos fijos con opacidad parpadeante secuencial */
+.apple-typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3.5px;
+}
+
+.apple-typing-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  animation: appleDotPulse 1.4s ease-in-out infinite;
+}
+
+.apple-typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.apple-typing-dot:nth-child(2) {
+  animation-delay: 0.25s;
+}
+
+.apple-typing-dot:nth-child(3) {
+  animation-delay: 0.5s;
+}
+
 /* Base custom font family helpers */
 .font-mono-tech {
   font-family: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

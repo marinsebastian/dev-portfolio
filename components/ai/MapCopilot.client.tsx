@@ -397,18 +397,18 @@ export default function MapCopilot() {
  * browser can animate it on the compositor instead of repainting a background.
  */
 export function CopilotTrigger({ onClick }: { onClick: () => void }) {
-  const { t } = useLanguage();
   const prefersReducedMotion = useReducedMotion();
   const { ref: sparklesRef, handlers: sparklesHandlers } = useIconAnimator(prefersReducedMotion ?? false);
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label="Abrir Copiloto IA del mapa"
       {...sparklesHandlers}
-      className="copilot-gradient-border group relative inline-flex min-h-[46px] items-center gap-2.5 rounded-xl px-5 py-3 font-mono-tech text-xs font-extrabold text-white tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_30px_rgba(20,184,166,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+      className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
     >
       <SparklesIcon ref={sparklesRef} size={16} className="shrink-0 text-teal-300" />
-      <span className="uppercase tracking-wider font-extrabold text-teal-300 group-hover:text-white transition-colors">{t('copilot.trigger')}</span>
+      <span className="font-extrabold text-teal-300 group-hover:text-white transition-colors">IA</span>
     </button>
   );
 }

@@ -90,10 +90,10 @@ export function HeroSection() {
             >
               <Link
                 href="#flagship"
-                className="flex items-center space-x-2 px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs font-mono-tech transition-all shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_25px_rgba(20,184,166,0.5)]"
+                className="apple-intelligence-glow-btn uppercase tracking-wider"
               >
                 <span>{t('hero.launchGeo')}</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-teal-300" />
               </Link>
               <Link
                 href="#projects"
