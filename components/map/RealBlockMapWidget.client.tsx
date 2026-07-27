@@ -762,9 +762,82 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
   }
 
   return (
-    <div className="space-y-4 font-sans">
-      {/* Scope + layer controls */}
-      <div className="space-y-3 rounded-t-xl border border-slate-800 bg-slate-900 p-3">
+    <div className="font-sans">
+      {/* Map canvas (Top) */}
+      <div className="relative h-[460px] w-full overflow-hidden rounded-t-xl border border-slate-800 shadow-2xl sm:h-[520px]">
+        <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
+
+        <SelectedBlockTooltip
+          anchorRef={tooltipAnchorRef}
+          // Focused Mode covers this exact instance with its own map + its
+          // own copy of this same tooltip — without this, both would render
+          // at once (each projecting the shared selection through its own
+          // camera), showing two competing tooltips for one selection.
+          position={focusedMode ? null : tooltipPos}
+          block={selectedBlock}
+          t={t}
+          onClose={() => setSelectedBlock(null)}
+        />
+
+        {/* Top Right Floating IA Copilot Button */}
+        <div className="absolute top-3 right-3 z-10">
+          <button
+            type="button"
+            onClick={() => setFocusedMode(true)}
+            aria-label="Abrir Copiloto IA del mapa"
+            className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
+          >
+            <div className="inline-flex items-center justify-center shrink-0 text-teal-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" opacity="1"></path>
+                <path d="M20 2v4" opacity="0.9"></path>
+                <path d="M22 4h-4" opacity="0.9"></path>
+                <circle cx="4" cy="20" r="2" opacity="1"></circle>
+              </svg>
+            </div>
+            <span className="font-extrabold text-teal-300 group-hover:text-white transition-colors">IA</span>
+          </button>
+        </div>
+
+        {/* Legend — visible on both desktop and mobile, and in Focused Mode */}
+        <div className="absolute top-3 left-3 z-10 block max-w-[190px] sm:max-w-xs bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl">
+          <div className="text-teal-400 font-bold tracking-wider uppercase">
+            {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-400">{t('flagship.legendLow')}</span>
+            <div
+              className="h-2 w-20 rounded"
+              style={{ background: `linear-gradient(to right, #0f172a, ${activeLayerMeta.primaryColor})` }}
+            />
+            <span className="text-slate-200 font-bold">{t('flagship.legendHigh')}</span>
+          </div>
+          <div className="text-slate-500">{activeLayerMeta.unitLabel}</div>
+        </div>
+
+        {/* Honest empty state: the archive has no geometry below zoom 8. */}
+        {belowDataZoom && (
+          <div className="absolute inset-x-3 bottom-3 sm:inset-x-auto sm:left-3 sm:max-w-sm z-10 p-3 rounded-lg bg-slate-900/95 backdrop-blur-md border border-amber-500/50 font-mono-tech text-[11px] space-y-2 shadow-2xl">
+            <div className="text-amber-300 font-bold uppercase tracking-wide">
+              {t('flagship.zoomNoticeTitle')}
+            </div>
+            <p className="text-slate-300 leading-relaxed font-sans text-xs">
+              {t('flagship.zoomNoticeBody')}
+            </p>
+            <button
+              type="button"
+              onClick={handleZoomToBlocks}
+              className="flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded bg-amber-500/20 border border-amber-500/50 text-amber-200 hover:bg-amber-500/30 transition-colors font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+            >
+              <ZoomIn className="w-3.5 h-3.5 shrink-0" />
+              <span>{t('flagship.zoomNoticeAction')}</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Scope + layer controls (Bottom) */}
+      <div className="space-y-3 rounded-b-xl border border-t-0 border-slate-800 bg-slate-900 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
           <div className="flex items-center space-x-2 min-w-0">
             <Layers className="w-4 h-4 text-teal-400 shrink-0" />
@@ -854,79 +927,6 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
               className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center rounded hover:bg-teal-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             >
               <XIcon ref={clearThresholdIconRef} size={14} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Map canvas */}
-      <div className="relative h-[460px] w-full overflow-hidden rounded-b-xl border border-slate-800 shadow-2xl sm:h-[520px]">
-        <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
-
-        <SelectedBlockTooltip
-          anchorRef={tooltipAnchorRef}
-          // Focused Mode covers this exact instance with its own map + its
-          // own copy of this same tooltip — without this, both would render
-          // at once (each projecting the shared selection through its own
-          // camera), showing two competing tooltips for one selection.
-          position={focusedMode ? null : tooltipPos}
-          block={selectedBlock}
-          t={t}
-          onClose={() => setSelectedBlock(null)}
-        />
-
-        {/* Top Right Floating IA Copilot Button */}
-        <div className="absolute top-3 right-3 z-10">
-          <button
-            type="button"
-            onClick={() => setFocusedMode(true)}
-            aria-label="Abrir Copiloto IA del mapa"
-            className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
-          >
-            <div className="inline-flex items-center justify-center shrink-0 text-teal-300">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" opacity="1"></path>
-                <path d="M20 2v4" opacity="0.9"></path>
-                <path d="M22 4h-4" opacity="0.9"></path>
-                <circle cx="4" cy="20" r="2" opacity="1"></circle>
-              </svg>
-            </div>
-            <span className="font-extrabold text-teal-300 group-hover:text-white transition-colors">IA</span>
-          </button>
-        </div>
-
-        {/* Legend — visible on both desktop and mobile, and in Focused Mode */}
-        <div className="absolute top-3 left-3 z-10 block max-w-[190px] sm:max-w-xs bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl">
-          <div className="text-teal-400 font-bold tracking-wider uppercase">
-            {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-slate-400">{t('flagship.legendLow')}</span>
-            <div
-              className="h-2 w-20 rounded"
-              style={{ background: `linear-gradient(to right, #0f172a, ${activeLayerMeta.primaryColor})` }}
-            />
-            <span className="text-slate-200 font-bold">{t('flagship.legendHigh')}</span>
-          </div>
-          <div className="text-slate-500">{activeLayerMeta.unitLabel}</div>
-        </div>
-
-        {/* Honest empty state: the archive has no geometry below zoom 8. */}
-        {belowDataZoom && (
-          <div className="absolute inset-x-3 bottom-3 sm:inset-x-auto sm:left-3 sm:max-w-sm z-10 p-3 rounded-lg bg-slate-900/95 backdrop-blur-md border border-amber-500/50 font-mono-tech text-[11px] space-y-2 shadow-2xl">
-            <div className="text-amber-300 font-bold uppercase tracking-wide">
-              {t('flagship.zoomNoticeTitle')}
-            </div>
-            <p className="text-slate-300 leading-relaxed font-sans text-xs">
-              {t('flagship.zoomNoticeBody')}
-            </p>
-            <button
-              type="button"
-              onClick={handleZoomToBlocks}
-              className="flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded bg-amber-500/20 border border-amber-500/50 text-amber-200 hover:bg-amber-500/30 transition-colors font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-            >
-              <ZoomIn className="w-3.5 h-3.5 shrink-0" />
-              <span>{t('flagship.zoomNoticeAction')}</span>
             </button>
           </div>
         )}
