@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Sparkles, Send, RotateCcw, Bot, Cpu, MapPin } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
+import { RotateCcw, Bot, Cpu, MapPin } from 'lucide-react';
+import { SendIcon, SparklesIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole } from '@/context/GeoConsoleContext';
 import { LAYER_DESCRIPTIONS } from '@/lib/copilotTools';
@@ -48,6 +51,8 @@ export default function MapCopilot() {
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: sendIconRef, handlers: sendIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
 
   // Which providers actually have a key server-side. Rendering only working
   // options avoids offering the user a provider that will fail on click.
@@ -370,9 +375,10 @@ export default function MapCopilot() {
           type="submit"
           disabled={isStreaming || !input.trim()}
           aria-label={t('copilot.send')}
+          {...sendIconHandlers}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-teal-500 text-slate-950 transition-colors hover:bg-teal-400 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
         >
-          <Send className="h-4 w-4" />
+          <SendIcon ref={sendIconRef} size={16} />
         </button>
       </form>
 
@@ -392,13 +398,16 @@ export default function MapCopilot() {
  */
 export function CopilotTrigger({ onClick }: { onClick: () => void }) {
   const { t } = useLanguage();
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: sparklesRef, handlers: sparklesHandlers } = useIconAnimator(prefersReducedMotion ?? false);
   return (
     <button
       type="button"
       onClick={onClick}
+      {...sparklesHandlers}
       className="copilot-gradient-border group relative inline-flex min-h-[46px] items-center gap-2.5 rounded-xl px-5 py-3 font-mono-tech text-xs font-extrabold text-white tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_30px_rgba(20,184,166,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
     >
-      <Sparkles className="h-4 w-4 shrink-0 text-teal-300 animate-pulse group-hover:rotate-12 transition-transform duration-300" />
+      <SparklesIcon ref={sparklesRef} size={16} className="shrink-0 text-teal-300" />
       <span className="uppercase tracking-wider font-extrabold text-teal-300 group-hover:text-white transition-colors">{t('copilot.trigger')}</span>
     </button>
   );

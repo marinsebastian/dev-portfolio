@@ -1,9 +1,50 @@
 'use client';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useReducedMotion } from 'framer-motion';
 import { SectionReveal } from '../motion/SectionReveal';
-import { Terminal, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { TerminalIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
+
+function WorkflowModuleButton({
+  isActive,
+  onClick,
+  title,
+  subtitle,
+  prefersReducedMotion,
+  index,
+}: {
+  isActive: boolean;
+  onClick: () => void;
+  title: string;
+  subtitle: string;
+  prefersReducedMotion: boolean;
+  index: number;
+}) {
+  const { ref, handlers } = useIconAnimator(prefersReducedMotion, index * 350);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      {...handlers}
+      className={`w-full text-left p-4.5 rounded-xl border transition-all ${
+        isActive
+          ? 'bg-slate-900 border-teal-500 text-teal-300 font-bold shadow-lg'
+          : 'bg-slate-900/40 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+      }`}
+    >
+      <div className="flex items-center space-x-3 font-mono-tech text-xs">
+        <TerminalIcon ref={ref} size={18} className="text-teal-400 shrink-0" />
+        <div>
+          <div className="text-slate-100 font-bold text-sm">{title}</div>
+          <div className="text-xs text-slate-400 mt-0.5">{subtitle}</div>
+        </div>
+      </div>
+    </button>
+  );
+}
 
 const PlaywrightTestRunner = dynamic(() => import('../micro/PlaywrightTestRunner.client'), {
   ssr: false,
@@ -40,6 +81,7 @@ export function WorkflowQASection() {
   ];
 
   const [activeModuleId, setActiveModuleId] = useState(WORKFLOW_MODULES[0].id);
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <section className="py-20 bg-[#070a11] relative border-t border-slate-800">
@@ -63,29 +105,17 @@ export function WorkflowQASection() {
           {/* Module Switcher Tabs */}
           <div className="lg:col-span-4 flex flex-col justify-between space-y-4">
             <div className="space-y-3">
-              {WORKFLOW_MODULES.map((mod) => {
-                const isActive = mod.id === activeModuleId;
-                return (
-                  <button
-                    key={mod.id}
-                    type="button"
-                    onClick={() => setActiveModuleId(mod.id)}
-                    className={`w-full text-left p-4.5 rounded-xl border transition-all ${
-                      isActive
-                        ? 'bg-slate-900 border-teal-500 text-teal-300 font-bold shadow-lg'
-                        : 'bg-slate-900/40 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3 font-mono-tech text-xs">
-                      <Terminal className="w-4.5 h-4.5 text-teal-400 shrink-0" />
-                      <div>
-                        <div className="text-slate-100 font-bold text-sm">{mod.title}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{mod.subtitle}</div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+              {WORKFLOW_MODULES.map((mod, index) => (
+                <WorkflowModuleButton
+                  key={mod.id}
+                  isActive={mod.id === activeModuleId}
+                  onClick={() => setActiveModuleId(mod.id)}
+                  title={mod.title}
+                  subtitle={mod.subtitle}
+                  prefersReducedMotion={prefersReducedMotion ?? false}
+                  index={index}
+                />
+              ))}
             </div>
 
             <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 font-mono-tech text-xs text-slate-300 space-y-2 mt-auto">

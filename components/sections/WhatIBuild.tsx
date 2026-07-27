@@ -1,9 +1,12 @@
 'use client';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useReducedMotion } from 'framer-motion';
 import { SectionReveal } from '../motion/SectionReveal';
-import { CAPABILITY_PILLARS } from '@/data/portfolioData';
+import { CAPABILITY_PILLARS, type CapabilityPillar } from '@/data/portfolioData';
 import { Layout, Server, MapPin, Terminal, CheckCircle2, LucideIcon } from 'lucide-react';
+import { MapPinIcon, TerminalIcon } from '@animateicons/react/lucide';
+import { useIconAnimator, type AnimatedIconComponent } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -11,6 +14,13 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Server,
   MapPin,
   Terminal,
+};
+
+/** Only two of the four pillar icons have a real AnimateIcons equivalent —
+ * Layout and Server have none in the curated set, so they keep the static icon. */
+const ANIMATED_ICON_MAP: Record<string, AnimatedIconComponent | undefined> = {
+  MapPin: MapPinIcon,
+  Terminal: TerminalIcon,
 };
 
 /** Placeholder sized to each panel so switching pillars does not jump the layout. */
@@ -56,9 +66,66 @@ function PillarMicroApp({ pillarId }: { pillarId: string }) {
   }
 }
 
+function PillarButton({
+  pillar,
+  isActive,
+  onClick,
+  title,
+  subtitle,
+  description,
+  prefersReducedMotion,
+  index,
+}: {
+  pillar: CapabilityPillar;
+  isActive: boolean;
+  onClick: () => void;
+  title: string;
+  subtitle: string;
+  description: string;
+  prefersReducedMotion: boolean;
+  index: number;
+}) {
+  const StaticIcon = ICON_MAP[pillar.iconName] || Layout;
+  const AnimatedIcon = ANIMATED_ICON_MAP[pillar.iconName];
+  const { ref, handlers } = useIconAnimator(prefersReducedMotion, index * 350);
+
+  return (
+    <button
+      onClick={onClick}
+      {...handlers}
+      className={`w-full text-left p-5 rounded-xl border transition-all duration-200 cursor-pointer flex-1 flex flex-col justify-center ${
+        isActive
+          ? 'bg-slate-900 border-teal-500/80 shadow-[0_0_20px_rgba(20,184,166,0.15)] ring-1 ring-teal-500/50'
+          : 'bg-slate-900/40 border-slate-800 hover:border-slate-700 hover:bg-slate-900/70'
+      }`}
+    >
+      <div className="flex items-start space-x-4">
+        <div
+          className={`p-3 rounded-lg border transition-colors shrink-0 ${
+            isActive
+              ? 'bg-teal-500/10 border-teal-500/40 text-teal-400'
+              : 'bg-slate-800/80 border-slate-700/60 text-slate-400'
+          }`}
+        >
+          {AnimatedIcon ? <AnimatedIcon ref={ref} size={20} /> : <StaticIcon className="w-5 h-5" />}
+        </div>
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <h3 className="text-base font-bold text-white tracking-tight">{title}</h3>
+            {isActive && <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />}
+          </div>
+          <p className="text-xs font-mono-tech text-teal-400/90">{subtitle}</p>
+          <p className="text-xs text-slate-400 line-clamp-2 pt-1">{description}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 export function WhatIBuild() {
   const { t, language } = useLanguage();
   const [activePillarId, setActivePillarId] = useState(CAPABILITY_PILLARS[0].id);
+  const prefersReducedMotion = useReducedMotion();
 
   const activePillar = CAPABILITY_PILLARS.find((p) => p.id === activePillarId) || CAPABILITY_PILLARS[0];
 
@@ -85,45 +152,19 @@ export function WhatIBuild() {
           
           {/* Left Column: 4 Pillar Selection Cards */}
           <div className="lg:col-span-5 flex flex-col space-y-4 h-full">
-            {CAPABILITY_PILLARS.map((pillar) => {
-              const Icon = ICON_MAP[pillar.iconName] || Layout;
-              const isActive = pillar.id === activePillarId;
-              const title = language === 'es' ? pillar.titleEs : pillar.title;
-              const subtitle = language === 'es' ? pillar.subtitleEs : pillar.subtitle;
-              const description = language === 'es' ? pillar.descriptionEs : pillar.description;
-
-              return (
-                <button
-                  key={pillar.id}
-                  onClick={() => setActivePillarId(pillar.id)}
-                  className={`w-full text-left p-5 rounded-xl border transition-all duration-200 cursor-pointer flex-1 flex flex-col justify-center ${
-                    isActive
-                      ? 'bg-slate-900 border-teal-500/80 shadow-[0_0_20px_rgba(20,184,166,0.15)] ring-1 ring-teal-500/50'
-                      : 'bg-slate-900/40 border-slate-800 hover:border-slate-700 hover:bg-slate-900/70'
-                  }`}
-                >
-                  <div className="flex items-start space-x-4">
-                    <div
-                      className={`p-3 rounded-lg border transition-colors shrink-0 ${
-                        isActive
-                          ? 'bg-teal-500/10 border-teal-500/40 text-teal-400'
-                          : 'bg-slate-800/80 border-slate-700/60 text-slate-400'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="text-base font-bold text-white tracking-tight">{title}</h3>
-                        {isActive && <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />}
-                      </div>
-                      <p className="text-xs font-mono-tech text-teal-400/90">{subtitle}</p>
-                      <p className="text-xs text-slate-400 line-clamp-2 pt-1">{description}</p>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            {CAPABILITY_PILLARS.map((pillar, index) => (
+              <PillarButton
+                key={pillar.id}
+                pillar={pillar}
+                isActive={pillar.id === activePillarId}
+                onClick={() => setActivePillarId(pillar.id)}
+                title={language === 'es' ? pillar.titleEs : pillar.title}
+                subtitle={language === 'es' ? pillar.subtitleEs : pillar.subtitle}
+                description={language === 'es' ? pillar.descriptionEs : pillar.description}
+                prefersReducedMotion={prefersReducedMotion ?? false}
+                index={index}
+              />
+            ))}
           </div>
 
           {/* Right Column: Active Pillar Code & Details Viewer */}

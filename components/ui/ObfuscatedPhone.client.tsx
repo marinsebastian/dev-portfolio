@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Phone, Eye } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
+import { PhoneIcon, EyeIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 
 /**
@@ -43,6 +45,11 @@ export default function ObfuscatedPhone({ variant = 'card' }: ObfuscatedPhonePro
   const { t } = useLanguage();
   const [revealed, setRevealed] = useState(false);
   const [phone, setPhone] = useState<string | null>(null);
+  const prefersReducedMotion = useReducedMotion();
+  // Only one of the four branches below ever renders at a time, so reusing a
+  // single ref/handlers pair for each icon across all of them is safe.
+  const { ref: phoneIconRef, handlers: phoneIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+  const { ref: eyeIconRef, handlers: eyeIconHandlers } = useIconAnimator(prefersReducedMotion ?? false, 200);
 
   // Reveal after sustained engagement, so a reader who scrolls and reads never
   // has to click, while a drive-by fetch still gets nothing.
@@ -65,9 +72,10 @@ export default function ObfuscatedPhone({ variant = 'card' }: ObfuscatedPhonePro
       <a
         href={toTelHref(phone)}
         data-testid="phone-link"
+        {...phoneIconHandlers}
         className="flex min-h-[36px] items-center space-x-1.5 rounded border border-slate-800 bg-slate-950 px-3 py-1 text-teal-300 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
       >
-        <Phone className="h-3.5 w-3.5 shrink-0 text-teal-400" />
+        <PhoneIcon ref={phoneIconRef} size={14} className="text-teal-400 shrink-0" />
         <span>{phone}</span>
       </a>
     ) : (
@@ -75,9 +83,10 @@ export default function ObfuscatedPhone({ variant = 'card' }: ObfuscatedPhonePro
         type="button"
         onClick={reveal}
         data-testid="reveal-phone-inline"
+        {...phoneIconHandlers}
         className="flex min-h-[36px] items-center space-x-1.5 rounded border border-slate-800 bg-slate-950 px-3 py-1 text-slate-300 hover:bg-slate-800 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
       >
-        <Phone className="h-3.5 w-3.5 shrink-0 text-teal-400" />
+        <PhoneIcon ref={phoneIconRef} size={14} className="text-teal-400 shrink-0" />
         <span className="select-none blur-[3px]" aria-hidden="true">
           +591 7•• •••
         </span>
@@ -92,16 +101,32 @@ export default function ObfuscatedPhone({ variant = 'card' }: ObfuscatedPhonePro
         type="button"
         onClick={reveal}
         data-testid="reveal-phone"
+        onMouseEnter={() => {
+          phoneIconHandlers.onMouseEnter();
+          eyeIconHandlers.onMouseEnter();
+        }}
+        onMouseLeave={() => {
+          phoneIconHandlers.onMouseLeave();
+          eyeIconHandlers.onMouseLeave();
+        }}
+        onFocus={() => {
+          phoneIconHandlers.onFocus();
+          eyeIconHandlers.onFocus();
+        }}
+        onBlur={() => {
+          phoneIconHandlers.onBlur();
+          eyeIconHandlers.onBlur();
+        }}
         className="flex w-full min-h-[44px] items-center space-x-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-left text-slate-200 transition-all hover:border-teal-500/50 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
       >
-        <Phone className="h-4 w-4 shrink-0 text-teal-400" />
+        <PhoneIcon ref={phoneIconRef} size={16} className="text-teal-400 shrink-0" />
         <span className="min-w-0">
           <span className="block text-[10px] text-slate-500">{t('contact.phoneLabel')}</span>
           <span className="flex items-center gap-1.5 font-bold">
             <span className="select-none blur-[3px]" aria-hidden="true">
               +591 7•• ••• ••
             </span>
-            <Eye className="h-3.5 w-3.5 shrink-0 text-teal-400" />
+            <EyeIcon ref={eyeIconRef} size={14} className="text-teal-400 shrink-0" />
           </span>
         </span>
         <span className="sr-only">{t('contact.revealPhone')}</span>
@@ -113,9 +138,10 @@ export default function ObfuscatedPhone({ variant = 'card' }: ObfuscatedPhonePro
     <a
       href={toTelHref(phone)}
       data-testid="phone-link"
+      {...phoneIconHandlers}
       className="flex min-h-[44px] items-center space-x-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-slate-200 transition-all hover:border-teal-500/50 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
     >
-      <Phone className="h-4 w-4 shrink-0 text-teal-400" />
+      <PhoneIcon ref={phoneIconRef} size={16} className="text-teal-400 shrink-0" />
       <span>
         <span className="block text-[10px] text-slate-500">{t('contact.phoneLabel')}</span>
         <span className="font-bold">{phone}</span>

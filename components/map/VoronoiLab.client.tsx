@@ -1,8 +1,11 @@
 'use client';
 import { useMemo, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, useMapEvents } from 'react-leaflet';
-import { Download, RefreshCw, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
+import { DownloadIcon, RefreshCwIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 
 interface Point {
   id: number;
@@ -118,6 +121,9 @@ export default function VoronoiLabClient() {
     { id: 3, lat: -17.43, lng: -66.1, name: 'Sacaba Hub' },
   ]);
   const [radiusM, setRadiusM] = useState(3000);
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: resetIconRef, handlers: resetIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+  const { ref: exportIconRef, handlers: exportIconHandlers } = useIconAnimator(prefersReducedMotion ?? false, 300);
 
   const cells = useMemo(
     () => points.map((p, idx) => ({ point: p, polygon: voronoiCell(p, points), color: PALETTE[idx % PALETTE.length] })),
@@ -176,18 +182,20 @@ export default function VoronoiLabClient() {
           <button
             type="button"
             onClick={handleReset}
+            {...resetIconHandlers}
             className="flex items-center space-x-1 px-3 py-2 min-h-[40px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
           >
-            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+            <RefreshCwIcon ref={resetIconRef} size={14} className="shrink-0" />
             <span>Reset</span>
           </button>
           <button
             type="button"
             onClick={handleExportGeoJson}
             disabled={points.length === 0}
+            {...exportIconHandlers}
             className="flex items-center space-x-1 px-3 py-2 min-h-[40px] rounded bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
           >
-            <Download className="w-3.5 h-3.5 shrink-0" />
+            <DownloadIcon ref={exportIconRef} size={14} className="shrink-0" />
             <span>Export GeoJSON</span>
           </button>
         </div>

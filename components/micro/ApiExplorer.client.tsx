@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Play, Loader2, Terminal } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
+import { Loader2, Terminal } from 'lucide-react';
+import { PlayIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface EndpointSpec {
@@ -47,6 +50,8 @@ export default function ApiExplorer() {
   const [params, setParams] = useState(ENDPOINTS[0].defaultParams);
   const [response, setResponse] = useState<ResponseState | null>(null);
   const [loading, setLoading] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: sendIconRef, handlers: sendIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
 
   const endpoint = ENDPOINTS.find((e) => e.id === endpointId) ?? ENDPOINTS[0];
 
@@ -139,9 +144,10 @@ export default function ApiExplorer() {
           type="button"
           onClick={send}
           disabled={loading}
+          {...sendIconHandlers}
           className="flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg bg-teal-500 px-3.5 py-2 font-mono-tech text-[11px] font-bold text-slate-950 transition-colors hover:bg-teal-400 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
         >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlayIcon ref={sendIconRef} size={14} />}
           {t('micro.apiSend')}
         </button>
       </div>

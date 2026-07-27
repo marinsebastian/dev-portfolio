@@ -2,7 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { X } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
+import { XIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole } from '@/context/GeoConsoleContext';
 import MapCopilot, { LocationBadge } from './MapCopilot.client';
@@ -34,6 +36,8 @@ export default function FocusedConsole() {
   const { focusedMode, setFocusedMode } = useGeoConsole();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<Element | null>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: closeIconRef, handlers: closeIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
 
   useEffect(() => {
     if (!focusedMode) return;
@@ -79,9 +83,10 @@ export default function FocusedConsole() {
           type="button"
           onClick={() => setFocusedMode(false)}
           aria-label={t('copilot.exitFocused')}
+          {...closeIconHandlers}
           className="flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg border border-slate-700 px-3 font-mono-tech text-xs text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
         >
-          <X className="h-4 w-4 shrink-0" />
+          <XIcon ref={closeIconRef} size={16} className="shrink-0" />
           <span className="hidden sm:inline">{t('copilot.exitFocused')}</span>
         </button>
       </header>

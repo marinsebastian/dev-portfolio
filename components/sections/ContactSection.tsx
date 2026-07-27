@@ -1,7 +1,10 @@
 'use client';
 import { useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { SectionReveal } from '../motion/SectionReveal';
-import { Mail, MapPin, Send, CheckCircle2 } from 'lucide-react';
+import { MapPin, CheckCircle2 } from 'lucide-react';
+import { MailIcon, SendIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 import { GithubIcon } from '../ui/GithubIcon';
 import ObfuscatedPhone from '../ui/ObfuscatedPhone.client';
 import { useLanguage } from '@/context/LanguageContext';
@@ -12,6 +15,10 @@ export function ContactSection() {
   const { t } = useLanguage();
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: mailIconRef, handlers: mailIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+  const { ref: reopenIconRef, handlers: reopenIconHandlers } = useIconAnimator(prefersReducedMotion ?? false, 200);
+  const { ref: submitIconRef, handlers: submitIconHandlers } = useIconAnimator(prefersReducedMotion ?? false, 400);
 
   // No mail server behind a static site: compose a draft and hand it to the
   // user's own mail client so nothing is silently dropped.
@@ -60,9 +67,10 @@ export function ContactSection() {
                 <div className="space-y-4 font-mono-tech text-xs">
                   <a
                     href="mailto:marinsebastian143@gmail.com"
+                    {...mailIconHandlers}
                     className="flex items-center space-x-3 p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-slate-200 hover:border-teal-500/50 hover:text-teal-300 transition-all"
                   >
-                    <Mail className="w-4 h-4 text-teal-400 shrink-0" />
+                    <MailIcon ref={mailIconRef} size={16} className="text-teal-400 shrink-0" />
                     <div>
                       <span className="text-slate-500 block text-[10px]">{t('contact.emailLabel')}</span>
                       <span className="font-bold">marinsebastian143@gmail.com</span>
@@ -109,9 +117,10 @@ export function ContactSection() {
                     <p className="text-slate-300 text-xs leading-relaxed font-sans">{t('contact.sentSuccessDesc')}</p>
                     <a
                       href={buildMailtoUrl()}
+                      {...reopenIconHandlers}
                       className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-lg bg-slate-900 border border-teal-500/40 text-teal-300 hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                     >
-                      <Send className="w-4 h-4" />
+                      <SendIcon ref={reopenIconRef} size={16} />
                       <span>{t('contact.reopenMailClient')}</span>
                     </a>
                   </div>
@@ -155,9 +164,10 @@ export function ContactSection() {
 
                     <button
                       type="submit"
+                      {...submitIconHandlers}
                       className="flex items-center justify-center space-x-2 w-full py-3 min-h-[44px] rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs font-mono-tech transition-all shadow-[0_0_20px_rgba(20,184,166,0.3)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                     >
-                      <Send className="w-4 h-4" />
+                      <SendIcon ref={submitIconRef} size={16} />
                       <span>{t('contact.sendButton')}</span>
                     </button>
 

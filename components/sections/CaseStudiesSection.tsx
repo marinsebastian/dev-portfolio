@@ -1,10 +1,13 @@
 'use client';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useReducedMotion } from 'framer-motion';
 import { SectionReveal } from '../motion/SectionReveal';
 import { CASE_STUDIES } from '@/data/portfolioData';
 import { GithubIcon } from '../ui/GithubIcon';
-import { ShoppingBag, Calendar, Server, MapPin, CheckCircle2, ArrowUpRight, ExternalLink, Lock, LucideIcon } from 'lucide-react';
+import { ShoppingBag, Calendar, Server, MapPin, CheckCircle2, ArrowUpRight, Lock, LucideIcon } from 'lucide-react';
+import { ShoppingBagIcon, CalendarIcon, MapPinIcon, ExternalLinkIcon } from '@animateicons/react/lucide';
+import { useIconAnimator, type AnimatedIconComponent } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 
 const VoronoiLabClient = dynamic(() => import('../map/VoronoiLab.client'), {
@@ -23,10 +26,59 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'spatial-lab': MapPin,
 };
 
+/** Only categories with a real AnimateIcons equivalent get one — `backend`
+ * (Server) has none in the curated set, so it keeps the plain static icon. */
+const ANIMATED_CATEGORY_ICONS: Record<string, AnimatedIconComponent | undefined> = {
+  commercial: ShoppingBagIcon,
+  operational: CalendarIcon,
+  'spatial-lab': MapPinIcon,
+};
+
+function CaseStudyTab({
+  category,
+  isActive,
+  label,
+  onClick,
+  prefersReducedMotion,
+  index,
+}: {
+  category: string;
+  isActive: boolean;
+  label: string;
+  onClick: () => void;
+  prefersReducedMotion: boolean;
+  index: number;
+}) {
+  const StaticIcon = CATEGORY_ICONS[category] || Server;
+  const AnimatedIcon = ANIMATED_CATEGORY_ICONS[category];
+  const { ref, handlers } = useIconAnimator(prefersReducedMotion, index * 350);
+
+  return (
+    <button
+      onClick={onClick}
+      {...handlers}
+      className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg border text-xs font-mono-tech transition-all cursor-pointer ${
+        isActive
+          ? 'bg-teal-500/15 border-teal-500 text-teal-300 font-bold shadow-[0_0_15px_rgba(20,184,166,0.2)]'
+          : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+      }`}
+    >
+      {AnimatedIcon ? (
+        <AnimatedIcon ref={ref} size={16} className="text-teal-400 shrink-0" />
+      ) : (
+        <StaticIcon className="w-4 h-4 text-teal-400 shrink-0" />
+      )}
+      <span>{label}</span>
+    </button>
+  );
+}
+
 export function CaseStudiesSection() {
   const { t, language } = useLanguage();
+  const prefersReducedMotion = useReducedMotion();
   const supportingStudies = CASE_STUDIES.filter((c) => c.category !== 'flagship');
   const [activeStudyId, setActiveStudyId] = useState(supportingStudies[0].id);
+  const { ref: liveDemoIconRef, handlers: liveDemoIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
 
   const activeStudy = supportingStudies.find((s) => s.id === activeStudyId) || supportingStudies[0];
 
@@ -59,26 +111,17 @@ export function CaseStudiesSection() {
 
         {/* Case Study Tab Navigation */}
         <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {supportingStudies.map((study) => {
-            const Icon = CATEGORY_ICONS[study.category] || Server;
-            const isActive = study.id === activeStudyId;
-            const tabTitle = language === 'es' && study.titleEs ? study.titleEs : study.title;
-
-            return (
-              <button
-                key={study.id}
-                onClick={() => setActiveStudyId(study.id)}
-                className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg border text-xs font-mono-tech transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-teal-500/15 border-teal-500 text-teal-300 font-bold shadow-[0_0_15px_rgba(20,184,166,0.2)]'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                }`}
-              >
-                <Icon className="w-4 h-4 text-teal-400 shrink-0" />
-                <span>{tabTitle}</span>
-              </button>
-            );
-          })}
+          {supportingStudies.map((study, index) => (
+            <CaseStudyTab
+              key={study.id}
+              category={study.category}
+              isActive={study.id === activeStudyId}
+              label={language === 'es' && study.titleEs ? study.titleEs : study.title}
+              onClick={() => setActiveStudyId(study.id)}
+              prefersReducedMotion={prefersReducedMotion ?? false}
+              index={index}
+            />
+          ))}
         </div>
 
         {/* Active Case Study Detail Card */}
@@ -133,9 +176,10 @@ export function CaseStudiesSection() {
               {activeStudy.liveDemoUrl && (
                 <a
                   href={activeStudy.liveDemoUrl}
+                  {...liveDemoIconHandlers}
                   className="flex items-center gap-2 px-3.5 py-2 min-h-[40px] rounded-lg bg-teal-500/15 border border-teal-500/40 text-teal-300 hover:bg-teal-500/25 text-xs font-mono-tech font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
                 >
-                  <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  <ExternalLinkIcon ref={liveDemoIconRef} size={14} className="shrink-0" />
                   <span>{language === 'es' ? 'Ver en vivo' : 'View live'}</span>
                 </a>
               )}

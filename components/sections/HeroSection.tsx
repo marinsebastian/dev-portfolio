@@ -1,11 +1,15 @@
 'use client';
-import { motion } from 'framer-motion';
-import { ArrowRight, FileText, MapPin, Server, Terminal, ShieldCheck, Sparkles, Code2, Database } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight, MapPin, Server, Terminal, ShieldCheck, Sparkles, Code2, Database } from 'lucide-react';
+import { FileTextIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 
 export function HeroSection() {
   const { t, language } = useLanguage();
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: cvIconRef, handlers: cvIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
 
   return (
     <section id="overview" className="relative min-h-[90vh] pt-28 pb-16 flex items-center bg-telemetry-grid bg-radial-glow overflow-hidden">
@@ -100,9 +104,10 @@ export function HeroSection() {
               <a
                 href="/CV Sebastian Marin.pdf"
                 download="CV Sebastian Marin.pdf"
+                {...cvIconHandlers}
                 className="flex items-center space-x-2 px-4 py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-teal-500/40 text-teal-300 font-mono-tech text-xs transition-all"
               >
-                <FileText className="w-4 h-4 text-teal-400" />
+                <FileTextIcon ref={cvIconRef} size={16} className="text-teal-400" />
                 <span>{t('hero.cvPdf')}</span>
               </a>
             </motion.div>
