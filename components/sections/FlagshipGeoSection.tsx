@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
 import { URBAN_CENSUS_ZONES } from '@/data/mauForondaCensusData';
 import { CASE_STUDIES } from '@/data/portfolioData';
-import { CodeBlock } from '../ui/CodeBlock';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { MapPin, Database, Server, CheckCircle2, Globe, Info } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -282,12 +281,26 @@ export function FlagshipGeoSection() {
             </h4>
             <p className="text-xs text-slate-300 leading-relaxed">{geolabsRelevance}</p>
 
-            <div className="pt-2">
-              <CodeBlock
-                filename="lib/copilotTools.ts"
-                language="typescript"
-                code={`// The copilot mutates the map through narrow, named tools.\n{\n  name: 'set_metric_threshold',\n  description: 'Dim every block outside a range on the active layer.',\n  parameters: {\n    type: 'object',\n    properties: {\n      min: { type: 'number' },\n      max: { type: 'number' },\n    },\n    required: ['min'],\n  },\n}`}
-              />
+            {/* Interactive Visual Tool Schema Card */}
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3 font-mono-tech text-xs">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-[11px]">
+                <span className="text-teal-400 font-bold">tools/copilot-schema.json</span>
+                <span className="text-slate-500">9 MAP TOOLS ACTIVE</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                <div className="p-2.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
+                  <span className="text-teal-400 font-bold block">set_map_layer</span>
+                  <span className="text-[10px] text-slate-400">Switches metric layer & color scale</span>
+                </div>
+                <div className="p-2.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
+                  <span className="text-cyan-400 font-bold block">fly_to_location</span>
+                  <span className="text-[10px] text-slate-400">Centers map on target city/block</span>
+                </div>
+                <div className="p-2.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
+                  <span className="text-emerald-400 font-bold block">set_metric_threshold</span>
+                  <span className="text-[10px] text-slate-400">Filters blocks by metric range</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

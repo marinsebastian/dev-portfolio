@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 
 interface EndpointSpec {
   id: string;
+  name: string;
   method: 'GET' | 'POST';
   path: string;
   /** Editable query string or JSON body, depending on the method. */
@@ -14,10 +15,13 @@ interface EndpointSpec {
 }
 
 const ENDPOINTS: EndpointSpec[] = [
-  { id: 'spatial', method: 'GET', path: '/api/spatial', defaultParams: 'dept=CBB', paramLabel: 'query' },
-  { id: 'php-sync', method: 'GET', path: '/api/php-sync', defaultParams: '', paramLabel: 'query' },
+  { id: 'spatial', name: 'GET /api/spatial (Bolivia Dept GeoJSON)', method: 'GET', path: '/api/spatial', defaultParams: 'dept=CBB', paramLabel: 'query' },
+  { id: 'php-sync', name: 'GET /api/php-sync (cURL Microservice Status)', method: 'GET', path: '/api/php-sync', defaultParams: '', paramLabel: 'query' },
+  { id: 'geo-ip', name: 'GET /api/geo-ip (Client Location Fallback)', method: 'GET', path: '/api/geo-ip', defaultParams: '', paramLabel: 'query' },
+  { id: 'ai-copilot', name: 'GET /api/ai-copilot (Multi-LLM Provider Status)', method: 'GET', path: '/api/ai-copilot', defaultParams: '', paramLabel: 'query' },
   {
     id: 'gemini',
+    name: 'POST /api/gemini-assistant (Gemini REST Proxy)',
     method: 'POST',
     path: '/api/gemini-assistant',
     defaultParams: '{\n  "metroArea": "La Paz",\n  "activeLayer": "TECH_CONN",\n  "language": "es"\n}',
@@ -97,10 +101,15 @@ export default function ApiExplorer() {
 
   return (
     <div className="space-y-3 rounded-xl border border-slate-800 bg-[#070a11] p-4">
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-        <Terminal className="h-3.5 w-3.5 shrink-0 text-teal-400" />
-        <span className="font-mono-tech text-[11px] font-bold uppercase text-slate-300">
-          {t('micro.apiTitle')}
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+        <div className="flex items-center gap-2">
+          <Terminal className="h-3.5 w-3.5 shrink-0 text-teal-400" />
+          <span className="font-mono-tech text-[11px] font-bold uppercase text-slate-300">
+            {t('micro.apiTitle')}
+          </span>
+        </div>
+        <span className="text-[10px] font-mono-tech text-teal-400 font-bold uppercase">
+          5 ENDPOINTS OPERATIVOS
         </span>
       </div>
 
@@ -112,7 +121,7 @@ export default function ApiExplorer() {
         >
           {endpoint.method}
         </span>
-        <label className="min-w-[180px] flex-1">
+        <label className="min-w-[200px] flex-1">
           <span className="sr-only">{t('micro.apiEndpoint')}</span>
           <select
             value={endpointId}
@@ -121,7 +130,7 @@ export default function ApiExplorer() {
           >
             {ENDPOINTS.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.path}
+                {e.name}
               </option>
             ))}
           </select>

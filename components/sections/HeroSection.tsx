@@ -52,28 +52,28 @@ export function HeroSection() {
               {language === 'es' ? t('hero.headlineEs') : t('hero.headlineEn')}
             </motion.p>
 
-            {/* Stack Highlights */}
+            {/* Stack Highlights (4 Badges in Clean Row) */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-wrap gap-2 pt-1 font-mono-tech text-xs text-slate-400"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono-tech text-xs text-slate-400"
             >
-              <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center space-x-1.5 text-slate-200 font-medium">
+              <span className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center space-x-1.5 text-slate-200 font-medium">
                 <ShieldCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                <span>{t('hero.badgeNext')}</span>
+                <span className="truncate">{t('hero.badgeNext')}</span>
               </span>
-              <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center space-x-1.5 text-slate-200 font-medium">
+              <span className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center space-x-1.5 text-slate-200 font-medium">
                 <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>{t('hero.badgePhp')}</span>
+                <span className="truncate">{t('hero.badgePhp')}</span>
               </span>
-              <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center space-x-1.5 text-slate-200 font-medium">
+              <span className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center space-x-1.5 text-slate-200 font-medium">
                 <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>{t('hero.badgeGis')}</span>
+                <span className="truncate">{t('hero.badgeGis')}</span>
               </span>
-              <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center space-x-1.5 text-slate-200 font-medium">
+              <span className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center space-x-1.5 text-slate-200 font-medium">
                 <Terminal className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>{t('hero.badgeLinux')}</span>
+                <span className="truncate">{t('hero.badgeLinux')}</span>
               </span>
             </motion.div>
 
@@ -119,15 +119,10 @@ export function HeroSection() {
             <div className="rounded-2xl border border-slate-800 bg-[#0f172a]/95 shadow-2xl p-6 lg:p-7 space-y-6">
               
               {/* Header: RESUMEN PROFESIONAL */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-3.5 h-3.5 rounded-full bg-teal-400 animate-pulse" />
-                  <span className="font-mono-tech text-sm sm:text-base font-extrabold text-white tracking-wider uppercase">
-                    {t('hero.telemetryTitle')}
-                  </span>
-                </div>
-                <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-mono-tech text-xs font-bold border border-emerald-500/40">
-                  {t('hero.telemetryStatus')}
+              <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
+                <div className="w-3.5 h-3.5 rounded-full bg-teal-400 animate-pulse shrink-0" />
+                <span className="font-mono-tech text-sm sm:text-base font-extrabold text-white tracking-wider uppercase">
+                  {t('hero.telemetryTitle')}
                 </span>
               </div>
 

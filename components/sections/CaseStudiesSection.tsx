@@ -3,7 +3,6 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
 import { CASE_STUDIES } from '@/data/portfolioData';
-import { CodeBlock } from '../ui/CodeBlock';
 import { GithubIcon } from '../ui/GithubIcon';
 import { ShoppingBag, Calendar, Server, MapPin, CheckCircle2, ArrowUpRight, ExternalLink, Lock, LucideIcon } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -191,13 +190,17 @@ export function CaseStudiesSection() {
               <VoronoiLabClient />
             </div>
           ) : activeStudy.codeSnippet ? (
-            <div className="space-y-2 pt-2">
-              <span className="text-xs font-mono-tech text-slate-400 block">{t('caseStudies.codeSampleTitle')}</span>
-              <CodeBlock
-                filename={activeStudy.codeSnippet.filename}
-                language={activeStudy.codeSnippet.language}
-                code={activeStudy.codeSnippet.code}
-              />
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3 font-mono-tech text-xs">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-[11px]">
+                <span className="text-teal-400 font-bold">{activeStudy.codeSnippet.filename}</span>
+                <span className="text-slate-500 font-bold uppercase">{activeStudy.codeSnippet.language} ENGINE</span>
+              </div>
+              <div className="p-3 rounded bg-slate-900 border border-slate-800 text-slate-300 text-[11px] leading-relaxed">
+                <span className="text-cyan-300 font-bold block mb-1">ARQUITECTURA DE INTEGRACIÓN OPERATIVA</span>
+                <p className="text-slate-400 font-sans text-xs">
+                  Componente de microservicio optimizado para alta concurrencia, sincronización transaccional y comunicación REST/cURL segura.
+                </p>
+              </div>
             </div>
           ) : null}
 

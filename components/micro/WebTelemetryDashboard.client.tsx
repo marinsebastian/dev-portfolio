@@ -51,13 +51,18 @@ function subscribeNoop(): () => void {
  * comes from rAF deltas, load timings from the Navigation Timing API, and the
  * API latency figure from an actual round trip to /api/spatial.
  */
+let globalTelemetryState = {
+  clicks: 0,
+  seconds: 0,
+};
+
 export default function WebTelemetryDashboard() {
   const { t, language } = useLanguage();
 
   const [fps, setFps] = useState(0);
   const [samples, setSamples] = useState<Sample[]>([]);
-  const [clicks, setClicks] = useState(0);
-  const [seconds, setSeconds] = useState(0);
+  const [clicks, setClicks] = useState(globalTelemetryState.clicks);
+  const [seconds, setSeconds] = useState(globalTelemetryState.seconds);
   const [latency, setLatency] = useState<number | null>(null);
 
   // Navigation timings are fixed for the life of the page, so they are read
@@ -94,10 +99,16 @@ export default function WebTelemetryDashboard() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Session timer and click counter.
+  // Session timer and click counter (synced globally so state persists across tab mounts)
   useEffect(() => {
-    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
-    const onClick = () => setClicks((c) => c + 1);
+    const timer = setInterval(() => {
+      globalTelemetryState.seconds += 1;
+      setSeconds(globalTelemetryState.seconds);
+    }, 1000);
+    const onClick = () => {
+      globalTelemetryState.clicks += 1;
+      setClicks(globalTelemetryState.clicks);
+    };
     window.addEventListener('click', onClick);
     return () => {
       clearInterval(timer);

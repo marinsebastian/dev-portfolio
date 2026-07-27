@@ -3,17 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, Navigation } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole } from '@/context/GeoConsoleContext';
-import { lookupIpLocation, locationFromIp } from '@/lib/geolocation';
+import { lookupIpLocation, locationFromIp, locationFromPosition } from '@/lib/geolocation';
 
 /**
  * Small map centred on wherever the visitor is inferred to be, alongside a
  * plain-language explanation of how that was worked out.
- *
- * Deliberately raster-only: this is a locator, not an analysis surface, so it
- * skips the PMTiles vector source and its worker entirely.
  */
 export default function UserSpatialMiniMap() {
   const { t } = useLanguage();
@@ -22,13 +19,11 @@ export default function UserSpatialMiniMap() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const [lookupFailed, setLookupFailed] = useState(false);
+  const [gpsRequesting, setGpsRequesting] = useState(false);
 
-  // Derived rather than stored: a lookup is in flight exactly when there is no
-  // location yet and the last attempt has not failed.
-  const resolving = !userLocation && !lookupFailed;
+  const resolving = (!userLocation && !lookupFailed) || gpsRequesting;
 
-  // Fall back to a coarse IP lookup when the visitor has not shared a position,
-  // so this pillar always has something real to show.
+  // Fall back to a coarse IP lookup when the visitor has not shared a position
   useEffect(() => {
     if (userLocation || lookupFailed) return;
     let cancelled = false;
@@ -83,7 +78,7 @@ export default function UserSpatialMiniMap() {
     if (!map || !userLocation) return;
 
     const el = document.createElement('div');
-    el.className = 'h-3.5 w-3.5 rounded-full bg-teal-400 ring-4 ring-teal-400/25';
+    el.className = 'h-4 w-4 rounded-full bg-teal-400 ring-4 ring-teal-400/30 animate-pulse';
 
     markerRef.current?.remove();
     markerRef.current = new maplibregl.Marker({ element: el })
@@ -92,10 +87,26 @@ export default function UserSpatialMiniMap() {
 
     map.flyTo({
       center: [userLocation.lng, userLocation.lat],
-      zoom: userLocation.source === 'gps' ? 12 : 9,
+      zoom: userLocation.source === 'gps' ? 13.5 : 10.5,
       duration: 1600,
     });
   }, [userLocation]);
+
+  const requestGpsLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+    setGpsRequesting(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsRequesting(false);
+        setUserLocation(locationFromPosition(pos));
+      },
+      () => {
+        setGpsRequesting(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
 
   return (
     <div className="space-y-3 rounded-xl border border-slate-800 bg-[#070a11] p-4">
@@ -104,7 +115,18 @@ export default function UserSpatialMiniMap() {
           <MapPin className="h-3.5 w-3.5 shrink-0 text-teal-400" />
           {t('micro.spatialTitle')}
         </span>
-        {resolving && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />}
+        <div className="flex items-center gap-2">
+          {resolving && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />}
+          <button
+            type="button"
+            onClick={requestGpsLocation}
+            disabled={gpsRequesting}
+            className="flex items-center space-x-1 px-2.5 py-1 rounded bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 text-[10px] font-mono-tech font-bold transition-all border border-teal-500/40"
+          >
+            <Navigation className="w-3 h-3 text-teal-400 shrink-0" />
+            <span>GPS</span>
+          </button>
+        </div>
       </div>
 
       <div className="h-48 w-full overflow-hidden rounded-lg border border-slate-800">

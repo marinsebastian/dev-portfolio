@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
-import { CodeBlock } from '../ui/CodeBlock';
+import { Terminal, Shield, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 const PlaywrightTestRunner = dynamic(() => import('../micro/PlaywrightTestRunner.client'), {
   ssr: false,
@@ -12,126 +13,39 @@ const PlaywrightTestRunner = dynamic(() => import('../micro/PlaywrightTestRunner
     </div>
   ),
 });
-import { Terminal, Shield } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+
+const LinuxTerminalConsole = dynamic(() => import('../micro/LinuxTerminalConsole.client'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-64 w-full items-center justify-center rounded-xl border border-slate-800 bg-[#070a11]">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-400 border-t-transparent" />
+    </div>
+  ),
+});
 
 export function WorkflowQASection() {
   const { t, language } = useLanguage();
 
-  const WORKFLOW_FILES = [
+  const WORKFLOW_MODULES = [
     {
       id: 'playwright',
-      title: 'Playwright Smoke Test',
-      subtitle: language === 'es' ? 'QA Automatizado & Pruebas E2E' : 'Automated QA & E2E Validation',
-      filename: 'tests/smoke.spec.ts',
-      language: 'typescript',
-      code: `import { test, expect } from '@playwright/test';
-
-test.describe('Portfolio Engineering Smoke Test Suite', () => {
-  test('should load homepage and verify hero telemetry', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('h1')).toContainText('Full-Stack');
-    await expect(page.getByText('DISPONIBLE / OPERATIVO')).toBeVisible();
-  });
-
-  test('should verify CV download link returns HTTP 200', async ({ request }) => {
-    const response = await request.get('/CV%20Sebastian%20Marin.pdf');
-    expect(response.status()).toBe(200);
-  });
-
-  test('should interact with Leaflet map region selector', async ({ page }) => {
-    await page.goto('/#flagship');
-    await page.click('button:has-text("Cochabamba")');
-    await expect(page.getByText('Cochabamba (CBB)')).toBeVisible();
-  });
-});`
+      title: 'Playwright E2E Smoke Tests',
+      subtitle: language === 'es' ? 'Ejecución Live de Pruebas Automatizadas' : 'Live Automated QA Execution',
     },
     {
       id: 'php-cron',
-      title: 'PHP Background Cron Sync',
-      subtitle: language === 'es' ? 'Sincronización cURL API & Registro PDO' : 'cURL API Sync & PDO Storage',
-      filename: 'backend/php/cron_sync.php',
-      language: 'php',
-      code: `<?php
-// Linux CLI background cron job script for external dataset synchronization
-declare(strict_types=1);
-
-require_once __DIR__ . '/vendor/autoload.php';
-
-$pdo = new PDO('mysql:host=localhost;dbname=geo_platform;charset=utf8mb4', 'app_user', $_ENV['DB_PASS'], [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-]);
-
-$ch = curl_init("https://api.internal.gov/v1/spatial-records");
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 30,
-    CURLOPT_HTTPHEADER => ["Accept: application/json"]
-]);
-
-$response = curl_exec($ch);
-if (curl_errno($ch)) {
-    fwrite(STDERR, "cURL Error: " . curl_error($ch) . "\n");
-    exit(1);
-}
-curl_close($ch);
-
-$records = json_decode($response, true);
-$stmt = $pdo->prepare("INSERT INTO region_metrics (dept_code, metric_value, updated_at) VALUES (:dept, :val, NOW())");
-foreach ($records['items'] as $item) {
-    $stmt->execute([':dept' => $item['dept'], ':val' => $item['val']]);
-}
-
-fwrite(STDOUT, "[" . date('Y-m-d H:i:s') . "] Synced " . count($records['items']) . " records successfully.\n");`
+      title: 'PHP & Linux Cron Automation',
+      subtitle: language === 'es' ? 'Consola CLI de Sincronización cURL & PDO' : 'cURL & PDO Sync CLI Console',
     },
-    {
-      id: 'docker',
-      title: 'Docker Compose Stack',
-      subtitle: language === 'es' ? 'Despliegue de Entorno Aislado' : 'Isolated Environment Deployment',
-      filename: 'docker-compose.yml',
-      language: 'yaml',
-      code: `version: '3.8'
-
-services:
-  web:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - GEMINI_API_KEY=\${GEMINI_API_KEY}
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/spatial"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  database:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: geo_db
-      POSTGRES_USER: geo_admin
-      POSTGRES_PASSWORD: \${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-volumes:
-  postgres_data:`
-    }
   ];
 
-  const [activeFileId, setActiveFileId] = useState(WORKFLOW_FILES[0].id);
-  const activeFile = WORKFLOW_FILES.find((f) => f.id === activeFileId) || WORKFLOW_FILES[0];
+  const [activeModuleId, setActiveModuleId] = useState(WORKFLOW_MODULES[0].id);
 
   return (
     <section className="py-20 bg-[#070a11] relative border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <SectionReveal className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <SectionReveal className="text-center max-w-3xl mx-auto mb-14 space-y-4">
           <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
             <span className="text-slate-600" aria-hidden="true">{'//'}</span>
             <span className="uppercase tracking-widest font-semibold">{t('workflow.tag')}</span>
@@ -146,26 +60,27 @@ volumes:
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
-          {/* File Switcher */}
-          <div className="lg:col-span-4 flex flex-col justify-between space-y-3 h-full">
+          {/* Module Switcher Tabs */}
+          <div className="lg:col-span-4 flex flex-col justify-between space-y-4">
             <div className="space-y-3">
-              {WORKFLOW_FILES.map((file) => {
-                const isActive = file.id === activeFileId;
+              {WORKFLOW_MODULES.map((mod) => {
+                const isActive = mod.id === activeModuleId;
                 return (
                   <button
-                    key={file.id}
-                    onClick={() => setActiveFileId(file.id)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all ${
+                    key={mod.id}
+                    type="button"
+                    onClick={() => setActiveModuleId(mod.id)}
+                    className={`w-full text-left p-4.5 rounded-xl border transition-all ${
                       isActive
                         ? 'bg-slate-900 border-teal-500 text-teal-300 font-bold shadow-lg'
                         : 'bg-slate-900/40 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
                     }`}
                   >
                     <div className="flex items-center space-x-3 font-mono-tech text-xs">
-                      <Terminal className="w-4 h-4 text-teal-400 shrink-0" />
+                      <Terminal className="w-4.5 h-4.5 text-teal-400 shrink-0" />
                       <div>
-                        <div className="text-slate-100 font-bold">{file.title}</div>
-                        <div className="text-[11px] text-slate-400">{file.subtitle}</div>
+                        <div className="text-slate-100 font-bold text-sm">{mod.title}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{mod.subtitle}</div>
                       </div>
                     </div>
                   </button>
@@ -175,23 +90,22 @@ volumes:
 
             <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 font-mono-tech text-xs text-slate-300 space-y-2 mt-auto">
               <div className="flex items-center space-x-2 text-emerald-400 font-bold">
-                <Shield className="w-4 h-4 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{t('workflow.qaVerified')}</span>
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                {t('workflow.qaDescription')}
+              <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                {t('workflow.qaNote')}
               </p>
             </div>
           </div>
 
-          {/* Active File Viewer */}
+          {/* Active Interactive Micro-App Console */}
           <div className="lg:col-span-8 h-full space-y-4">
-            <PlaywrightTestRunner />
-            <CodeBlock
-              filename={activeFile.filename}
-              language={activeFile.language}
-              code={activeFile.code}
-            />
+            {activeModuleId === 'playwright' ? (
+              <PlaywrightTestRunner />
+            ) : (
+              <LinuxTerminalConsole />
+            )}
           </div>
 
         </div>

@@ -396,10 +396,10 @@ export function CopilotTrigger({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="copilot-gradient-border group relative inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2.5 font-mono-tech text-xs font-bold text-slate-100 transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+      className="copilot-gradient-border group relative inline-flex min-h-[46px] items-center gap-2.5 rounded-xl px-5 py-3 font-mono-tech text-xs font-extrabold text-white tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_30px_rgba(20,184,166,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
     >
-      <Sparkles className="h-4 w-4 shrink-0 text-teal-300" />
-      <span>{t('copilot.trigger')}</span>
+      <Sparkles className="h-4 w-4 shrink-0 text-teal-300 animate-pulse group-hover:rotate-12 transition-transform duration-300" />
+      <span className="uppercase tracking-wider font-extrabold text-teal-300 group-hover:text-white transition-colors">{t('copilot.trigger')}</span>
     </button>
   );
 }
