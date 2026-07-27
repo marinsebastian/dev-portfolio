@@ -24,7 +24,15 @@ export interface TranslationDictionary {
     badgeLinux: string;
     telemetryTitle: string;
     telemetryDegree: string;
+    telemetryDegreeLabel: string;
     telemetryWork: string;
+    telemetryWorkLabel: string;
+    telemetrySpecialty: string;
+    telemetrySpecialtyLabel: string;
+    telemetryQaLabel: string;
+    telemetryQaValue: string;
+    telemetryDeployLabel: string;
+    telemetryDeployValue: string;
     telemetryStatus: string;
   };
   proofStrip: {
@@ -78,6 +86,25 @@ export interface TranslationDictionary {
     geoBoliviaTitle: string;
     geoBoliviaProvider: string;
     geoBoliviaDesc: string;
+    datasetBannerTitle: string;
+    datasetBannerDesc: string;
+    scopeSelectorLabel: string;
+    atlasLinkLabel: string;
+    legendLayerTitle: string;
+    zonesSuffix: string;
+    provenanceNote: string;
+    zoomNoticeTitle: string;
+    zoomNoticeBody: string;
+    zoomNoticeAction: string;
+    blockInspectorTitle: string;
+    blockInspectorSubtitle: string;
+    blockIndexNote: string;
+    blockPopulationLabel: string;
+    blockDensityLabel: string;
+    blockInternetLabel: string;
+    blockWaterLabel: string;
+    blockEducationLabel: string;
+    aiNoBlockSelected: string;
   };
   caseStudies: {
     tag: string;
@@ -139,6 +166,8 @@ export interface TranslationDictionary {
     sendButton: string;
     sentSuccess: string;
     sentSuccessDesc: string;
+    formNote: string;
+    reopenMailClient: string;
   };
   footer: {
     tagline: string;
@@ -172,12 +201,20 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       cvPdf: "CV (PDF)",
       badgeNext: "Next.js & TypeScript",
       badgePhp: "PHP 8 & cURL REST",
-      badgeGis: "Mapas Espaciales Leaflet",
+      badgeGis: "MapLibre GL & PMTiles",
       badgeLinux: "CLI Linux & Cron Jobs",
-      telemetryTitle: "DIAGNÓSTICO TÉCNICO",
+      telemetryTitle: "RESUMEN PROFESIONAL",
       telemetryDegree: "Ingeniero de Sistemas (UMSS 2024)",
+      telemetryDegreeLabel: "TITULACIÓN PROFESIONAL",
       telemetryWork: "Awtu Commerce (BCP QR, Gemini API, Next.js)",
-      telemetryStatus: "LISTO PARA DESPLIEGUE"
+      telemetryWorkLabel: "EXPERIENCIA COMERCIAL REAL",
+      telemetrySpecialty: "Interfaces Web, APIs REST, Mapas Espaciales e IA",
+      telemetrySpecialtyLabel: "ESPECIALIDAD TÉCNICA",
+      telemetryQaLabel: "PRUEBAS AUTOMATIZADAS",
+      telemetryQaValue: "Playwright E2E",
+      telemetryDeployLabel: "DESPLIEGUE",
+      telemetryDeployValue: "Vercel & Docker",
+      telemetryStatus: "DISPONIBLE PARA ENTREVISTAS"
     },
     proofStrip: {
       title: "PRUEBAS TÉCNICAS CLAVE:"
@@ -203,7 +240,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       connectivity: "ÍNDICE DE CONECTIVIDAD",
       infrastructure: "INFRAESTRUCTURA URBANA",
       sectors: "SECTORES CLAVE:",
-      comparisonTitle: "COMPARATIVA DE INDICADORES DEPARTAMENTALES",
+      comparisonTitle: "COMPARATIVA DE ZONAS URBANAS",
       relevanceTitle: "Relevancia para el Rol Full-Stack",
       proofTitle: "Puntos de Prueba Técnica",
       scopeLabel: "NIVEL DE COBERTURA ESPACIAL:",
@@ -229,7 +266,26 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       legendHigh: "Alto / Consolidado",
       geoBoliviaTitle: "Límite Referencial Departamentos del Estado Plurinacional de Bolivia 2015",
       geoBoliviaProvider: "GeoBolivia / Viceministerio de Autonomías (339 Municipios)",
-      geoBoliviaDesc: "Muestra la división política-administrativa de los 9 departamentos de Bolivia, entidades subnacionales mayores en las que se subdivide el territorio del Estado Plurinacional, que cuentan con autonomía reconocida a nivel ejecutivo y legislativo. Dato referencial de GeoBolivia y Censo 2024 de Mauricio Foronda (@mauforonda)."
+      geoBoliviaDesc: "Muestra la división política-administrativa de los 9 departamentos de Bolivia, entidades subnacionales mayores en las que se subdivide el territorio del Estado Plurinacional, que cuentan con autonomía reconocida a nivel ejecutivo y legislativo. Dato referencial de GeoBolivia y Censo 2024 de Mauricio Foronda (@mauforonda).",
+      datasetBannerTitle: "Manzanos Reales INE — Censo 2024 (Flujo Vectorial PMTiles)",
+      datasetBannerDesc: "Consume directamente los archivos vectoriales PMTiles publicados por Mauricio Foronda (@mauforonda) a partir del Censo de Población y Vivienda 2024 del INE Bolivia. El archivo contiene 247.346 manzanos urbanos con su geometría irregular real y 28 indicadores censales por manzano.",
+      scopeSelectorLabel: "ALCANCE ESPACIAL (MANZANOS REALES PMTILES):",
+      atlasLinkLabel: "Atlas Urbano Censo 2024 (@mauforonda)",
+      legendLayerTitle: "MANZANOS REALES INE (PMTILES)",
+      zonesSuffix: "ZONAS",
+      provenanceNote: "Los polígonos y los indicadores por manzano provienen del archivo PMTiles del Censo 2024 (haz clic en un manzano para verlos). Las cifras agregadas de esta tarjeta son referencias ilustrativas de zona, no lecturas oficiales del INE.",
+      zoomNoticeTitle: "SIN COBERTURA DE MANZANOS EN ESTE NIVEL DE ZOOM",
+      zoomNoticeBody: "El archivo PMTiles del Censo 2024 se genera desde el nivel de zoom 8. En la vista nacional solo se muestra el mapa base.",
+      zoomNoticeAction: "Acercar a los manzanos",
+      blockInspectorTitle: "MANZANO SELECCIONADO",
+      blockInspectorSubtitle: "MANZANO REAL — CENSO 2024 INE",
+      blockIndexNote: "Valores leídos directamente del archivo PMTiles del Censo 2024: población y densidad son conteos absolutos por manzano; los porcentajes son proporciones de vivienda del propio archivo.",
+      blockPopulationLabel: "Población",
+      blockDensityLabel: "Densidad",
+      blockInternetLabel: "Internet/TIC",
+      blockWaterLabel: "Agua por cañería",
+      blockEducationLabel: "Educación superior",
+      aiNoBlockSelected: "Selecciona un manzano en el mapa para incluir sus indicadores en el análisis."
     },
     caseStudies: {
       tag: "EJECUCIÓN TÉCNICA DEMOSTRADA",
@@ -288,13 +344,15 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       emailPlaceholder: "nombre@empresa.com",
       messageLabel: "DETALLES DE LA CONSULTA O ROL",
       messagePlaceholder: "Describa la oportunidad o consulta técnica...",
-      sendButton: "ENVIAR MENSAJE",
-      sentSuccess: "MENSAJE ENVIADO CORRECTAMENTE",
-      sentSuccessDesc: "¡Gracias! Sebastian revisará tu mensaje y responderá a la brevedad."
+      sendButton: "ABRIR EN MI CLIENTE DE CORREO",
+      sentSuccess: "BORRADOR ABIERTO EN TU CLIENTE DE CORREO",
+      sentSuccessDesc: "Este sitio es estático y no tiene servidor de correo: el formulario prepara el mensaje y lo abre en tu aplicación de correo. Revísalo y pulsa enviar allí. Si no se abrió, escribe directamente a marinsebastian143@gmail.com.",
+      formNote: "Este formulario no envía nada por sí solo: arma un borrador y lo abre en tu cliente de correo para que tú lo envíes.",
+      reopenMailClient: "Volver a abrir el borrador"
     },
     footer: {
       tagline: "Consola de Ingeniería Operativa v1.0",
-      builtWith: "Construido con Next.js 16, TypeScript, Tailwind CSS, Leaflet y Framer Motion",
+      builtWith: "Construido con Next.js 16, TypeScript, Tailwind CSS, MapLibre GL, Leaflet y Framer Motion",
       location: "Cochabamba, Bolivia"
     }
   },
@@ -320,12 +378,20 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       cvPdf: "CV (PDF)",
       badgeNext: "Next.js & TypeScript",
       badgePhp: "PHP 8 & cURL REST",
-      badgeGis: "Leaflet Spatial Maps",
+      badgeGis: "MapLibre GL & PMTiles",
       badgeLinux: "Linux CLI & Cron Jobs",
-      telemetryTitle: "TECHNICAL DIAGNOSTIC",
+      telemetryTitle: "PROFESSIONAL SUMMARY",
       telemetryDegree: "Systems Engineer (UMSS 2024)",
+      telemetryDegreeLabel: "PROFESSIONAL DEGREE",
       telemetryWork: "Awtu Commerce (BCP QR, Gemini API, Next.js)",
-      telemetryStatus: "READY TO DEPLOY"
+      telemetryWorkLabel: "REAL COMMERCIAL EXPERIENCE",
+      telemetrySpecialty: "Web Interfaces, REST APIs, Spatial Maps & AI",
+      telemetrySpecialtyLabel: "TECHNICAL SPECIALTY",
+      telemetryQaLabel: "AUTOMATED TESTING",
+      telemetryQaValue: "Playwright E2E",
+      telemetryDeployLabel: "DEPLOYMENT",
+      telemetryDeployValue: "Vercel & Docker",
+      telemetryStatus: "AVAILABLE FOR INTERVIEWS"
     },
     proofStrip: {
       title: "CORE TECHNICAL PROOF:"
@@ -351,7 +417,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       connectivity: "CONNECTIVITY INDEX",
       infrastructure: "URBAN INFRASTRUCTURE",
       sectors: "KEY SECTORS:",
-      comparisonTitle: "DEPARTMENTAL METRICS COMPARISON",
+      comparisonTitle: "URBAN ZONE COMPARISON",
       relevanceTitle: "Relevance for Full-Stack Role",
       proofTitle: "Technical Proof Points",
       scopeLabel: "SPATIAL SCOPE LEVEL:",
@@ -377,7 +443,26 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       legendHigh: "High / Consolidated",
       geoBoliviaTitle: "Referential Boundary of Departments of the Plurinational State of Bolivia 2015",
       geoBoliviaProvider: "GeoBolivia / Viceministerio de Autonomías (339 Municipalities)",
-      geoBoliviaDesc: "Displays the political-administrative division of the 9 departments of Bolivia, major subnational entities with executive and legislative autonomy. Sourced from GeoBolivia referential datasets & Mauricio Foronda (@mauforonda) 2024 Census open data."
+      geoBoliviaDesc: "Displays the political-administrative division of the 9 departments of Bolivia, major subnational entities with executive and legislative autonomy. Sourced from GeoBolivia referential datasets & Mauricio Foronda (@mauforonda) 2024 Census open data.",
+      datasetBannerTitle: "Real INE City Blocks — 2024 Census (PMTiles Vector Stream)",
+      datasetBannerDesc: "Streams the PMTiles vector archive published by Mauricio Foronda (@mauforonda) from Bolivia's INE 2024 Population and Housing Census. The archive holds 247,346 urban blocks with their real irregular geometry and 28 census indicators per block.",
+      scopeSelectorLabel: "SPATIAL SCOPE (REAL PMTILES BLOCKS):",
+      atlasLinkLabel: "Atlas Urbano 2024 Census (@mauforonda)",
+      legendLayerTitle: "REAL INE BLOCKS (PMTILES)",
+      zonesSuffix: "ZONES",
+      provenanceNote: "Polygons and per-block indicators come from the 2024 Census PMTiles archive (click a block to see them). The aggregate figures on this card are illustrative zone references, not official INE readings.",
+      zoomNoticeTitle: "NO BLOCK COVERAGE AT THIS ZOOM LEVEL",
+      zoomNoticeBody: "The 2024 Census PMTiles archive is generated from zoom level 8 upward. The national view shows the base map only.",
+      zoomNoticeAction: "Zoom in to the blocks",
+      blockInspectorTitle: "SELECTED BLOCK",
+      blockInspectorSubtitle: "REAL CITY BLOCK — 2024 INE CENSUS",
+      blockIndexNote: "Read straight from the 2024 Census PMTiles archive: population and density are absolute per-block counts; the percentages are household proportions carried in the archive itself.",
+      blockPopulationLabel: "Population",
+      blockDensityLabel: "Density",
+      blockInternetLabel: "Internet/ICT",
+      blockWaterLabel: "Piped water",
+      blockEducationLabel: "Higher education",
+      aiNoBlockSelected: "Select a block on the map to include its indicators in the analysis."
     },
     caseStudies: {
       tag: "PROVEN TECHNICAL EXECUTION",
@@ -436,13 +521,15 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       emailPlaceholder: "name@company.com",
       messageLabel: "INQUIRY OR ROLE DETAILS",
       messagePlaceholder: "Describe role opportunities or technical inquiry...",
-      sendButton: "DISPATCH MESSAGE",
-      sentSuccess: "MESSAGE SENT SUCCESSFULLY",
-      sentSuccessDesc: "Thank you! Sebastian will review your message and reply promptly."
+      sendButton: "OPEN IN MY EMAIL CLIENT",
+      sentSuccess: "DRAFT OPENED IN YOUR EMAIL CLIENT",
+      sentSuccessDesc: "This is a static site with no mail server: the form composes the message and opens it in your email application. Review it and hit send there. If nothing opened, write directly to marinsebastian143@gmail.com.",
+      formNote: "This form does not send anything on its own — it composes a draft and opens it in your email client so you can send it.",
+      reopenMailClient: "Reopen the draft"
     },
     footer: {
       tagline: "Operational Engineering Console v1.0",
-      builtWith: "Built with Next.js 16, TypeScript, Tailwind CSS, Leaflet & Framer Motion",
+      builtWith: "Built with Next.js 16, TypeScript, Tailwind CSS, MapLibre GL, Leaflet & Framer Motion",
       location: "Cochabamba, Bolivia"
     }
   }

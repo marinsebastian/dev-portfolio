@@ -12,16 +12,34 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dev-portfolio-lilac-chi.vercel.app";
+
+// The page ships in Spanish by default, so the shared preview is Spanish too.
+const SITE_TITLE = "Sebastian Marin | Desarrollador Full-Stack — Interfaces, APIs, Datos Espaciales y Automatización";
+const SITE_DESCRIPTION =
+  "Ingeniero de Sistemas y desarrollador Full-Stack. Construyo interfaces web, APIs REST en Next.js y PHP, mapas vectoriales con MapLibre GL y PMTiles, y automatización en Linux.";
+
 export const metadata: Metadata = {
-  title: "Sebastian Marin | Full-Stack Developer — Interfaces, APIs, Spatial Data & Automation",
-  description: "Systems Engineer and Full-Stack Developer specializing in Next.js, React, TypeScript, PHP/cURL REST APIs, SQL, Leaflet spatial maps, Linux server automation, and Gemini AI features.",
-  keywords: ["Sebastian Marin", "Full-Stack Developer", "Next.js", "TypeScript", "PHP", "REST API", "Geospatial", "Leaflet", "Bolivia", "Linux", "Docker", "Playwright"],
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  keywords: ["Sebastian Marin", "Full-Stack Developer", "Next.js", "TypeScript", "PHP", "REST API", "Geospatial", "MapLibre GL", "PMTiles", "Bolivia", "Linux", "Docker", "Playwright"],
   authors: [{ name: "Sebastian Marin", url: "https://github.com/marinsebastian" }],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Sebastian Marin | Full-Stack Developer",
-    description: "Operational web interfaces, spatial data visualizations, REST APIs, and automation systems.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Sebastian Marin — Portafolio de Ingeniería",
     type: "website",
     locale: "es_BO",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
 };
 

@@ -5,13 +5,29 @@ import { Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
 import { GithubIcon } from '../ui/GithubIcon';
 import { useLanguage } from '@/context/LanguageContext';
 
+const CONTACT_EMAIL = 'marinsebastian143@gmail.com';
+
 export function ContactSection() {
   const { t } = useLanguage();
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
+  // No mail server behind a static site: compose a draft and hand it to the
+  // user's own mail client so nothing is silently dropped.
+  const buildMailtoUrl = () => {
+    const subject = `Portfolio contact — ${formData.name || 'Sin nombre'}`;
+    const body = [
+      `Nombre / Empresa: ${formData.name}`,
+      `Email de respuesta: ${formData.email}`,
+      '',
+      formData.message,
+    ].join('\n');
+    return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    window.location.href = buildMailtoUrl();
     setFormSubmitted(true);
   };
 
@@ -21,7 +37,7 @@ export function ContactSection() {
         
         <SectionReveal className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
-            <span className="text-slate-600">//</span>
+            <span className="text-slate-600" aria-hidden="true">{'//'}</span>
             <span className="uppercase tracking-widest font-semibold font-mono-tech">{t('contact.tag')}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
@@ -95,10 +111,17 @@ export function ContactSection() {
                 <h3 className="text-lg font-bold text-white tracking-tight mb-6">{t('contact.formTitle')}</h3>
 
                 {formSubmitted ? (
-                  <div className="p-6 rounded-xl bg-teal-500/10 border border-teal-500/40 text-teal-300 font-mono-tech text-xs space-y-2 text-center my-auto">
+                  <div className="p-6 rounded-xl bg-teal-500/10 border border-teal-500/40 text-teal-300 font-mono-tech text-xs space-y-3 text-center my-auto">
                     <CheckCircle2 className="w-8 h-8 text-teal-400 mx-auto" />
                     <div className="font-bold text-sm">{t('contact.sentSuccess')}</div>
-                    <p className="text-slate-300 text-xs">{t('contact.sentSuccessDesc')}</p>
+                    <p className="text-slate-300 text-xs leading-relaxed font-sans">{t('contact.sentSuccessDesc')}</p>
+                    <a
+                      href={buildMailtoUrl()}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-lg bg-slate-900 border border-teal-500/40 text-teal-300 hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>{t('contact.reopenMailClient')}</span>
+                    </a>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
@@ -140,11 +163,15 @@ export function ContactSection() {
 
                     <button
                       type="submit"
-                      className="flex items-center justify-center space-x-2 w-full py-3 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs font-mono-tech transition-all shadow-[0_0_20px_rgba(20,184,166,0.3)] cursor-pointer"
+                      className="flex items-center justify-center space-x-2 w-full py-3 min-h-[44px] rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs font-mono-tech transition-all shadow-[0_0_20px_rgba(20,184,166,0.3)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                     >
                       <Send className="w-4 h-4" />
                       <span>{t('contact.sendButton')}</span>
                     </button>
+
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
+                      {t('contact.formNote')}
+                    </p>
                   </form>
                 )}
               </div>

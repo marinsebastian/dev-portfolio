@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SectionReveal } from '../motion/SectionReveal';
 import { SEBASTIAN_CV_DATA } from '@/data/cvData';
 import { GithubIcon } from '../ui/GithubIcon';
@@ -16,15 +16,19 @@ import {
   MapPin,
   CheckCircle2,
   X,
-  Check
+  Check,
+  LucideIcon
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
+type CvTab = 'profile' | 'experience' | 'skills' | 'education';
+
 export function InteractiveCVSection() {
   const { t, language } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'profile' | 'experience' | 'skills' | 'education'>('profile');
+  const [activeTab, setActiveTab] = useState<CvTab>('profile');
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const previewButtonRef = useRef<HTMLButtonElement>(null);
 
   const cv = SEBASTIAN_CV_DATA;
 
@@ -34,6 +38,20 @@ export function InteractiveCVSection() {
     setTimeout(() => setCopiedEmail(false), 2000);
   };
 
+  // Escape closes the PDF dialog and focus returns to the trigger that opened it.
+  useEffect(() => {
+    if (!pdfModalOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPdfModalOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [pdfModalOpen]);
+
+  useEffect(() => {
+    if (!pdfModalOpen) previewButtonRef.current?.focus();
+  }, [pdfModalOpen]);
+
   return (
     <section id="cv" className="py-20 bg-[#0b0f17] relative border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,7 +59,7 @@ export function InteractiveCVSection() {
         {/* Section Header */}
         <SectionReveal className="text-center max-w-3xl mx-auto mb-12 space-y-4">
           <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
-            <span className="text-slate-600">//</span>
+            <span className="text-slate-600" aria-hidden="true">{'//'}</span>
             <span className="uppercase tracking-widest font-semibold">{t('cv.tag')}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
@@ -54,8 +72,10 @@ export function InteractiveCVSection() {
           {/* Action Bar for PDF & Quick Contact */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2 font-mono-tech text-xs">
             <button
+              ref={previewButtonRef}
+              type="button"
               onClick={() => setPdfModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold transition-all shadow-[0_0_15px_rgba(20,184,166,0.3)] cursor-pointer"
+              className="flex items-center space-x-2 px-4 py-2.5 min-h-[44px] rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold transition-all shadow-[0_0_15px_rgba(20,184,166,0.3)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             >
               <Eye className="w-4 h-4" />
               <span>{t('cv.previewPdf')}</span>
@@ -82,25 +102,27 @@ export function InteractiveCVSection() {
 
         {/* Tab Switcher */}
         <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {[
+          {([
             { id: 'profile', label: t('cv.tabProfile'), icon: User },
             { id: 'experience', label: t('cv.tabExperience'), icon: Briefcase },
             { id: 'skills', label: t('cv.tabSkills'), icon: Award },
             { id: 'education', label: t('cv.tabEducation'), icon: GraduationCap },
-          ].map((tab) => {
+          ] satisfies { id: CvTab; label: string; icon: LucideIcon }[]).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg border text-xs font-mono-tech transition-all cursor-pointer ${
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-4 py-2.5 min-h-[44px] rounded-lg border text-xs font-mono-tech transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                   isActive
                     ? 'bg-teal-500/15 border-teal-500 text-teal-300 font-bold shadow-lg'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-850 hover:text-slate-200'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                 }`}
               >
-                <Icon className="w-4 h-4 text-teal-400" />
+                <Icon className="w-4 h-4 text-teal-400 shrink-0" />
                 <span>{tab.label}</span>
               </button>
             );
@@ -267,14 +289,19 @@ export function InteractiveCVSection() {
 
       {/* PDF Document Preview Modal */}
       {pdfModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cv-pdf-dialog-title"
+        >
           <div className="bg-[#0f172a] border border-slate-800 rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900">
               <div className="flex items-center space-x-2">
                 <FileText className="w-5 h-5 text-teal-400" />
-                <span className="font-bold text-white text-sm">CV Sebastian Marin.pdf</span>
+                <span id="cv-pdf-dialog-title" className="font-bold text-white text-sm">CV Sebastian Marin.pdf</span>
                 <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-mono-tech">{t('cv.officialDoc')}</span>
               </div>
 
@@ -288,8 +315,11 @@ export function InteractiveCVSection() {
                   <span>{t('cv.downloadPdf')}</span>
                 </a>
                 <button
+                  type="button"
+                  autoFocus
                   onClick={() => setPdfModalOpen(false)}
-                  className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                  aria-label="Cerrar / Close"
+                  className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
                 >
                   <X className="w-6 h-6" />
                 </button>

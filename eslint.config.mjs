@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored MapLibre/PMTiles worker bundles staged by
+    // tools/copy-maplibre-worker.mjs — third-party, minified, not ours to lint.
+    "public/maplibre/maplibre-gl-*.mjs",
+    "public/maplibre/pmtiles.mjs",
+    "public/maplibre/fflate.mjs",
   ]),
 ]);
 

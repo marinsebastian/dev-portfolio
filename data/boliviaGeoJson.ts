@@ -53,14 +53,15 @@ export const BOLIVIA_DEPARTMENTS: DepartmentData[] = [
     population: "2,028,000",
     areaKm2: "55,631 km²",
     density: "36.4 hab/km²",
-    densityVal: 36.4,
+    connectivityIndex: 90,
+    infrastructureScore: 86,
     coordinates: [-17.3895, -66.1568],
     keySectors: ["Software & IT Services", "Agriculture", "Energy", "Higher Education"],
     summaryEs: "Hub tecnológico y académico de Bolivia. Concentración estratégica de talento en ingeniería de software y desarrollo de sistemas.",
     geojsonPolygon: [
       [-16.5, -66.8], [-16.2, -64.8], [-17.8, -64.5], [-18.5, -65.8], [-17.8, -67.0], [-16.5, -66.8]
     ]
-  } as any,
+  },
   {
     id: "ORU",
     name: "Oruro",
@@ -158,7 +159,3 @@ export const BOLIVIA_DEPARTMENTS: DepartmentData[] = [
     ]
   }
 ];
-
-// Complete CBB default values
-BOLIVIA_DEPARTMENTS[2].connectivityIndex = 90;
-BOLIVIA_DEPARTMENTS[2].infrastructureScore = 86;

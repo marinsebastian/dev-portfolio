@@ -123,7 +123,7 @@ volumes:
         
         <SectionReveal className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
-            <span className="text-slate-600">//</span>
+            <span className="text-slate-600" aria-hidden="true">{'//'}</span>
             <span className="uppercase tracking-widest font-semibold">{t('workflow.tag')}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">

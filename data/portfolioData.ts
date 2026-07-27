@@ -26,6 +26,9 @@ export interface CaseStudy {
   };
   liveDemoUrl?: string;
   githubUrl?: string;
+  /** Shown when there is no public link, so the absence is explained rather than silent. */
+  availabilityNote?: string;
+  availabilityNoteEs?: string;
 }
 
 export interface CapabilityPillar {
@@ -75,7 +78,7 @@ export const CAPABILITY_PILLARS: CapabilityPillar[] = [
     description: "Interactive web maps, GeoJSON region rendering, custom spatial polygon calculation, and GIS visualization for public datasets.",
     descriptionEs: "Mapas interactivos en la web, renderizado de polígonos GeoJSON por departamento/municipio, cálculo espacial y visualización GIS de datos públicos.",
     iconName: "MapPin",
-    techTags: ["Leaflet", "GeoJSON", "Spatial Queries", "Turf.js", "Spatial Analytics"],
+    techTags: ["MapLibre GL", "PMTiles", "Leaflet", "GeoJSON", "Computational Geometry"],
     highlightSnippet: `<MapContainer center={[-16.5, -64.5]} zoom={6}>\n  <GeoJSON data={boliviaDepartments} style={geoStyle} onEachFeature={onFeatureClick} />\n</MapContainer>`
   },
   {
@@ -106,33 +109,34 @@ export const CASE_STUDIES: CaseStudy[] = [
     summaryEs: "Panel de mapas interactivos que transforma datos socio-demográficos y urbanos de Bolivia en una consola de análisis visual.",
     problem: "Public socio-demographic, infrastructure, and regional economic datasets in Bolivia are often distributed in static PDFs or raw CSVs, making spatial correlation and rapid decision-making difficult.",
     problemEs: "Los datos públicos socio-demográficos, de infraestructura y de economía en Bolivia suelen distribuirse en documentos PDF estáticos o archivos CSV crudos, lo que dificulta la correlación espacial y la toma rápida de decisiones.",
-    solution: "Built a responsive Next.js application featuring an interactive Leaflet map, custom GeoJSON department polygon layers, dynamic data filters, demographic aggregation charts, and an AI-assisted spatial summary engine powered by Gemini API.",
-    solutionEs: "Desarrollé una aplicación responsiva con Next.js que integra un mapa interactivo con Leaflet, capas de polígonos GeoJSON por departamento, filtros dinámicos, gráficos demográficos y un motor de resumen narrativo espacial con Gemini API.",
+    solution: "Built a responsive Next.js application that streams the atlasurbano PMTiles vector archive with MapLibre GL, decodes its minified census attribute schema, paints four data-driven metric layers, and adds a server-side Gemini proxy for narrative summaries.",
+    solutionEs: "Desarrollé una aplicación responsiva en Next.js que transmite el archivo vectorial PMTiles de atlasurbano con MapLibre GL, decodifica su esquema minificado de atributos censales, pinta cuatro capas métricas basadas en datos y añade un proxy de Gemini en el servidor para resúmenes narrativos.",
     proofPoints: [
-      "Dynamic GeoJSON layer loading for 9 departments of Bolivia with instant spatial metric calculation.",
-      "Filter datasets by region, population density, connectivity index, and infrastructure coverage.",
-      "Integrated Gemini AI API proxy to generate automated narrative summaries of selected regional metrics.",
-      "Optimized client-side rendering with dynamic imports to achieve 60 FPS map pan and zoom interactions."
+      "Streams 247,346 real INE census block polygons from a 90 MB PMTiles archive using HTTP byte-range requests — no tile server and no hosted map service.",
+      "Decoded the archive's undocumented minified attribute schema (a1, b1, r1, v1, g1) and drives MapLibre GL interpolate expressions directly from it.",
+      "Four switchable census layers (density, connectivity, basic services, population) with click-to-inspect on individual blocks.",
+      "Server-side Gemini API proxy keeps the key off the client and caps output tokens per request."
     ],
     proofPointsEs: [
-      "Carga dinámica de capas GeoJSON para los 9 departamentos de Bolivia con cálculo inmediato de métricas espaciales.",
-      "Filtros de datos por región, densidad poblacional, índice de conectividad digital y cobertura de servicios básicos.",
-      "Integración de proxy backend para la API de Gemini AI que genera resúmenes narrativos de las métricas regionales seleccionadas.",
-      "Renderizado optimizado en el cliente con importaciones dinámicas para garantizar interactividad fluida a 60 FPS."
+      "Transmite 247.346 polígonos reales de manzanos del INE desde un archivo PMTiles de 90 MB mediante peticiones HTTP por rango de bytes — sin servidor de teselas ni servicio de mapas alojado.",
+      "Decodifiqué el esquema minificado de atributos del archivo (a1, b1, r1, v1, g1) y alimento con él las expresiones interpolate de MapLibre GL.",
+      "Cuatro capas censales conmutables (densidad, conectividad, servicios básicos, población) con inspección por clic sobre cada manzano.",
+      "Proxy de la API de Gemini en el servidor: la clave nunca llega al navegador y el consumo de tokens está acotado por petición."
     ],
-    techStack: ["Next.js 14", "TypeScript", "Leaflet", "GeoJSON", "Recharts", "Tailwind CSS", "Gemini API Proxy"],
-    geolabsRelevance: "Directly proves spatial data handling, Leaflet UI integration, client/server data isolation, interactive dashboard engineering, and modern REST/AI data pipelines.",
-    geolabsRelevanceEs: "Demuestra de forma directa el manejo de datos espaciales, integración de UI con Leaflet, aislamiento seguro cliente/servidor, desarrollo de paneles interactivos y pipelines de datos REST con Inteligencia Artificial.",
+    techStack: ["Next.js 16", "TypeScript", "MapLibre GL", "PMTiles", "Recharts", "Tailwind CSS", "Gemini API Proxy"],
+    geolabsRelevance: "Directly proves vector-tile handling, spatial data pipelines, client/server key isolation, interactive dashboard engineering, and reading an undocumented dataset schema end to end.",
+    geolabsRelevanceEs: "Demuestra de forma directa el manejo de teselas vectoriales, pipelines de datos espaciales, aislamiento de claves cliente/servidor, desarrollo de paneles interactivos y la lectura completa de un esquema de datos no documentado.",
     metrics: [
-      { label: "Departments Mapped", labelEs: "Departamentos Mapeados", value: "9 / 9" },
-      { label: "Data Metrics", labelEs: "Indicadores de Datos", value: "24+ Indicadores" },
-      { label: "Map Render Target", labelEs: "Frecuencia de Rendimiento", value: "60 FPS" },
-      { label: "AI Summary Latency", labelEs: "Latencia Respuesta IA", value: "< 800ms" }
+      { label: "Census Blocks Streamed", labelEs: "Manzanos Transmitidos", value: "247,346" },
+      { label: "Archive Size", labelEs: "Tamaño del Archivo", value: "~90 MB PMTiles" },
+      { label: "Zoom Coverage", labelEs: "Cobertura de Zoom", value: "z8 – z14" },
+      { label: "Metric Layers", labelEs: "Capas Métricas", value: "4" }
     ],
+    liveDemoUrl: "#flagship",
     codeSnippet: {
-      filename: "components/map/GeoInsightsExplorer.tsx",
+      filename: "components/map/RealBlockMapWidget.client.tsx",
       language: "typescript",
-      code: `export function processDepartmentMetrics(deptCode: string, rawMetrics: RegionMetric[]) {\n  const filtered = rawMetrics.filter(m => m.deptId === deptCode);\n  const totalPopulation = filtered.reduce((acc, curr) => acc + curr.population, 0);\n  const avgConnectivity = filtered.reduce((acc, curr) => acc + curr.connectivity, 0) / (filtered.length || 1);\n  \n  return {\n    deptCode,\n    totalPopulation,\n    avgConnectivity: Math.round(avgConnectivity * 10) / 10,\n    densityRating: totalPopulation > 2000000 ? 'High' : 'Moderate'\n  };\n}`
+      code: `// The atlas minifies census field names to two-character codes.\n// Every value is normalized 0-1 against the national range.\nexport const ATLAS_FIELDS = {\n  personas_por_hectarea: 'b1', // density\n  tics_internet: 'v1',         // internet / ICT\n  agua_caneria: 'r1',          // piped water\n  educacion_superior: 'g1',    // higher education\n} as const;\n\nmap.setPaintProperty('ine-manzanos-fill', 'fill-color', [\n  'interpolate',\n  ['linear'],\n  ['coalesce', ['get', ATLAS_FIELDS.personas_por_hectarea], 0],\n  0.0, '#0f172a', 0.45, '#059669', 0.9, '#34d399',\n]);`
     }
   },
   {
@@ -166,10 +170,12 @@ export const CASE_STUDIES: CaseStudy[] = [
     geolabsRelevance: "Proves real production experience with Next.js/TypeScript, API integration, payment status polling/webhooks, security best practices for AI keys, and automated QA.",
     geolabsRelevanceEs: "Demuestra experiencia real en producción con Next.js/TypeScript, integración de APIs, estado de pagos con polling/webhooks, buenas prácticas de seguridad para llaves de IA y QA automatizado.",
     metrics: [
-      { label: "Payment Verification", labelEs: "Verificación de Pago", value: "Polling Tiempo Real" },
-      { label: "API Key Exposure", labelEs: "Exposición de Claves API", value: "0% (Proxy Backend)" },
-      { label: "QA Automated Coverage", labelEs: "Cobertura de Pruebas", value: "Suites Playwright" }
+      { label: "Payment Verification", labelEs: "Verificación de Pago", value: "Polling + Webhooks" },
+      { label: "API Key Handling", labelEs: "Manejo de Claves API", value: "Proxy en Backend" },
+      { label: "Engagement", labelEs: "Tipo de Trabajo", value: "Comercial (en producción)" }
     ],
+    availabilityNote: "Client-owned private codebase — I can walk through the implementation on a call.",
+    availabilityNoteEs: "Código privado del cliente — puedo mostrar la implementación en una llamada.",
     codeSnippet: {
       filename: "lib/payments/bcpQrPoll.ts",
       language: "typescript",
@@ -205,9 +211,11 @@ export const CASE_STUDIES: CaseStudy[] = [
     geolabsRelevance: "Demonstrates practical backend database logic, relational query design, business constraint enforcement, and operational web tool creation.",
     geolabsRelevanceEs: "Demuestra lógica práctica de base de datos backend, diseño de consultas SQL avanzadas, cumplimiento de reglas de negocio y construcción de herramientas operativas.",
     metrics: [
-      { label: "Conflict Overlaps Allowed", labelEs: "Cruces Permitidos", value: "0 (Estricto)" },
-      { label: "CRUD Operations", labelEs: "Operaciones CRUD", value: "100% Validadas" }
+      { label: "Overlap Rule", labelEs: "Regla de Cruces", value: "Validada en servidor" },
+      { label: "Context", labelEs: "Contexto", value: "Proyecto académico UMSS" }
     ],
+    availabilityNote: "University coursework project — the reservation logic below is the core of it.",
+    availabilityNoteEs: "Proyecto académico universitario — la lógica de reservas mostrada abajo es su núcleo.",
     codeSnippet: {
       filename: "lib/db/reservationLogic.sql",
       language: "sql",
@@ -245,9 +253,12 @@ export const CASE_STUDIES: CaseStudy[] = [
     geolabsRelevance: "Directly matches backend requirements (PHP intermediate/advanced, cURL, REST APIs, MySQL, Linux CLI, cron jobs, process debugging).",
     geolabsRelevanceEs: "Cumple directamente con requerimientos backend avanzados (PHP 8, cURL, APIs REST, MySQL, CLI Linux, tareas cron y depuración de procesos).",
     metrics: [
-      { label: "Execution Overhead", labelEs: "Sobrecarga de Ejecución", value: "< 45ms" },
-      { label: "Sync Schedule", labelEs: "Programación Cron", value: "Configurable" }
+      { label: "Runtime", labelEs: "Entorno de Ejecución", value: "PHP 8 CLI + cron" },
+      { label: "Persistence", labelEs: "Persistencia", value: "MySQL vía PDO" }
     ],
+    liveDemoUrl: "/api/php-sync",
+    availabilityNote: "The /api/php-sync endpoint publishes this service's response contract — it is an example payload, not a live PHP process.",
+    availabilityNoteEs: "El endpoint /api/php-sync publica el contrato de respuesta de este servicio — es un ejemplo, no un proceso PHP en ejecución.",
     codeSnippet: {
       filename: "backend/php/sync_service.php",
       language: "php",
@@ -267,25 +278,27 @@ export const CASE_STUDIES: CaseStudy[] = [
     summaryEs: "Laboratorio espacial interactivo donde el usuario coloca puntos de servicio sobre el mapa, calcula celdas de cobertura geométrica Voronoi y exporta archivos GeoJSON estándar.",
     problem: "Planning coverage areas for service points or sensors requires fast interactive spatial polygon generation.",
     problemEs: "Planificar áreas de cobertura para puntos de atención o sensores requiere la generación rápida e interactiva de polígonos espaciales.",
-    solution: "Engineered a client-side Leaflet tool that dynamically calculates nearest-neighbor Delaunay/Voronoi cells and renders interactive polygon features.",
-    solutionEs: "Construí una herramienta cliente en Leaflet que calcula dinámicamente celdas Voronoi/Delaunay según puntos cercanos y renderiza polígonos interactivos.",
+    solution: "Built a client-side Leaflet tool that computes each site's exact Voronoi cell by half-plane intersection — clipping a working rectangle against the perpendicular bisector of every site pair — with no geometry library.",
+    solutionEs: "Construí una herramienta cliente en Leaflet que calcula la celda Voronoi exacta de cada punto por intersección de semiplanos — recortando un rectángulo de trabajo con la bisectriz perpendicular de cada par de puntos — sin librerías de geometría.",
     proofPoints: [
-      "Interactive point placement on map canvas.",
-      "Dynamic client-side spatial polygon generation.",
-      "GeoJSON export for downstream GIS tools (QGIS, ArcGIS)."
+      "Voronoi cells computed by successive Sutherland–Hodgman clipping against perpendicular bisectors — the cells tessellate the working area with no gaps or overlaps.",
+      "Interactive point placement: every click recomputes the full tessellation in the browser.",
+      "Exports the computed coverage polygons (not just the input points) as standard GeoJSON for QGIS or ArcGIS."
     ],
     proofPointsEs: [
-      "Ubicación interactiva de puntos sobre el mapa.",
-      "Cálculo dinámico de polígonos espaciales en tiempo real en el navegador.",
-      "Exportación GeoJSON compatible con herramientas GIS profesionales (QGIS, ArcGIS)."
+      "Celdas Voronoi calculadas por recortes sucesivos de Sutherland–Hodgman contra bisectrices perpendiculares — teselan el área de trabajo sin huecos ni solapamientos.",
+      "Ubicación interactiva de puntos: cada clic recalcula la teselación completa en el navegador.",
+      "Exporta los polígonos de cobertura calculados (no solo los puntos de entrada) como GeoJSON estándar para QGIS o ArcGIS."
     ],
-    techStack: ["TypeScript", "Leaflet", "GeoJSON", "Geometric Algorithms", "Tailwind CSS"],
-    geolabsRelevance: "Highlights spatial curiosity, geometric algorithms, client-side map manipulation, and standardized spatial data formats.",
-    geolabsRelevanceEs: "Resalta capacidades en datos espaciales, algoritmos geométricos, manipulación cliente de mapas e intercambio de formatos estándar GIS.",
+    techStack: ["TypeScript", "Leaflet", "GeoJSON", "Computational Geometry", "Tailwind CSS"],
+    geolabsRelevance: "Shows comfort implementing a spatial algorithm from first principles rather than reaching for a library, plus standardized GIS interchange formats.",
+    geolabsRelevanceEs: "Muestra soltura para implementar un algoritmo espacial desde cero en lugar de recurrir a una librería, además del intercambio en formatos GIS estándar.",
     metrics: [
-      { label: "Calculation Speed", labelEs: "Velocidad de Cálculo", value: "< 16ms (Inmediato)" },
-      { label: "Export Format", labelEs: "Formato de Salida", value: "GeoJSON Standard" }
-    ]
+      { label: "Algorithm", labelEs: "Algoritmo", value: "Half-plane intersection" },
+      { label: "Export Format", labelEs: "Formato de Salida", value: "GeoJSON Polygon" }
+    ],
+    availabilityNote: "Runs live in this page — click the map below to add service points.",
+    availabilityNoteEs: "Funciona en vivo en esta página — haz clic en el mapa de abajo para agregar puntos de servicio."
   }
 ];
 

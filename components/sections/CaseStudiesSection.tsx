@@ -2,9 +2,10 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
-import { CASE_STUDIES, CaseStudy } from '@/data/portfolioData';
+import { CASE_STUDIES } from '@/data/portfolioData';
 import { CodeBlock } from '../ui/CodeBlock';
-import { ShoppingBag, Calendar, Server, MapPin, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { GithubIcon } from '../ui/GithubIcon';
+import { ShoppingBag, Calendar, Server, MapPin, CheckCircle2, ArrowUpRight, ExternalLink, Lock, LucideIcon } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 const VoronoiLabClient = dynamic(() => import('../map/VoronoiLab.client'), {
@@ -16,7 +17,7 @@ const VoronoiLabClient = dynamic(() => import('../map/VoronoiLab.client'), {
   ),
 });
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
   commercial: ShoppingBag,
   operational: Calendar,
   backend: Server,
@@ -37,6 +38,7 @@ export function CaseStudiesSection() {
   const solution = language === 'es' && activeStudy.solutionEs ? activeStudy.solutionEs : activeStudy.solution;
   const proofPoints = language === 'es' && activeStudy.proofPointsEs ? activeStudy.proofPointsEs : activeStudy.proofPoints;
   const geolabsRelevance = language === 'es' && activeStudy.geolabsRelevanceEs ? activeStudy.geolabsRelevanceEs : activeStudy.geolabsRelevance;
+  const availabilityNote = language === 'es' && activeStudy.availabilityNoteEs ? activeStudy.availabilityNoteEs : activeStudy.availabilityNote;
 
   return (
     <section id="projects" className="py-20 bg-[#090d14] relative border-t border-slate-800">
@@ -45,7 +47,7 @@ export function CaseStudiesSection() {
         {/* Section Header */}
         <SectionReveal className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
-            <span className="text-slate-600">//</span>
+            <span className="text-slate-600" aria-hidden="true">{'//'}</span>
             <span className="uppercase tracking-widest font-semibold">{t('caseStudies.tag')}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
@@ -125,6 +127,38 @@ export function CaseStudiesSection() {
               <p className="text-sm text-slate-300 leading-relaxed pt-1">{solution}</p>
             </div>
           </div>
+
+          {/* Where to see it: real links where they exist, an explicit note where they don't */}
+          {(activeStudy.liveDemoUrl || activeStudy.githubUrl || availabilityNote) && (
+            <div className="flex flex-wrap items-center gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+              {activeStudy.liveDemoUrl && (
+                <a
+                  href={activeStudy.liveDemoUrl}
+                  className="flex items-center gap-2 px-3.5 py-2 min-h-[40px] rounded-lg bg-teal-500/15 border border-teal-500/40 text-teal-300 hover:bg-teal-500/25 text-xs font-mono-tech font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  <span>{language === 'es' ? 'Ver en vivo' : 'View live'}</span>
+                </a>
+              )}
+              {activeStudy.githubUrl && (
+                <a
+                  href={activeStudy.githubUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 px-3.5 py-2 min-h-[40px] rounded-lg bg-slate-900 border border-slate-700 text-slate-200 hover:border-slate-600 text-xs font-mono-tech transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                >
+                  <GithubIcon className="w-3.5 h-3.5 shrink-0" />
+                  <span>{language === 'es' ? 'Repositorio' : 'Repository'}</span>
+                </a>
+              )}
+              {availabilityNote && (
+                <p className="flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed flex-1 min-w-[220px]">
+                  <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-px" />
+                  <span>{availabilityNote}</span>
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Tech Stack Pills */}
           <div className="space-y-2">

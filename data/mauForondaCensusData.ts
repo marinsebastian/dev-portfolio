@@ -1,14 +1,22 @@
-export interface ManzanoBlock {
-  id: string;
-  code: string;
-  polygon: [number, number][]; // Polygon geometry [lat, lng]
-  metrics: {
-    population2024: number;
-    densityHabKm2: number;
-    internetCoveragePct: number;
-    basicServicesIndex: number;
-  };
-}
+/**
+ * ── Data provenance ──────────────────────────────────────────────────────────
+ *
+ * Two different kinds of data meet in the flagship map, and they must not be
+ * confused with each other:
+ *
+ *  1. REAL — the block polygons and their attributes, streamed at runtime from
+ *     Mauricio Foronda's atlasurbano PMTiles archive (INE Censo 2024) and
+ *     rendered directly by MapLibre GL. Note the archive's mixed schema: count
+ *     fields (population, density per hectare) are absolute, while coverage
+ *     fields are 0–1 proportions. Nothing in this file touches them.
+ *
+ *  2. ILLUSTRATIVE — the aggregate zone figures below (population, density,
+ *     internet coverage, services index). These are hand-authored reference
+ *     values used to give each metro area a readable summary card. They are NOT
+ *     official INE readings and the UI labels them as such.
+ *
+ * See DATA_SOURCES.md for the full breakdown.
+ */
 
 export interface UrbanCensusZone {
   id: string;
@@ -16,7 +24,7 @@ export interface UrbanCensusZone {
   metroArea: 'Santa Cruz' | 'Cochabamba' | 'La Paz' | 'Nacional';
   coordinates: [number, number]; // [lat, lng]
   bounds: [number, number][]; // Zone bounding box
-  manzanos?: ManzanoBlock[]; // Array of individual city block polygons (Manzanos Urbanos)
+  /** Illustrative reference figures — see the provenance note above. */
   metrics: {
     population2024: number;
     densityHabKm2: number;
@@ -49,27 +57,41 @@ export interface LayerConfig {
   primaryColor: string;
 }
 
-export const SCOPE_CONFIG: Record<ScopeType, { center: [number, number]; zoom: number; labelEs: string; labelEn: string }> = {
+/**
+ * Camera presets for the MapLibre GL flagship map.
+ *
+ * NOTE THE COORDINATE ORDER. Everything else in this file uses Leaflet's
+ * `[lat, lng]`, but MapLibre GL — like GeoJSON — takes `[lng, lat]`. These
+ * centres are therefore stored in MapLibre order and are named accordingly.
+ * Getting this backwards puts the camera in the South Atlantic, outside the
+ * census archive's bounds, and the block layer renders nothing at all while the
+ * unbounded raster basemap keeps loading ocean tiles — a silent failure with no
+ * console error.
+ */
+export const SCOPE_CONFIG: Record<
+  ScopeType,
+  { centerLngLat: [number, number]; zoom: number; labelEs: string; labelEn: string }
+> = {
   Nacional: {
-    center: [-16.5, -64.5],
+    centerLngLat: [-64.5, -16.5],
     zoom: 5.5,
     labelEs: 'Bolivia Nacional',
     labelEn: 'National Bolivia',
   },
   'Santa Cruz': {
-    center: [-17.78, -63.18],
+    centerLngLat: [-63.18, -17.78],
     zoom: 12.2,
     labelEs: 'ZM Santa Cruz (Manzanos)',
     labelEn: 'Santa Cruz Metro (Blocks)',
   },
   Cochabamba: {
-    center: [-17.39, -66.16],
+    centerLngLat: [-66.16, -17.39],
     zoom: 12.8,
     labelEs: 'ZM Cochabamba (Manzanos)',
     labelEn: 'Cochabamba Metro (Blocks)',
   },
   'La Paz': {
-    center: [-16.51, -68.13],
+    centerLngLat: [-68.13, -16.51],
     zoom: 12.5,
     labelEs: 'ZM La Paz / El Alto (Manzanos)',
     labelEn: 'La Paz / El Alto Metro (Blocks)',
@@ -89,8 +111,8 @@ export const CENSUS_LAYERS: LayerConfig[] = [
     code: 'DENSITY',
     labelEs: 'Densidad Poblacional (Manzano)',
     labelEn: 'Block Population Density',
-    descriptionEs: 'Habitantes por km² a nivel de manzano urbano.',
-    descriptionEn: 'Inhabitants per km² at the urban block level.',
+    descriptionEs: 'Habitantes por hectárea a nivel de manzano urbano (campo b1 del archivo PMTiles).',
+    descriptionEn: 'Inhabitants per hectare at the urban block level (field b1 of the PMTiles archive).',
     primaryColor: '#10b981', // Emerald
   },
   {
@@ -110,61 +132,6 @@ export const CENSUS_LAYERS: LayerConfig[] = [
     primaryColor: '#14b8a6', // Teal
   },
 ];
-
-// Helper to generate a realistic grid of urban blocks (manzanos) with street gaps
-function generateBlockGrid(prefix: string, centerLat: number, centerLng: number, baseMetrics: { population2024: number; densityHabKm2: number; internetCoveragePct: number; basicServicesIndex: number }) {
-  const blocks: ManzanoBlock[] = [];
-  const latRows = 3;
-  const lngCols = 3;
-  const blockSize = 0.0035; // ~380 meters
-  const streetGap = 0.0008; // ~80 meters street gap
-
-  const startLat = centerLat - (latRows * (blockSize + streetGap)) / 2;
-  const startLng = centerLng - (lngCols * (blockSize + streetGap)) / 2;
-
-  let count = 1;
-  for (let r = 0; r < latRows; r++) {
-    for (let c = 0; c < lngCols; c++) {
-      const minLat = startLat + r * (blockSize + streetGap);
-      const maxLat = minLat + blockSize;
-      const minLng = startLng + c * (blockSize + streetGap);
-      const maxLng = minLng + blockSize;
-
-      // Closed polygon coordinates [lat, lng]
-      const polygon: [number, number][] = [
-        [minLat, minLng],
-        [maxLat, minLng],
-        [maxLat, maxLng],
-        [minLat, maxLng],
-      ];
-
-      // Deterministic block variations for realistic choropleth mapping
-      const seed = (r + 1) * 7 + (c + 1) * 13;
-      const connVar = (seed % 15) - 7;
-      const servVar = (seed % 9) - 4;
-      const densityVar = (seed % 1200) - 600;
-
-      const blockConn = Math.min(99, Math.max(40, baseMetrics.internetCoveragePct + connVar));
-      const blockServ = Math.min(100, Math.max(45, baseMetrics.basicServicesIndex + servVar));
-      const blockDensity = Math.max(800, baseMetrics.densityHabKm2 + densityVar);
-      const blockPop = Math.round((baseMetrics.population2024 / 9) + (seed % 300 - 150));
-
-      blocks.push({
-        id: `${prefix}-MZ${String(count).padStart(2, '0')}`,
-        code: `MANZANO ${prefix.toUpperCase()}-${String(count).padStart(2, '0')}`,
-        polygon,
-        metrics: {
-          population2024: blockPop,
-          densityHabKm2: Math.round(blockDensity),
-          internetCoveragePct: Math.round(blockConn * 10) / 10,
-          basicServicesIndex: Math.round(blockServ * 10) / 10,
-        },
-      });
-      count++;
-    }
-  }
-  return blocks;
-}
 
 export const RAW_ZONES = [
   // --- SANTA CRUZ METRO ---
@@ -428,12 +395,4 @@ export const RAW_ZONES = [
   },
 ];
 
-// Enrich each urban zone with individual Manzano (city block) polygons
-export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = RAW_ZONES.map((zone) => {
-  if (zone.metroArea === 'Nacional') return zone;
-  const manzanos = generateBlockGrid(zone.id, zone.coordinates[0], zone.coordinates[1], zone.metrics);
-  return {
-    ...zone,
-    manzanos,
-  };
-});
+export const URBAN_CENSUS_ZONES: UrbanCensusZone[] = RAW_ZONES;

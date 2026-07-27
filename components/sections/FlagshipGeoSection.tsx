@@ -12,7 +12,7 @@ import {
 import { CASE_STUDIES } from '@/data/portfolioData';
 import { CodeBlock } from '../ui/CodeBlock';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { MapPin, Database, Server, CheckCircle2, Globe } from 'lucide-react';
+import { MapPin, Database, Server, CheckCircle2, Globe, Info } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 // Dynamic import for MapLibre GL + PMTiles map component
@@ -35,6 +35,14 @@ export function FlagshipGeoSection() {
   );
 
   const flagshipData = CASE_STUDIES.find((c) => c.id === 'geoinsights-bolivia')!;
+
+  // The data file carries both languages; the ES variants were previously unused.
+  const proofPoints =
+    language === 'es' && flagshipData.proofPointsEs ? flagshipData.proofPointsEs : flagshipData.proofPoints;
+  const geolabsRelevance =
+    language === 'es' && flagshipData.geolabsRelevanceEs
+      ? flagshipData.geolabsRelevanceEs
+      : flagshipData.geolabsRelevance;
 
   const formatNumber = (num: number) => {
     const separator = language === 'es' ? '.' : ',';
@@ -74,24 +82,24 @@ export function FlagshipGeoSection() {
             {t('flagship.summary')}
           </p>
 
-          {/* Official GeoBolivia 2015 & PMTiles Dataset Reference Banner */}
+          {/* PMTiles dataset provenance banner */}
           <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 font-mono-tech text-xs space-y-1.5 max-w-4xl text-slate-300">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
               <span className="text-teal-300 font-bold flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-teal-400" />
-                Manzanos Reales INE — Censo 2024 (PMTiles Vector Stream)
+                <Globe className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                {t('flagship.datasetBannerTitle')}
               </span>
               <a
                 href="https://mauforonda.github.io/atlasurbano/"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11px] text-cyan-400 hover:underline inline-flex items-center gap-1"
+                className="text-[11px] text-cyan-400 hover:underline inline-flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
               >
                 <span>mauforonda/atlasurbano</span>
               </a>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              Consume directamente los archivos vectoriales PMTiles producidos por Mauricio Foronda (@mauforonda) a partir del Censo de Población y Vivienda 2024 del INE Bolivia. Representa cada manzano urbano con su geometría irregular real y sus correspondientes indicadores demográficos y de vivienda.
+              {t('flagship.datasetBannerDesc')}
             </p>
           </div>
         </SectionReveal>
@@ -121,7 +129,7 @@ export function FlagshipGeoSection() {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div>
                   <span className="text-[10px] font-mono-tech text-slate-400 uppercase">
-                    ZONA URBANA SELECCIONADA
+                    {t('flagship.activeZone')}
                   </span>
                   <h3 className="text-lg font-bold text-teal-300">{selectedZone.name}</h3>
                 </div>
@@ -183,6 +191,12 @@ export function FlagshipGeoSection() {
               <p className="text-xs text-slate-300 leading-relaxed pt-1 border-t border-slate-800/80">
                 {language === 'es' ? selectedZone.narrativeEs : selectedZone.narrativeEn}
               </p>
+
+              {/* Provenance: which numbers are measured and which are illustrative */}
+              <p className="flex items-start gap-2 text-[10px] text-slate-500 leading-relaxed pt-3 border-t border-slate-800/80">
+                <Info className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-px" />
+                <span>{t('flagship.provenanceNote')}</span>
+              </p>
             </div>
 
             {/* Scope Comparison Bar Chart */}
@@ -192,7 +206,7 @@ export function FlagshipGeoSection() {
                   {t('flagship.comparisonTitle')}
                 </span>
                 <span className="text-[10px] font-mono-tech text-teal-400 font-bold">
-                  {activeScope} ({scopeZones.length} ZONAS)
+                  {activeScope} ({scopeZones.length} {t('flagship.zonesSuffix')})
                 </span>
               </div>
               <div className="h-44 w-full pt-1">
@@ -247,7 +261,7 @@ export function FlagshipGeoSection() {
               <span>{t('flagship.proofTitle')}</span>
             </h4>
             <ul className="space-y-2 text-xs text-slate-300">
-              {flagshipData.proofPoints.map((point, i) => (
+              {proofPoints.map((point, i) => (
                 <li key={i} className="flex items-start space-x-2">
                   <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
                   <span>{point}</span>
@@ -262,7 +276,7 @@ export function FlagshipGeoSection() {
               <span>{t('flagship.relevanceTitle')}</span>
             </h4>
             <p className="text-xs text-slate-300 leading-relaxed">
-              {flagshipData.geolabsRelevance}
+              {geolabsRelevance}
             </p>
 
             <div className="pt-2">

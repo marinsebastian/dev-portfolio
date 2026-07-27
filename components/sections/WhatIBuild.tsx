@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { SectionReveal } from '../motion/SectionReveal';
 import { CAPABILITY_PILLARS } from '@/data/portfolioData';
 import { CodeBlock } from '../ui/CodeBlock';
-import { Layout, Server, MapPin, Terminal, CheckCircle2 } from 'lucide-react';
+import { Layout, Server, MapPin, Terminal, CheckCircle2, LucideIcon } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   Layout,
   Server,
   MapPin,
@@ -26,7 +26,7 @@ export function WhatIBuild() {
         {/* Section Header */}
         <SectionReveal className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center space-x-2 font-mono-tech text-xs text-teal-400">
-            <span className="text-slate-600">//</span>
+            <span className="text-slate-600" aria-hidden="true">{'//'}</span>
             <span className="uppercase tracking-widest font-semibold">{t('pillars.tag')}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">

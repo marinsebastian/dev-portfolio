@@ -7,7 +7,7 @@ const TECH_ITEMS = [
   { name: 'TypeScript', category: 'Core' },
   { name: 'PHP 8 (PDO / cURL)', category: 'Backend' },
   { name: 'MySQL & PostgreSQL', category: 'SQL Data' },
-  { name: 'Leaflet Spatial Maps', category: 'GIS' },
+  { name: 'MapLibre GL & PMTiles', category: 'GIS' },
   { name: 'Linux CLI & Cron', category: 'Automation' },
   { name: 'Docker Compose', category: 'DevOps' },
   { name: 'Gemini API Proxy', category: 'AI Integration' },

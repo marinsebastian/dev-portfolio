@@ -137,7 +137,7 @@ export function HeroSection() {
                 <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-start space-x-3">
                   <Code2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-slate-500 text-[10px] block">TITULACIÓN PROFESIONAL</span>
+                    <span className="text-slate-500 text-[10px] block">{t('hero.telemetryDegreeLabel')}</span>
                     <span className="text-slate-100 font-bold">{t('hero.telemetryDegree')}</span>
                   </div>
                 </div>
@@ -145,7 +145,7 @@ export function HeroSection() {
                 <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-start space-x-3">
                   <Database className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-slate-500 text-[10px] block">EXPERIENCIA COMERCIAL REAL</span>
+                    <span className="text-slate-500 text-[10px] block">{t('hero.telemetryWorkLabel')}</span>
                     <span className="text-slate-100 font-bold">{t('hero.telemetryWork')}</span>
                   </div>
                 </div>
@@ -153,8 +153,8 @@ export function HeroSection() {
                 <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-start space-x-3">
                   <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-slate-500 text-[10px] block">ESPECIALIDAD TÉCNICA</span>
-                    <span className="text-slate-100 font-bold">Interfaces Web, APIs REST, Mapas Espaciales e IA</span>
+                    <span className="text-slate-500 text-[10px] block">{t('hero.telemetrySpecialtyLabel')}</span>
+                    <span className="text-slate-100 font-bold">{t('hero.telemetrySpecialty')}</span>
                   </div>
                 </div>
 
@@ -163,12 +163,12 @@ export function HeroSection() {
               {/* Executive Metrics Bar */}
               <div className="grid grid-cols-2 gap-2 pt-1 font-mono-tech text-[11px]">
                 <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-center">
-                  <span className="text-slate-400 block text-[10px]">VERIFICACIÓN QA</span>
-                  <span className="text-emerald-400 font-bold">100% Playwright</span>
+                  <span className="text-slate-400 block text-[10px]">{t('hero.telemetryQaLabel')}</span>
+                  <span className="text-emerald-400 font-bold">{t('hero.telemetryQaValue')}</span>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-center">
-                  <span className="text-slate-400 block text-[10px]">DESPLIEGUE</span>
-                  <span className="text-teal-400 font-bold">Vercel & Docker</span>
+                  <span className="text-slate-400 block text-[10px]">{t('hero.telemetryDeployLabel')}</span>
+                  <span className="text-teal-400 font-bold">{t('hero.telemetryDeployValue')}</span>
                 </div>
               </div>
 
