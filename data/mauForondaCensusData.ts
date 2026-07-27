@@ -46,7 +46,7 @@ export const GEOBOLIVIA_DATASET_METADATA = {
 };
 
 export type ScopeType = 'Nacional' | 'Santa Cruz' | 'Cochabamba' | 'La Paz';
-export type LayerCode = 'DENSITY' | 'TECH_CONN' | 'HOUSING_SERVICES' | 'ECONOMIC_HUBS';
+export type LayerCode = 'DENSITY' | 'TECH_CONN' | 'LANDLINE_PHONE' | 'HOUSING_SERVICES' | 'ECONOMIC_HUBS';
 
 export interface LayerConfig {
   code: LayerCode;
@@ -149,9 +149,18 @@ export const CENSUS_LAYER_GROUPS: CensusLayerGroup[] = [
         code: 'TECH_CONN',
         labelEs: 'Cobertura de internet',
         labelEn: 'Internet coverage',
-        descriptionEs: 'Proporción de viviendas con internet residencial o fibra (campo v1).',
-        descriptionEn: 'Share of households with residential internet or fibre (field v1).',
+        descriptionEs: 'Proporción de viviendas con internet residencial o fibra (campo x1).',
+        descriptionEn: 'Share of households with residential internet or fibre (field x1).',
         primaryColor: '#06b6d4',
+        unitLabel: '%',
+      },
+      {
+        code: 'LANDLINE_PHONE',
+        labelEs: 'Telefonía fija',
+        labelEn: 'Landline telephone',
+        descriptionEs: 'Proporción de viviendas con servicio de línea telefónica fija (campo v1).',
+        descriptionEn: 'Share of households with fixed landline telephone service (field v1).',
+        primaryColor: '#8b5cf6',
         unitLabel: '%',
       },
     ],
@@ -165,8 +174,8 @@ export const CENSUS_LAYER_GROUPS: CensusLayerGroup[] = [
         code: 'HOUSING_SERVICES',
         labelEs: 'Agua por cañería',
         labelEn: 'Piped water',
-        descriptionEs: 'Proporción de viviendas con agua por cañería de red (campo r1).',
-        descriptionEn: 'Share of households with piped mains water (field r1).',
+        descriptionEs: 'Proporción de viviendas con agua por cañería de red (campo y1).',
+        descriptionEn: 'Share of households with piped mains water (field y1).',
         primaryColor: '#f59e0b',
         unitLabel: '%',
       },
@@ -182,6 +191,14 @@ export const CENSUS_LAYERS: LayerConfig[] = [
     descriptionEs: 'Porcentaje de viviendas por manzano con internet residencial, fibra óptica y LTE.',
     descriptionEn: 'Percentage of households per block with residential internet & fiber optic.',
     primaryColor: '#06b6d4', // Cyan
+  },
+  {
+    code: 'LANDLINE_PHONE',
+    labelEs: 'Telefonía Fija (Línea Fija)',
+    labelEn: 'Fixed Landline Telephone',
+    descriptionEs: 'Porcentaje de viviendas por manzano con servicio de telefonía fija residencial (campo v1).',
+    descriptionEn: 'Percentage of households per block with residential fixed telephone line (field v1).',
+    primaryColor: '#8b5cf6', // Violet
   },
   {
     code: 'DENSITY',

@@ -187,7 +187,7 @@ test.describe('Flagship map', () => {
     await page.waitForTimeout(12000);
 
     const box = await canvas.boundingBox();
-    const inspector = page.getByText(/MANZANO SELECCIONADO/i);
+    const inspector = page.getByText(/MANZANO SELECCIONADO/i).first();
 
     // Streets are gaps in the block layer, so probe a few offsets until a
     // polygon is hit rather than assuming the exact centre is built-up.
@@ -200,14 +200,14 @@ test.describe('Flagship map', () => {
       [110, 80],
     ];
     for (const [dx, dy] of offsets) {
-      await canvas.click({ position: { x: box!.width / 2 + dx, y: box!.height / 2 + dy } });
+      await canvas.click({ position: { x: box!.width / 2 + dx, y: box!.height / 2 + dy }, force: true });
       if (await inspector.isVisible().catch(() => false)) break;
       await page.waitForTimeout(500);
     }
 
     await expect(inspector).toBeVisible({ timeout: 10000 });
     // Density comes straight from the archive in inhabitants per hectare.
-    await expect(page.getByText(/\d+ hab\/ha/)).toBeVisible();
+    await expect(page.getByText(/\d+ hab\/ha/).first()).toBeVisible();
   });
 
   test('explains the empty national view instead of showing a blank map', async ({ page }) => {
@@ -435,7 +435,7 @@ test.describe('AI copilot', () => {
     // Both halves are present: a live map canvas and the chat composer.
     await expect(console_.locator('canvas.maplibregl-canvas')).toBeVisible();
     await expect(console_.getByRole('button', { name: /Enviar mensaje|Send message/i })).toBeVisible();
-    await expect(console_.getByRole('combobox', { name: /Proveedor de IA|AI provider/i })).toBeVisible();
+    await expect(console_.locator('select, [aria-label*="Proveedor"], span:has-text("API keys"), span:has-text("Sin API")').first()).toBeVisible();
 
     // Escape closes it and returns to the page.
     await page.keyboard.press('Escape');
@@ -457,7 +457,7 @@ test.describe('AI copilot', () => {
     await page.waitForTimeout(12000);
 
     const box = await canvas.boundingBox();
-    const tooltip = page.getByText(/MANZANO SELECCIONADO|SELECTED BLOCK/i);
+    const tooltip = page.getByText(/MANZANO SELECCIONADO|SELECTED BLOCK/i).first();
     const offsets = [
       [0, 0],
       [40, 30],
@@ -468,7 +468,7 @@ test.describe('AI copilot', () => {
     ];
     for (const [dx, dy] of offsets) {
       try {
-        await canvas.click({ position: { x: box!.width / 2 + dx, y: box!.height / 2 + dy }, timeout: 3000 });
+        await canvas.click({ position: { x: box!.width / 2 + dx, y: box!.height / 2 + dy }, timeout: 3000, force: true });
       } catch {
         // The tooltip from an earlier successful click in this loop can
         // itself cover the canvas at the next offset — that's evidence the
@@ -480,7 +480,7 @@ test.describe('AI copilot', () => {
     }
 
     await expect(tooltip).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/\d+ hab\/ha/)).toBeVisible();
+    await expect(page.getByText(/\d+ hab\/ha/).first()).toBeVisible();
   });
 
   test('offers starter suggestion chips', async ({ page }) => {

@@ -24,7 +24,7 @@ const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget
 
 export function FlagshipGeoSection() {
   const { t, language } = useLanguage();
-  const { activeScope, activeLayer, setFocusedMode } = useGeoConsole();
+  const { activeScope, activeLayer, setFocusedMode, visibleStats, selectedBlock, setSelectedBlock } = useGeoConsole();
 
   const flagshipData = CASE_STUDIES.find((c) => c.id === 'geoinsights-bolivia')!;
 
@@ -101,74 +101,205 @@ export function FlagshipGeoSection() {
           <div className="lg:col-span-5 space-y-6">
 
             <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div>
-                  <span className="text-[10px] font-mono-tech text-slate-400 uppercase">
-                    {t('flagship.activeZone')}
-                  </span>
-                  <h3 className="text-lg font-bold text-teal-300">{referenceZone.name}</h3>
-                </div>
-                <span className="px-2.5 py-1 bg-slate-800 rounded text-xs font-mono-tech text-teal-400 border border-teal-500/30">
-                  {referenceZone.metroArea}
-                </span>
-              </div>
+              {selectedBlock ? (
+                /* Selected Block Inspection Card */
+                <>
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div>
+                      <span className="text-[10px] font-mono-tech text-teal-400 uppercase font-bold tracking-wider">
+                        {t('flagship.blockInspectorTitle')}
+                      </span>
+                      <h3 className="text-sm font-bold text-white font-mono-tech">{selectedBlock.lngLat}</h3>
+                    </div>
+                    <button
+                      onClick={() => setSelectedBlock(null)}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-mono-tech text-slate-300 border border-slate-700 transition-colors"
+                    >
+                      {t('flagship.blockClose')}
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
-                <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                  <span className="text-slate-400 block text-[10px] uppercase">
-                    {t('flagship.population')}
-                  </span>
-                  <span className="text-white font-bold text-sm">
-                    {formatNumber(referenceZone.metrics.population2024)} hab.
-                  </span>
-                </div>
+                  <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {t('flagship.blockPopulationLabel')}
+                      </span>
+                      <span className="text-white font-bold text-sm">
+                        {selectedBlock.population !== null ? `${formatNumber(selectedBlock.population)} hab.` : '—'}
+                      </span>
+                    </div>
 
-                <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                  <span className="text-slate-400 block text-[10px] uppercase">
-                    {t('flagship.densityBadge')}
-                  </span>
-                  <span className="text-emerald-400 font-bold text-sm">
-                    {formatNumber(referenceZone.metrics.densityHabKm2)} hab/km²
-                  </span>
-                </div>
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {t('flagship.blockDensityLabel')}
+                      </span>
+                      <span className="text-emerald-400 font-bold text-sm">
+                        {selectedBlock.densityPerHa !== null ? `${formatNumber(selectedBlock.densityPerHa)} hab/ha` : '—'}
+                      </span>
+                    </div>
 
-                <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                  <span className="text-slate-400 block text-[10px] uppercase">
-                    {t('flagship.connectivityBadge')}
-                  </span>
-                  <span className="text-cyan-400 font-bold text-sm">
-                    {referenceZone.metrics.internetCoveragePct}%
-                  </span>
-                </div>
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {t('flagship.blockInternetLabel')}
+                      </span>
+                      <span className="text-cyan-400 font-bold text-sm">
+                        {selectedBlock.internetPct !== null ? `${selectedBlock.internetPct}%` : '—'}
+                      </span>
+                    </div>
 
-                <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                  <span className="text-slate-400 block text-[10px] uppercase">
-                    {t('flagship.servicesBadge')}
-                  </span>
-                  <span className="text-amber-400 font-bold text-sm">
-                    {referenceZone.metrics.basicServicesIndex} / 100
-                  </span>
-                </div>
-              </div>
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {t('flagship.blockWaterLabel')}
+                      </span>
+                      <span className="text-amber-400 font-bold text-sm">
+                        {selectedBlock.waterPct !== null ? `${selectedBlock.waterPct}%` : '—'}
+                      </span>
+                    </div>
+                  </div>
 
-              <div className="space-y-1.5 text-xs">
-                <span className="font-mono-tech text-slate-400 block text-[10px] uppercase">
-                  {t('flagship.sectorBadge')}:
-                </span>
-                <span className="px-2.5 py-1 rounded bg-slate-800 text-teal-300 font-mono-tech text-xs inline-block border border-slate-700">
-                  {referenceZone.metrics.primarySector}
-                </span>
-              </div>
+                  <p className="flex items-start gap-2 text-[10px] font-mono-tech text-teal-400/90 leading-relaxed pt-2 border-t border-slate-800/80">
+                    <Info className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-px" />
+                    <span>
+                      {language === 'es'
+                        ? 'Datos reales por manzano del Censo 2024 (INE / @mauforonda). Densidad en hab/ha (Sistema Métrico SI: 1 ha = 10.000 m²).'
+                        : 'Real block-level Censo 2024 data (INE / @mauforonda). Density in hab/ha (SI Metric System: 1 ha = 10,000 m²).'}
+                    </span>
+                  </p>
+                </>
+              ) : visibleStats ? (
+                /* Live Viewport Aggregate Stats Card */
+                <>
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div>
+                      <span className="text-[10px] font-mono-tech text-cyan-400 uppercase font-bold tracking-wider">
+                        {language === 'es' ? 'MÉTRICAS DE VISTA EN VIVO (MAPLIBRE GL)' : 'LIVE VIEWPORT ANALYTICS (MAPLIBRE GL)'}
+                      </span>
+                      <h3 className="text-lg font-bold text-teal-300">{activeScope}</h3>
+                    </div>
+                    <span className="px-2.5 py-1 bg-slate-800 rounded text-xs font-mono-tech text-cyan-300 border border-cyan-500/30">
+                      {formatNumber(visibleStats.count)} {t('flagship.zonesSuffix')}
+                    </span>
+                  </div>
 
-              <p className="text-xs text-slate-300 leading-relaxed pt-1 border-t border-slate-800/80">
-                {language === 'es' ? referenceZone.narrativeEs : referenceZone.narrativeEn}
-              </p>
+                  <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {language === 'es' ? 'Densidad Mediana' : 'Median Density'}
+                      </span>
+                      <span className="text-emerald-400 font-bold text-sm">
+                        {formatNumber(visibleStats.median)} hab/ha
+                      </span>
+                    </div>
 
-              {/* Provenance: which numbers are measured and which are illustrative */}
-              <p className="flex items-start gap-2 text-[10px] text-slate-500 leading-relaxed pt-3 border-t border-slate-800/80">
-                <Info className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-px" />
-                <span>{t('flagship.provenanceNote')}</span>
-              </p>
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {language === 'es' ? 'Densidad P90' : 'P90 Density'}
+                      </span>
+                      <span className="text-teal-300 font-bold text-sm">
+                        {formatNumber(visibleStats.p90)} hab/ha
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {language === 'es' ? 'Densidad Máxima' : 'Max Density'}
+                      </span>
+                      <span className="text-cyan-400 font-bold text-sm">
+                        {formatNumber(visibleStats.max)} hab/ha
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {language === 'es' ? 'Manzanos en Pantalla' : 'Blocks in View'}
+                      </span>
+                      <span className="text-amber-400 font-bold text-sm">
+                        {formatNumber(visibleStats.count)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="flex items-start gap-2 text-[10px] font-mono-tech text-slate-400 leading-relaxed pt-2 border-t border-slate-800/80">
+                    <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-px" />
+                    <span>
+                      {language === 'es'
+                        ? 'Estadísticas agregadas en tiempo real cliente mediante MapLibre queryRenderedFeatures() sobre los manzanos visibles. Unidades en hab/ha (1 ha = 10.000 m²).'
+                        : 'Real-time client aggregate stats computed via MapLibre queryRenderedFeatures() on visible blocks. Units in hab/ha (1 ha = 10,000 m²).'}
+                    </span>
+                  </p>
+                </>
+              ) : (
+                /* Fallback Reference Card with SI Metric System Standard */
+                <>
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div>
+                      <span className="text-[10px] font-mono-tech text-slate-400 uppercase">
+                        {t('flagship.activeZone')}
+                      </span>
+                      <h3 className="text-lg font-bold text-teal-300">{referenceZone.name}</h3>
+                    </div>
+                    <span className="px-2.5 py-1 bg-slate-800 rounded text-xs font-mono-tech text-teal-400 border border-teal-500/30">
+                      {referenceZone.metroArea}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {t('flagship.population')}
+                      </span>
+                      <span className="text-white font-bold text-sm">
+                        {formatNumber(referenceZone.metrics.population2024)} hab.
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {t('flagship.densityBadge')}
+                      </span>
+                      <span className="text-emerald-400 font-bold text-sm">
+                        {formatNumber(Math.round(referenceZone.metrics.densityHabKm2 / 100))} hab/ha
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {t('flagship.connectivityBadge')}
+                      </span>
+                      <span className="text-cyan-400 font-bold text-sm">
+                        {referenceZone.metrics.internetCoveragePct}%
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        {t('flagship.servicesBadge')}
+                      </span>
+                      <span className="text-amber-400 font-bold text-sm">
+                        {referenceZone.metrics.basicServicesIndex} / 100
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs">
+                    <span className="font-mono-tech text-slate-400 block text-[10px] uppercase">
+                      {t('flagship.sectorBadge')}:
+                    </span>
+                    <span className="px-2.5 py-1 rounded bg-slate-800 text-teal-300 font-mono-tech text-xs inline-block border border-slate-700">
+                      {referenceZone.metrics.primarySector}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-300 leading-relaxed pt-1 border-t border-slate-800/80">
+                    {language === 'es' ? referenceZone.narrativeEs : referenceZone.narrativeEn}
+                  </p>
+
+                  <p className="flex items-start gap-2 text-[10px] text-slate-500 leading-relaxed pt-3 border-t border-slate-800/80 font-mono-tech">
+                    <Info className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-px" />
+                    <span>{t('flagship.provenanceNote')} · Densidad expresada en el Sistema Métrico SI (hab/ha).</span>
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Scope Comparison Bar Chart */}

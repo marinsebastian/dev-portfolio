@@ -9,8 +9,11 @@ async function inspect() {
   console.log("=== PMTILES HEADER ===");
   console.log(JSON.stringify(header, null, 2));
 
-  console.log("\n=== PMTILES METADATA ===");
-  console.log(JSON.stringify(metadata, null, 2));
+  console.log("=== PMTILES ATTRIBUTES ===");
+  const attributes = metadata.tilestats.layers[0].attributes;
+  for (const attr of attributes) {
+    console.log(`Key: ${attr.attribute} | min: ${attr.min} | max: ${attr.max} | count: ${attr.count}`);
+  }
 }
 
 inspect().catch(err => console.error("Error inspecting PMTiles:", err));

@@ -113,13 +113,13 @@ export const CASE_STUDIES: CaseStudy[] = [
     solutionEs: "Desarrollé una aplicación responsiva en Next.js que transmite el archivo vectorial PMTiles de atlasurbano con MapLibre GL, decodifica su esquema minificado de atributos censales, pinta cuatro capas métricas basadas en datos y añade un proxy de Gemini en el servidor para resúmenes narrativos.",
     proofPoints: [
       "Streams 247,346 real INE census block polygons from a 90 MB PMTiles archive using HTTP byte-range requests — no tile server and no hosted map service.",
-      "Decoded the archive's undocumented minified attribute schema (a1, b1, r1, v1, g1) and drives MapLibre GL interpolate expressions directly from it.",
+      "Decoded the archive's undocumented minified attribute schema (a1, b1, x1, y1, g1) and drives MapLibre GL interpolate expressions directly from it.",
       "Four switchable census layers (density, connectivity, basic services, population) with click-to-inspect on individual blocks.",
       "Server-side Gemini API proxy keeps the key off the client and caps output tokens per request."
     ],
     proofPointsEs: [
       "Transmite 247.346 polígonos reales de manzanos del INE desde un archivo PMTiles de 90 MB mediante peticiones HTTP por rango de bytes — sin servidor de teselas ni servicio de mapas alojado.",
-      "Decodifiqué el esquema minificado de atributos del archivo (a1, b1, r1, v1, g1) y alimento con él las expresiones interpolate de MapLibre GL.",
+      "Decodifiqué el esquema minificado de atributos del archivo (a1, b1, x1, y1, g1) y alimento con él las expresiones interpolate de MapLibre GL.",
       "Cuatro capas censales conmutables (densidad, conectividad, servicios básicos, población) con inspección por clic sobre cada manzano.",
       "Proxy de la API de Gemini en el servidor: la clave nunca llega al navegador y el consumo de tokens está acotado por petición."
     ],
@@ -136,7 +136,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     codeSnippet: {
       filename: "components/map/RealBlockMapWidget.client.tsx",
       language: "typescript",
-      code: `// The atlas minifies census field names to two-character codes.\n// Every value is normalized 0-1 against the national range.\nexport const ATLAS_FIELDS = {\n  personas_por_hectarea: 'b1', // density\n  tics_internet: 'v1',         // internet / ICT\n  agua_caneria: 'r1',          // piped water\n  educacion_superior: 'g1',    // higher education\n} as const;\n\nmap.setPaintProperty('ine-manzanos-fill', 'fill-color', [\n  'interpolate',\n  ['linear'],\n  ['coalesce', ['get', ATLAS_FIELDS.personas_por_hectarea], 0],\n  0.0, '#0f172a', 0.45, '#059669', 0.9, '#34d399',\n]);`
+      code: `// The atlas minifies census field names to two-character codes.\n// Every value is normalized 0-1 against the national range.\nexport const ATLAS_FIELDS = {\n  personas_por_hectarea: 'b1', // density\n  tics_internet: 'x1',         // internet / ICT\n  agua_caneria: 'y1',          // piped water\n  educacion_superior: 'g1',    // higher education\n} as const;\n\nmap.setPaintProperty('ine-manzanos-fill', 'fill-color', [\n  'interpolate',\n  ['linear'],\n  ['coalesce', ['get', ATLAS_FIELDS.personas_por_hectarea], 0],\n  0.0, '#0f172a', 0.45, '#059669', 0.9, '#34d399',\n]);`
     }
   },
   {

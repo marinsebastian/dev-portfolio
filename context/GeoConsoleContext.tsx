@@ -81,6 +81,9 @@ interface GeoConsoleValue {
   focusedMode: boolean;
   setFocusedMode: (focused: boolean) => void;
 
+  visibleStats: VisibleStats | null;
+  setVisibleStats: (stats: VisibleStats | null) => void;
+
   /** Called by the map widget on mount; returns a cleanup that unregisters. */
   registerMapController: (controller: MapController) => () => void;
   /** Null until the map has mounted. */
@@ -96,6 +99,7 @@ export function GeoConsoleProvider({ children }: { children: React.ReactNode }) 
   const [selectedBlock, setSelectedBlock] = useState<SelectedBlock | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [focusedMode, setFocusedMode] = useState(false);
+  const [visibleStats, setVisibleStats] = useState<VisibleStats | null>(null);
 
   // A ref, not state: the controller identity changing must not re-render the
   // whole console, and consumers only ever read it inside event handlers.
@@ -124,6 +128,8 @@ export function GeoConsoleProvider({ children }: { children: React.ReactNode }) 
       setUserLocation,
       focusedMode,
       setFocusedMode,
+      visibleStats,
+      setVisibleStats,
       registerMapController,
       getMapController,
     }),
@@ -134,6 +140,7 @@ export function GeoConsoleProvider({ children }: { children: React.ReactNode }) 
       selectedBlock,
       userLocation,
       focusedMode,
+      visibleStats,
       registerMapController,
       getMapController,
     ]

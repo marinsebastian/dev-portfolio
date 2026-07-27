@@ -41,9 +41,9 @@ export const COPILOT_TOOLS = [
         properties: {
           layer: {
             type: 'string',
-            enum: ['DENSITY', 'TECH_CONN', 'HOUSING_SERVICES', 'ECONOMIC_HUBS'],
+            enum: ['DENSITY', 'TECH_CONN', 'LANDLINE_PHONE', 'HOUSING_SERVICES', 'ECONOMIC_HUBS'],
             description:
-              'DENSITY = inhabitants per hectare (b1). TECH_CONN = internet/ICT coverage (v1). HOUSING_SERVICES = piped water coverage (r1). ECONOMIC_HUBS = inhabitants per block (a1).',
+              'DENSITY = inhabitants per hectare (b1). TECH_CONN = internet/ICT coverage (x1). LANDLINE_PHONE = fixed telephone line (v1). HOUSING_SERVICES = piped water coverage (y1). ECONOMIC_HUBS = inhabitants per block (a1).',
           },
         },
         required: ['layer'],
@@ -61,7 +61,7 @@ export const COPILOT_TOOLS = [
         properties: {
           scope: {
             type: 'string',
-            enum: ['Nacional', 'Santa Cruz', 'Cochabamba', 'La Paz'],
+            enum: ['Santa Cruz', 'La Paz', 'Cochabamba', 'Nacional'],
           },
         },
         required: ['scope'],
@@ -161,8 +161,9 @@ export interface MapStateSnapshot {
 
 export const LAYER_DESCRIPTIONS: Record<LayerCode, string> = {
   DENSITY: 'Densidad poblacional — habitantes por hectárea (campo b1, valor absoluto)',
-  TECH_CONN: 'Conectividad — cobertura de internet/TIC por manzano (campo v1, proporción 0–1)',
-  HOUSING_SERVICES: 'Servicios básicos — cobertura de agua por cañería (campo r1, proporción 0–1)',
+  TECH_CONN: 'Conectividad — cobertura de internet/TIC por manzano (campo x1, proporción 0–1)',
+  LANDLINE_PHONE: 'Telefonía fija — cobertura de línea telefónica fija por manzano (campo v1, proporción 0–1)',
+  HOUSING_SERVICES: 'Servicios básicos — cobertura de agua por cañería (campo y1, proporción 0–1)',
   ECONOMIC_HUBS: 'Población por manzano — habitantes (campo a1, valor absoluto)',
 };
 
@@ -184,7 +185,7 @@ Responde SIEMPRE en ${isEs ? 'español' : 'English'}. ${isEs ? 'Usa el sistema m
 ## Datos disponibles
 Los manzanos provienen del archivo PMTiles atlasurbano de Mauricio Foronda (@mauforonda), derivado del Censo 2024 del INE. El esquema es MIXTO:
 - Valores absolutos: población por manzano (a1, 0–8.645) y densidad en habitantes por hectárea (b1, 0–8.581).
-- Proporciones 0–1 que se muestran como porcentaje: internet/TIC (v1), agua por cañería (r1), educación superior (g1), alcantarillado (s1).
+- Proporciones 0–1 que se muestran como porcentaje: internet/TIC (x1), agua por cañería (y1), educación superior (g1), alcantarillado (z1).
 Los manzanos sólo existen desde el nivel de zoom 8. Por debajo de eso el mapa muestra únicamente el mapa base.
 
 ## Herramientas

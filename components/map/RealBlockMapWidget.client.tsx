@@ -86,9 +86,10 @@ export const ATLAS_FIELDS = {
   porcentaje_menor20: 'd1', // Share under 20 — proportion, 0 … 1
   porcentaje_60omas: 'e1', // Share 60 and over — proportion, 0 … 0.84
   educacion_superior: 'g1', // Higher education — proportion, 0 … 1
-  agua_caneria: 'r1', // Piped water coverage — proportion, 0 … 1
-  alcantarillado: 's1', // Sewage coverage — proportion, 0 … 1
-  tics_internet: 'v1', // Internet / ICT coverage — proportion, 0 … 1
+  agua_caneria: 'y1', // Piped water coverage — proportion, 0 … 1 (x1/y1/z1 core indicators)
+  alcantarillado: 'z1', // Sewage / Basic Services coverage — proportion, 0 … 1
+  tics_internet: 'x1', // Internet / ICT coverage — proportion, 0 … 1
+  telefonia_fija: 'v1', // Fixed landline telephone coverage — proportion, 0 … 1
 } as const;
 
 interface LayerPaint {
@@ -113,6 +114,12 @@ const LAYER_PAINT: Record<LayerCode, LayerPaint> = {
   TECH_CONN: {
     field: ATLAS_FIELDS.tics_internet,
     stops: [0.0, '#0f172a', 0.2, '#155e75', 0.4, '#0e7490', 0.65, '#06b6d4', 0.9, '#22d3ee'],
+    unitScale: 100,
+    unitLabel: '%',
+  },
+  LANDLINE_PHONE: {
+    field: ATLAS_FIELDS.telefonia_fija,
+    stops: [0.0, '#0f172a', 0.05, '#4c1d95', 0.15, '#6d28d9', 0.3, '#8b5cf6', 0.5, '#a78bfa'],
     unitScale: 100,
     unitLabel: '%',
   },
@@ -288,6 +295,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     userLocation,
     registerMapController,
     focusedMode,
+    setVisibleStats,
   } = useGeoConsole();
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -421,9 +429,32 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     });
 
     // The block layer only exists from BLOCK_MIN_ZOOM; surface that to the user.
-    const syncZoomState = () => setBelowDataZoom(map.getZoom() < BLOCK_MIN_ZOOM);
+    const syncZoomState = () => {
+      setBelowDataZoom(map.getZoom() < BLOCK_MIN_ZOOM);
+      if (map.getZoom() >= BLOCK_MIN_ZOOM) {
+        const { field, unitScale } = LAYER_PAINT[layerRef.current];
+        const values = map
+          .queryRenderedFeatures({ layers: [FILL_LAYER] })
+          .map((f) => f.properties?.[field])
+          .filter((v): v is number => typeof v === 'number')
+          .map((v) => v * unitScale)
+          .sort((a, b) => a - b);
+        if (values.length > 0) {
+          setVisibleStats({
+            count: values.length,
+            median: Math.round(percentile(values, 0.5)),
+            p90: Math.round(percentile(values, 0.9)),
+            max: Math.round(values[values.length - 1]),
+            field,
+          });
+        }
+      } else {
+        setVisibleStats(null);
+      }
+    };
     map.on('zoomend', syncZoomState);
     map.on('moveend', syncZoomState);
+    map.on('idle', syncZoomState);
 
     map.on('click', FILL_LAYER, (e) => {
       const feature = e.features?.[0];
