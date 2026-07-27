@@ -174,6 +174,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
 
   const isFocused = variant === 'focused';
 
+
   // The imperative controller is registered once but reads the layer at call
   // time, so it needs a live value rather than the one captured at registration.
   const layerRef = useRef(activeLayer);
@@ -438,14 +439,90 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     ? `${threshold.min}${threshold.max !== null ? `–${threshold.max}` : '+'} ${LAYER_PAINT[activeLayer].unitLabel}`
     : null;
 
+  // In focused mode the chat is the primary control surface and vertical space
+  // is scarce, so the controls collapse to a single scrollable row — otherwise
+  // the full panel eats most of the mobile half and leaves a sliver of map.
+  if (isFocused) {
+    return (
+      <div className="flex h-full flex-col font-sans">
+        <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900 px-3 py-2">
+          {(['Nacional', 'Santa Cruz', 'Cochabamba', 'La Paz'] as ScopeType[]).map((scope) => (
+            <button
+              key={scope}
+              type="button"
+              aria-pressed={activeScope === scope}
+              onClick={() => {
+                setActiveScope(scope);
+                setSelectedBlock(null);
+              }}
+              className={`min-h-[36px] shrink-0 rounded-lg px-2.5 py-1.5 font-mono-tech text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                activeScope === scope
+                  ? 'bg-teal-500 text-slate-950'
+                  : 'border border-slate-800 bg-slate-950/80 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              {scope === 'Nacional' ? t('flagship.scopeNacional').split(' ')[1] ?? 'Nacional' : scope}
+            </button>
+          ))}
+
+          <select
+            value={activeLayer}
+            onChange={(e) => setActiveLayer(e.target.value as LayerCode)}
+            aria-label={t('flagship.layerLabel')}
+            className="ml-auto min-h-[36px] shrink-0 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 font-mono-tech text-[11px] text-slate-200 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+          >
+            {CENSUS_LAYER_GROUPS.map((group) => (
+              <optgroup key={group.code} label={language === 'es' ? group.labelEs : group.labelEn}>
+                {group.layers.map((layer) => (
+                  <option key={layer.code} value={layer.code}>
+                    {language === 'es' ? layer.labelEs : layer.labelEn} ({layer.unitLabel})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+
+        <div className="relative min-h-0 flex-1">
+          <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
+
+          {thresholdLabel && (
+            <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-teal-500/40 bg-slate-900/90 px-2.5 py-1.5 font-mono-tech text-[10px] text-teal-200 backdrop-blur-md">
+              <SlidersHorizontal className="h-3 w-3 shrink-0" />
+              <span>{thresholdLabel}</span>
+              <button
+                type="button"
+                onClick={() => setThreshold(null)}
+                aria-label={t('flagship.thresholdClear')}
+                className="rounded p-0.5 hover:bg-teal-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+
+          {belowDataZoom && (
+            <div className="absolute inset-x-3 bottom-3 z-10 space-y-1.5 rounded-lg border border-amber-500/50 bg-slate-900/95 p-2.5 font-mono-tech text-[10px] shadow-2xl backdrop-blur-md">
+              <div className="font-bold uppercase text-amber-300">{t('flagship.zoomNoticeTitle')}</div>
+              <button
+                type="button"
+                onClick={handleZoomToBlocks}
+                className="flex min-h-[36px] items-center gap-1.5 rounded border border-amber-500/50 bg-amber-500/20 px-2.5 py-1.5 font-bold text-amber-200 hover:bg-amber-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              >
+                <ZoomIn className="h-3 w-3 shrink-0" />
+                {t('flagship.zoomNoticeAction')}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={isFocused ? 'flex h-full flex-col font-sans' : 'space-y-4 font-sans'}>
+    <div className="space-y-4 font-sans">
       {/* Scope + layer controls */}
-      <div
-        className={`bg-slate-900 border border-slate-800 p-3 space-y-3 ${
-          isFocused ? 'border-x-0 border-t-0' : 'rounded-t-xl'
-        }`}
-      >
+      <div className="space-y-3 rounded-t-xl border border-slate-800 bg-slate-900 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
           <div className="flex items-center space-x-2 min-w-0">
             <Layers className="w-4 h-4 text-teal-400 shrink-0" />
@@ -540,11 +617,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       </div>
 
       {/* Map canvas */}
-      <div
-        className={`relative w-full overflow-hidden border border-slate-800 shadow-2xl ${
-          isFocused ? 'flex-1 border-x-0 border-b-0' : 'h-[460px] sm:h-[520px] rounded-b-xl'
-        }`}
-      >
+      <div className="relative h-[460px] w-full overflow-hidden rounded-b-xl border border-slate-800 shadow-2xl sm:h-[520px]">
         <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
 
         {/* Legend */}
@@ -585,7 +658,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       </div>
 
       {/* Block inspector */}
-      {selectedBlock && !isFocused && (
+      {selectedBlock && (
         <div className="p-3.5 rounded-xl bg-slate-900 border border-teal-500/50 font-mono-tech text-xs text-slate-200 space-y-2.5 shadow-xl">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>

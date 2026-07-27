@@ -125,7 +125,7 @@ export function ContactSection() {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder={t('contact.namePlaceholder')}
-                        className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-teal-500 transition-colors"
+                        className="w-full min-h-[44px] px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 transition-colors focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                       />
                     </div>
 
@@ -137,7 +137,7 @@ export function ContactSection() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder={t('contact.emailPlaceholder')}
-                        className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-teal-500 transition-colors"
+                        className="w-full min-h-[44px] px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 transition-colors focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                       />
                     </div>
 
@@ -149,7 +149,7 @@ export function ContactSection() {
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         placeholder={t('contact.messagePlaceholder')}
-                        className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-teal-500 transition-colors"
+                        className="w-full min-h-[44px] px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 transition-colors focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                       />
                     </div>
 

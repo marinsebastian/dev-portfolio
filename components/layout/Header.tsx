@@ -48,7 +48,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center space-x-1 bg-slate-900/80 p-1 rounded-lg border border-slate-800/80 text-xs font-medium whitespace-nowrap">
+          <nav className="hidden xl:flex items-center space-x-1 bg-slate-900/80 p-1 rounded-lg border border-slate-800/80 text-xs font-medium whitespace-nowrap">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -64,7 +64,7 @@ export function Header() {
             })}
           </nav>
 
-          {/* Right actions: language switcher (all widths) + CV download (xl and up) */}
+          {/* Right actions: language switcher at every width, CV download from sm */}
           <div className="flex items-center gap-2 shrink-0">
 
             <LanguageSwitcher language={language} setLanguage={setLanguage} />
@@ -72,17 +72,19 @@ export function Header() {
             <a
               href="/CV Sebastian Marin.pdf"
               download="CV Sebastian Marin.pdf"
-              className="hidden xl:flex items-center space-x-2 px-3.5 py-2.5 min-h-[44px] rounded-lg bg-teal-500/10 border border-teal-500/40 text-teal-300 hover:bg-teal-500/20 text-xs font-mono-tech font-medium transition-all shadow-sm whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className="hidden sm:flex items-center space-x-2 px-3.5 py-2.5 min-h-[44px] rounded-lg bg-teal-500/10 border border-teal-500/40 text-teal-300 hover:bg-teal-500/20 text-xs font-mono-tech font-medium transition-all shadow-sm whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             >
               <FileText className="w-3.5 h-3.5 text-teal-400 shrink-0" />
               <span>{t('nav.downloadCv')}</span>
             </a>
 
-            {/* Drawer trigger — matches the drawer's own lg breakpoint so tablet
-                widths are never left without navigation. */}
+            {/* Drawer trigger — shares the drawer's own xl breakpoint. The six
+                nav links plus the language switcher do not fit at 1024px, so the
+                full nav only appears from xl and everything below gets the
+                drawer rather than a clipped row. */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md bg-slate-900 border border-slate-800 text-slate-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className="xl:hidden p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md bg-slate-900 border border-slate-800 text-slate-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-nav-drawer"
@@ -94,11 +96,11 @@ export function Header() {
         </div>
       </div>
 
-      {/* Navigation drawer (below lg) */}
+      {/* Navigation drawer (below xl) */}
       {mobileMenuOpen && (
         <div
           id="mobile-nav-drawer"
-          className="lg:hidden bg-[#0b0f17] border-b border-slate-800 px-4 pt-3 pb-6 space-y-2 mt-2 shadow-2xl"
+          className="xl:hidden bg-[#0b0f17] border-b border-slate-800 px-4 pt-3 pb-6 space-y-2 mt-2 shadow-2xl"
         >
           {navLinks.map((link) => {
             const Icon = link.icon;
