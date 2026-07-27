@@ -42,6 +42,62 @@ test.describe('Portfolio — core content', () => {
     await expect(page.getByText('Awtu Commerce', { exact: true })).toBeVisible();
     await expect(page.getByText('Facultad de Ciencias y Tecnología')).toBeVisible();
   });
+
+  test('does not steal focus or scroll position on a fresh load', async ({ page }) => {
+    await page.goto('/');
+
+    // A mount-time `.focus()` deep in the CV section used to silently scroll
+    // the page there on every load — this is the regression that fix targets.
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    const active = await page.evaluate(() => document.activeElement?.tagName);
+    expect(active).not.toBe('BUTTON');
+  });
+});
+
+test.describe('Navigation — active section indicator', () => {
+  test('marks the current section active in the desktop nav while scrolling', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+
+    await expect(page.locator('nav a[aria-current="true"]')).toHaveAttribute('href', '#overview');
+
+    await page.locator('#flagship').scrollIntoViewIfNeeded();
+    await expect(page.locator('nav a[aria-current="true"]')).toHaveAttribute('href', '#flagship', {
+      timeout: 5000,
+    });
+
+    await page.locator('#contact').scrollIntoViewIfNeeded();
+    await expect(page.locator('nav a[aria-current="true"]')).toHaveAttribute('href', '#contact', {
+      timeout: 5000,
+    });
+  });
+
+  test('scroll progress bar paints above the sticky header once scrolled', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+    // The bar's width animates via a spring, not instantly — poll until it settles.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () => document.querySelector('[data-testid="scroll-progress"]')?.getBoundingClientRect().width ?? 0
+          ),
+        { timeout: 5000 }
+      )
+      .toBeGreaterThan(1000);
+
+    const bar = page.getByTestId('scroll-progress');
+    const box = await bar.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThan(1000);
+
+    // The bar must be the topmost element at its own strip, not painted over
+    // by the header — the exact regression this test guards against.
+    const topmost = await page.evaluate(() => document.elementFromPoint(640, 1)?.getAttribute('data-testid'));
+    expect(topmost).toBe('scroll-progress');
+  });
 });
 
 test.describe('Portfolio — bilingual behaviour', () => {
@@ -384,6 +440,47 @@ test.describe('AI copilot', () => {
     // Escape closes it and returns to the page.
     await page.keyboard.press('Escape');
     await expect(console_).toBeHidden();
+  });
+
+  test('shows the selected-block tooltip in Focused Mode too, not just the main page', async ({ page }) => {
+    // Focused Mode is how a mobile visitor primarily uses the map (map on
+    // top, chat below) — the block inspector used to be a panel that only
+    // existed in the main page's layout, so a mobile visitor had no way to
+    // see what they had clicked at all once inside this view.
+    await page.goto('/#flagship');
+    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+
+    const console_ = page.getByTestId('focused-console');
+    await expect(console_).toBeVisible();
+    const canvas = console_.locator('canvas.maplibregl-canvas').first();
+    await expect(canvas).toBeVisible();
+    await page.waitForTimeout(12000);
+
+    const box = await canvas.boundingBox();
+    const tooltip = page.getByText(/MANZANO SELECCIONADO|SELECTED BLOCK/i);
+    const offsets = [
+      [0, 0],
+      [40, 30],
+      [-40, -30],
+      [70, -50],
+      [-70, 50],
+      [110, 80],
+    ];
+    for (const [dx, dy] of offsets) {
+      try {
+        await canvas.click({ position: { x: box!.width / 2 + dx, y: box!.height / 2 + dy }, timeout: 3000 });
+      } catch {
+        // The tooltip from an earlier successful click in this loop can
+        // itself cover the canvas at the next offset — that's evidence the
+        // interaction already worked, in this smaller Focused Mode canvas.
+        break;
+      }
+      if (await tooltip.isVisible().catch(() => false)) break;
+      await page.waitForTimeout(500);
+    }
+
+    await expect(tooltip).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/\d+ hab\/ha/)).toBeVisible();
   });
 
   test('offers starter suggestion chips', async ({ page }) => {

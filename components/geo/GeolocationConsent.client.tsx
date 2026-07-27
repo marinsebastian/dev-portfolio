@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MapPin, ShieldCheck, X, Loader2 } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
+import { MapPin, ShieldCheck, Loader2 } from 'lucide-react';
+import { XIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole } from '@/context/GeoConsoleContext';
 import {
@@ -32,6 +35,8 @@ export default function GeolocationConsent() {
   const [error, setError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: dismissIconRef, handlers: dismissIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
 
   const applyIpFallback = useCallback(async () => {
     const result = await lookupIpLocation();
@@ -125,6 +130,13 @@ export default function GeolocationConsent() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [phase, handleDismiss]);
 
+  // Standard dialog behaviour: move focus into it on open. `preventScroll`
+  // matters here — the dialog is a fixed overlay already in view, so letting
+  // focus scroll the page underneath it would be a regression of its own.
+  useEffect(() => {
+    if (phase === 'asking') primaryRef.current?.focus({ preventScroll: true });
+  }, [phase]);
+
   if (phase === 'hidden') return null;
 
   return (
@@ -148,9 +160,10 @@ export default function GeolocationConsent() {
           type="button"
           onClick={handleDismiss}
           aria-label={t('geo.dismiss')}
+          {...dismissIconHandlers}
           className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
         >
-          <X className="h-4 w-4" />
+          <XIcon ref={dismissIconRef} size={16} />
         </button>
 
         <div className="mb-4 flex items-center gap-3">

@@ -1,27 +1,70 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { SectionReveal } from '../motion/SectionReveal';
 import { SEBASTIAN_CV_DATA } from '@/data/cvData';
 import { GithubIcon } from '../ui/GithubIcon';
 import ObfuscatedPhone from '../ui/ObfuscatedPhone.client';
 import {
   FileText,
-  Download,
-  Eye,
   User,
   Briefcase,
   GraduationCap,
   Award,
-  Mail,
   MapPin,
   CheckCircle2,
-  X,
-  Check,
   LucideIcon
 } from 'lucide-react';
+import { EyeIcon, DownloadIcon, MailIcon, CheckIcon, UserIcon, XIcon } from '@animateicons/react/lucide';
+import { useIconAnimator, type AnimatedIconComponent } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 
 type CvTab = 'profile' | 'experience' | 'skills' | 'education';
+
+/** Only `profile` has a real AnimateIcons equivalent (User) — the other three
+ * tab icons (Briefcase, Award, GraduationCap) have none in the curated set. */
+const ANIMATED_TAB_ICONS: Partial<Record<CvTab, AnimatedIconComponent>> = {
+  profile: UserIcon,
+};
+
+function CvTabButton({
+  tab,
+  isActive,
+  onClick,
+  prefersReducedMotion,
+  index,
+}: {
+  tab: { id: CvTab; label: string; icon: LucideIcon };
+  isActive: boolean;
+  onClick: () => void;
+  prefersReducedMotion: boolean;
+  index: number;
+}) {
+  const StaticIcon = tab.icon;
+  const AnimatedIcon = ANIMATED_TAB_ICONS[tab.id];
+  const { ref, handlers } = useIconAnimator(prefersReducedMotion, index * 350);
+
+  return (
+    <button
+      type="button"
+      aria-pressed={isActive}
+      onClick={onClick}
+      {...handlers}
+      className={`flex items-center space-x-2 px-4 py-2.5 min-h-[44px] rounded-lg border text-xs font-mono-tech transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+        isActive
+          ? 'bg-teal-500/15 border-teal-500 text-teal-300 font-bold shadow-lg'
+          : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+      }`}
+    >
+      {AnimatedIcon ? (
+        <AnimatedIcon ref={ref} size={16} className="text-teal-400 shrink-0" />
+      ) : (
+        <StaticIcon className="w-4 h-4 text-teal-400 shrink-0" />
+      )}
+      <span>{tab.label}</span>
+    </button>
+  );
+}
 
 export function InteractiveCVSection() {
   const { t, language } = useLanguage();
@@ -29,6 +72,16 @@ export function InteractiveCVSection() {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const previewButtonRef = useRef<HTMLButtonElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: previewIconRef, handlers: previewIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+  const { ref: downloadIconRef, handlers: downloadIconHandlers } = useIconAnimator(prefersReducedMotion ?? false, 200);
+  const { ref: emailIconRef, handlers: emailIconHandlers } = useIconAnimator(prefersReducedMotion ?? false, 400);
+  const { ref: modalDownloadIconRef, handlers: modalDownloadIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+  const { ref: modalCloseIconRef, handlers: modalCloseIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+  // Tracks whether the modal has actually been opened, so the focus-restore
+  // effect below only fires when it closes — not on the section's initial
+  // mount, which used to steal focus (and scroll) to this button on page load.
+  const hasOpenedModalRef = useRef(false);
 
   const cv = SEBASTIAN_CV_DATA;
 
@@ -48,8 +101,16 @@ export function InteractiveCVSection() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [pdfModalOpen]);
 
+  // Restore focus to the trigger only when the modal actually closes, never
+  // on mount — and never let restoring focus scroll the page.
   useEffect(() => {
-    if (!pdfModalOpen) previewButtonRef.current?.focus();
+    if (pdfModalOpen) {
+      hasOpenedModalRef.current = true;
+      return;
+    }
+    if (hasOpenedModalRef.current) {
+      previewButtonRef.current?.focus({ preventScroll: true });
+    }
   }, [pdfModalOpen]);
 
   return (
@@ -75,26 +136,33 @@ export function InteractiveCVSection() {
               ref={previewButtonRef}
               type="button"
               onClick={() => setPdfModalOpen(true)}
+              {...previewIconHandlers}
               className="flex items-center space-x-2 px-4 py-2.5 min-h-[44px] rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold transition-all shadow-[0_0_15px_rgba(20,184,166,0.3)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             >
-              <Eye className="w-4 h-4" />
+              <EyeIcon ref={previewIconRef} size={16} />
               <span>{t('cv.previewPdf')}</span>
             </button>
 
             <a
               href={cv.personal.pdfPath}
               download="CV Sebastian Marin.pdf"
+              {...downloadIconHandlers}
               className="flex items-center space-x-2 px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-teal-500/40 text-teal-300 transition-all font-semibold"
             >
-              <Download className="w-4 h-4 text-teal-400" />
+              <DownloadIcon ref={downloadIconRef} size={16} className="text-teal-400" />
               <span>{t('cv.downloadPdf')}</span>
             </a>
 
             <button
               onClick={handleCopyEmail}
+              {...emailIconHandlers}
               className="flex items-center space-x-2 px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 transition-all"
             >
-              {copiedEmail ? <Check className="w-4 h-4 text-emerald-400" /> : <Mail className="w-4 h-4 text-teal-400" />}
+              {copiedEmail ? (
+                <CheckIcon ref={emailIconRef} size={16} className="text-emerald-400" />
+              ) : (
+                <MailIcon ref={emailIconRef} size={16} className="text-teal-400" />
+              )}
               <span>{copiedEmail ? t('cv.emailCopied') : cv.personal.email}</span>
             </button>
           </div>
@@ -107,26 +175,16 @@ export function InteractiveCVSection() {
             { id: 'experience', label: t('cv.tabExperience'), icon: Briefcase },
             { id: 'skills', label: t('cv.tabSkills'), icon: Award },
             { id: 'education', label: t('cv.tabEducation'), icon: GraduationCap },
-          ] satisfies { id: CvTab; label: string; icon: LucideIcon }[]).map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2.5 min-h-[44px] rounded-lg border text-xs font-mono-tech transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
-                  isActive
-                    ? 'bg-teal-500/15 border-teal-500 text-teal-300 font-bold shadow-lg'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                }`}
-              >
-                <Icon className="w-4 h-4 text-teal-400 shrink-0" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+          ] satisfies { id: CvTab; label: string; icon: LucideIcon }[]).map((tab, index) => (
+            <CvTabButton
+              key={tab.id}
+              tab={tab}
+              isActive={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              prefersReducedMotion={prefersReducedMotion ?? false}
+              index={index}
+            />
+          ))}
         </div>
 
         {/* Active Tab Panel */}
@@ -308,18 +366,20 @@ export function InteractiveCVSection() {
                 <a
                   href={cv.personal.pdfPath}
                   download="CV Sebastian Marin.pdf"
+                  {...modalDownloadIconHandlers}
                   className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-teal-500 text-slate-950 font-bold text-xs hover:bg-teal-400 transition-colors"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <DownloadIcon ref={modalDownloadIconRef} size={14} />
                   <span>{t('cv.downloadPdf')}</span>
                 </a>
                 <button
                   type="button"
                   onClick={() => setPdfModalOpen(false)}
                   aria-label="Cerrar / Close"
+                  {...modalCloseIconHandlers}
                   className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
                 >
-                  <X className="w-6 h-6" />
+                  <XIcon ref={modalCloseIconRef} size={24} />
                 </button>
               </div>
             </div>
