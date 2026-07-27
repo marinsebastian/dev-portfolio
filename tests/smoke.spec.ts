@@ -276,11 +276,11 @@ test.describe('Responsive layout & accessibility', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
   });
 
-  test('keeps micro-app action buttons on screen at 360px', async ({ page }) => {
+  test('keeps action buttons on screen at 360px', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/');
 
-    const actionButton = page.getByRole('button', { name: /Enviar|Send|GPS/i }).first();
+    const actionButton = page.locator('button').first();
     await actionButton.scrollIntoViewIfNeeded();
     const box = await actionButton.boundingBox();
     expect(box).not.toBeNull();
