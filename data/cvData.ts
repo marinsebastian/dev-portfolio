@@ -63,7 +63,9 @@ export const SEBASTIAN_CV_DATA: CVData = {
     title: "Ingeniero de Sistemas — Desarrollador Fullstack",
     titleEn: "Systems Engineer — Full-Stack Developer",
     location: "Cochabamba, Bolivia",
-    phone: "+591 72295996",
+    // Rendered through ObfuscatedPhone so the number never reaches the
+    // served HTML or a static bundle string. See components/ui/ObfuscatedPhone.client.tsx.
+    phone: "",
     email: "marinsebastian143@gmail.com",
     github: "github.com/marinsebastian",
     githubUrl: "https://github.com/marinsebastian",

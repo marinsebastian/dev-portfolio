@@ -1,17 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import * as pmtiles from 'pmtiles';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import {
-  CENSUS_LAYERS,
-  SCOPE_CONFIG,
-  ScopeType,
-  LayerCode,
-} from '@/data/mauForondaCensusData';
+import { CENSUS_LAYER_GROUPS, SCOPE_CONFIG, ScopeType, LayerCode } from '@/data/mauForondaCensusData';
 import { useLanguage } from '@/context/LanguageContext';
-import { Sparkles, Layers, ExternalLink, Info, ZoomIn } from 'lucide-react';
+import { useGeoConsole, type VisibleStats } from '@/context/GeoConsoleContext';
+import { Layers, ZoomIn, Crosshair, SlidersHorizontal, X } from 'lucide-react';
 
 const PMTILES_URL = 'https://raw.githubusercontent.com/mauforonda/atlasurbano/pmtiles/atlas.pmtiles';
 
@@ -37,7 +33,7 @@ if (typeof window !== 'undefined') {
   maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 }
 
-/** Resolves once the worker has the pmtiles protocol; awaited before map creation. */
+/** Resolves once the worker has the pmtiles protocol. */
 let workerProtocolReady: Promise<void> | null = null;
 
 function ensureWorkerProtocol(): Promise<void> {
@@ -59,6 +55,11 @@ const BLOCK_MIN_ZOOM = 8;
 /** Zoom used when the user asks to jump from the national view down to real blocks. */
 const BLOCK_ENTRY_ZOOM = 12;
 
+const FILL_LAYER = 'ine-manzanos-fill';
+const STROKE_LAYER = 'ine-manzanos-stroke';
+const SELECTED_SOURCE = 'selected-block';
+const SELECTED_LAYER = 'selected-block-glow';
+
 /**
  * Mauricio Foronda minifies the Censo 2024 attribute names to two-character
  * codes to keep tiles small. The schema is *mixed*, which is easy to get wrong:
@@ -78,30 +79,54 @@ export const ATLAS_FIELDS = {
   tics_internet: 'v1', // Internet / ICT coverage — proportion, 0 … 1
 } as const;
 
+interface LayerPaint {
+  field: string;
+  stops: (number | string)[];
+  /**
+   * Divisor converting a user-facing number into the field's own scale.
+   * Coverage layers are quoted in percent but stored as 0–1, so "fibre above
+   * 80%" has to become `v1 >= 0.8`. Count layers are already in native units.
+   */
+  unitScale: number;
+  unitLabel: string;
+}
+
 /**
  * Fill ramp per layer. Stops are expressed in each field's own units, so the
  * absolute-count layers ramp over realistic urban values rather than 0–1 (which
  * would saturate every block at the top colour). The archive's maxima are
  * extreme outliers, so the ramps top out at a readable urban range instead.
  */
-const LAYER_PAINT: Record<LayerCode, { field: string; stops: (number | string)[] }> = {
+const LAYER_PAINT: Record<LayerCode, LayerPaint> = {
   TECH_CONN: {
-    field: ATLAS_FIELDS.tics_internet, // 0–1
+    field: ATLAS_FIELDS.tics_internet,
     stops: [0.0, '#0f172a', 0.2, '#155e75', 0.4, '#0e7490', 0.65, '#06b6d4', 0.9, '#22d3ee'],
+    unitScale: 100,
+    unitLabel: '%',
   },
   DENSITY: {
-    field: ATLAS_FIELDS.personas_por_hectarea, // inhabitants per hectare
+    field: ATLAS_FIELDS.personas_por_hectarea,
     stops: [0, '#0f172a', 50, '#047857', 120, '#059669', 250, '#10b981', 450, '#34d399'],
+    unitScale: 1,
+    unitLabel: 'hab/ha',
   },
   HOUSING_SERVICES: {
-    field: ATLAS_FIELDS.agua_caneria, // 0–1
+    field: ATLAS_FIELDS.agua_caneria,
     stops: [0.0, '#0f172a', 0.25, '#b45309', 0.5, '#d97706', 0.75, '#f59e0b', 0.95, '#fbbf24'],
+    unitScale: 100,
+    unitLabel: '%',
   },
   ECONOMIC_HUBS: {
-    field: ATLAS_FIELDS.personas, // inhabitants per block
+    field: ATLAS_FIELDS.personas,
     stops: [0, '#0f172a', 80, '#0d9488', 200, '#14b8a6', 400, '#2dd4bf', 800, '#5eead4'],
+    unitScale: 1,
+    unitLabel: 'hab',
   },
 };
+
+export function layerUnit(layer: LayerCode): { unitScale: number; unitLabel: string } {
+  return { unitScale: LAYER_PAINT[layer].unitScale, unitLabel: LAYER_PAINT[layer].unitLabel };
+}
 
 /** Rounds an absolute count-style attribute, or null when the block lacks it. */
 function toCount(value: unknown): number | null {
@@ -113,39 +138,48 @@ function toPercent(value: unknown): number | null {
   return typeof value === 'number' ? Math.round(value * 100) : null;
 }
 
-interface SelectedBlock {
-  lngLat: string;
-  /** Inhabitants per hectare, straight from the archive. */
-  densityPerHa: number | null;
-  /** Inhabitants in this block. */
-  population: number | null;
-  internetPct: number | null;
-  waterPct: number | null;
-  educationPct: number | null;
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  const index = Math.min(sorted.length - 1, Math.floor(sorted.length * p));
+  return sorted[index];
 }
+
+const EMPTY_COLLECTION: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
 
 interface RealBlockMapWidgetProps {
-  activeScope: ScopeType;
-  onScopeChange: (scope: ScopeType) => void;
-  activeLayer: LayerCode;
-  onLayerChange: (layer: LayerCode) => void;
+  /** Focused mode renders the map full-height beside the chat, without chrome. */
+  variant?: 'panel' | 'focused';
 }
 
-export default function RealBlockMapWidgetClient({
-  activeScope,
-  onScopeChange,
-  activeLayer,
-  onLayerChange,
-}: RealBlockMapWidgetProps) {
+export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBlockMapWidgetProps) {
   const { t, language } = useLanguage();
+  const {
+    activeScope,
+    setActiveScope,
+    activeLayer,
+    setActiveLayer,
+    threshold,
+    setThreshold,
+    selectedBlock,
+    setSelectedBlock,
+    userLocation,
+    registerMapController,
+  } = useGeoConsole();
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
   const [styleReady, setStyleReady] = useState(false);
   const [belowDataZoom, setBelowDataZoom] = useState(SCOPE_CONFIG[activeScope].zoom < BLOCK_MIN_ZOOM);
-  const [selectedBlock, setSelectedBlock] = useState<SelectedBlock | null>(null);
-  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
+
+  const isFocused = variant === 'focused';
+
+  // The imperative controller is registered once but reads the layer at call
+  // time, so it needs a live value rather than the one captured at registration.
+  const layerRef = useRef(activeLayer);
+  useEffect(() => {
+    layerRef.current = activeLayer;
+  }, [activeLayer]);
 
   // Initialize the MapLibre GL map with the PMTiles vector source.
   useEffect(() => {
@@ -170,24 +204,20 @@ export default function RealBlockMapWidgetClient({
             type: 'raster',
             tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
             tileSize: 256,
-            attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           },
           'atlas-pmtiles': {
             type: 'vector',
             url: `pmtiles://${PMTILES_URL}`,
-            attribution: 'Manzanos Censo 2024 INE &mdash; <a href="https://github.com/mauforonda/atlasurbano" target="_blank" rel="noreferrer">@mauforonda / atlasurbano</a>',
+          },
+          [SELECTED_SOURCE]: {
+            type: 'geojson',
+            data: EMPTY_COLLECTION,
           },
         },
         layers: [
+          { id: 'carto-dark-bg', type: 'raster', source: 'carto-dark', minzoom: 0, maxzoom: 20 },
           {
-            id: 'carto-dark-bg',
-            type: 'raster',
-            source: 'carto-dark',
-            minzoom: 0,
-            maxzoom: 20,
-          },
-          {
-            id: 'ine-manzanos-fill',
+            id: FILL_LAYER,
             type: 'fill',
             source: 'atlas-pmtiles',
             'source-layer': 'manzanos',
@@ -202,32 +232,39 @@ export default function RealBlockMapWidgetClient({
             },
           },
           {
-            id: 'ine-manzanos-stroke',
+            id: STROKE_LAYER,
             type: 'line',
             source: 'atlas-pmtiles',
             'source-layer': 'manzanos',
+            paint: { 'line-color': '#020617', 'line-width': 0.7, 'line-opacity': 0.7 },
+          },
+          {
+            // The vector layer carries no id field, so the selected block is
+            // highlighted by copying its geometry into a small GeoJSON source
+            // rather than by filtering on a key that does not exist.
+            id: SELECTED_LAYER,
+            type: 'line',
+            source: SELECTED_SOURCE,
             paint: {
-              'line-color': '#020617',
-              'line-width': 0.7,
-              'line-opacity': 0.7,
+              'line-color': '#14b8a6',
+              'line-width': 3.5,
+              'line-opacity': 0.9,
+              'line-blur': 0.6,
             },
           },
         ],
       },
       center: initialScope.centerLngLat,
       zoom: initialScope.zoom,
+      // Attribution is rendered as discrete text beneath the map instead of a
+      // canvas overlay: the licence obligation is met without the watermark.
       attributionControl: false,
     });
 
-    // The worker exists by the time the map is constructed, so this is where the
-    // worker-side protocol gets installed. It resolves well before the first
-    // tile request; if it ever failed, the block layer would stay empty and the
-    // error surfaces in the console rather than silently.
     void ensureWorkerProtocol();
 
     map.on('load', () => {
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-      map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
       setStyleReady(true);
     });
 
@@ -236,26 +273,33 @@ export default function RealBlockMapWidgetClient({
     map.on('zoomend', syncZoomState);
     map.on('moveend', syncZoomState);
 
-    map.on('click', 'ine-manzanos-fill', (e) => {
+    map.on('click', FILL_LAYER, (e) => {
       const feature = e.features?.[0];
       if (!feature) return;
       const props = feature.properties ?? {};
 
       setSelectedBlock({
         lngLat: `${e.lngLat.lat.toFixed(5)}, ${e.lngLat.lng.toFixed(5)}`,
+        lat: e.lngLat.lat,
+        lng: e.lngLat.lng,
         densityPerHa: toCount(props[ATLAS_FIELDS.personas_por_hectarea]),
         population: toCount(props[ATLAS_FIELDS.personas]),
         internetPct: toPercent(props[ATLAS_FIELDS.tics_internet]),
         waterPct: toPercent(props[ATLAS_FIELDS.agua_caneria]),
         educationPct: toPercent(props[ATLAS_FIELDS.educacion_superior]),
       });
+
+      const source = map.getSource(SELECTED_SOURCE) as maplibregl.GeoJSONSource | undefined;
+      source?.setData({
+        type: 'FeatureCollection',
+        features: [{ type: 'Feature', properties: {}, geometry: feature.geometry }],
+      });
     });
 
-    map.on('mouseenter', 'ine-manzanos-fill', () => {
+    map.on('mouseenter', FILL_LAYER, () => {
       map.getCanvas().style.cursor = 'pointer';
     });
-
-    map.on('mouseleave', 'ine-manzanos-fill', () => {
+    map.on('mouseleave', FILL_LAYER, () => {
       map.getCanvas().style.cursor = '';
     });
 
@@ -271,31 +315,95 @@ export default function RealBlockMapWidgetClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Publish the imperative surface the copilot and geolocation flow drive.
+  useEffect(() => {
+    if (!styleReady) return;
+
+    return registerMapController({
+      flyTo: (lat, lng, zoom) => {
+        mapRef.current?.flyTo({
+          center: [lng, lat],
+          zoom: zoom ?? Math.max(mapRef.current.getZoom(), BLOCK_ENTRY_ZOOM),
+          duration: 1600,
+        });
+      },
+      getCenter: () => {
+        const c = mapRef.current?.getCenter();
+        return { lat: c?.lat ?? 0, lng: c?.lng ?? 0 };
+      },
+      getZoom: () => mapRef.current?.getZoom() ?? 0,
+      getRenderedBlockCount: () =>
+        mapRef.current?.queryRenderedFeatures({ layers: [FILL_LAYER] }).length ?? 0,
+      getVisibleStats: (): VisibleStats | null => {
+        const map = mapRef.current;
+        if (!map) return null;
+
+        const { field, unitScale } = LAYER_PAINT[layerRef.current];
+        const values = map
+          .queryRenderedFeatures({ layers: [FILL_LAYER] })
+          .map((f) => f.properties?.[field])
+          .filter((v): v is number => typeof v === 'number')
+          .map((v) => v * unitScale)
+          .sort((a, b) => a - b);
+
+        if (values.length === 0) return null;
+        return {
+          count: values.length,
+          median: Math.round(percentile(values, 0.5)),
+          p90: Math.round(percentile(values, 0.9)),
+          max: Math.round(values[values.length - 1]),
+          field,
+        };
+      },
+    });
+  }, [styleReady, registerMapController]);
+
   // Move the camera when the scope changes.
   useEffect(() => {
     if (!mapRef.current) return;
     const config = SCOPE_CONFIG[activeScope];
-    mapRef.current.flyTo({
-      center: config.centerLngLat,
-      zoom: config.zoom,
-      duration: 1200,
-    });
+    mapRef.current.flyTo({ center: config.centerLngLat, zoom: config.zoom, duration: 1200 });
   }, [activeScope]);
 
-  // Repaint the fill ramp whenever the layer changes — and once the style is
-  // ready, so a pill clicked during the initial load is not silently dropped.
+  // Repaint the fill ramp whenever the layer or threshold changes — and once
+  // the style is ready, so a change made during the initial load is not
+  // silently dropped.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
 
-    const { field, stops } = LAYER_PAINT[activeLayer];
-    map.setPaintProperty('ine-manzanos-fill', 'fill-color', [
+    const { field, stops, unitScale } = LAYER_PAINT[activeLayer];
+    map.setPaintProperty(FILL_LAYER, 'fill-color', [
       'interpolate',
       ['linear'],
       ['coalesce', ['get', field], 0],
       ...stops,
     ]);
-  }, [activeLayer, styleReady]);
+
+    if (threshold) {
+      // Dim rather than hide: keeping non-matching blocks faintly visible
+      // preserves the street grid, so a filtered view still reads as a city.
+      const min = threshold.min / unitScale;
+      const max = threshold.max === null ? Number.MAX_SAFE_INTEGER : threshold.max / unitScale;
+      map.setPaintProperty(FILL_LAYER, 'fill-opacity', [
+        'case',
+        ['all', ['>=', ['coalesce', ['get', field], -1], min], ['<=', ['coalesce', ['get', field], -1], max]],
+        0.9,
+        0.07,
+      ]);
+    } else {
+      map.setPaintProperty(FILL_LAYER, 'fill-opacity', 0.85);
+    }
+  }, [activeLayer, threshold, styleReady]);
+
+  // Clearing the selection from elsewhere (scope change, copilot) must also
+  // clear the highlight geometry.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady || selectedBlock) return;
+    const source = map.getSource(SELECTED_SOURCE) as maplibregl.GeoJSONSource | undefined;
+    source?.setData(EMPTY_COLLECTION);
+  }, [selectedBlock, styleReady]);
 
   const handleZoomToBlocks = useCallback(() => {
     const map = mapRef.current;
@@ -306,38 +414,38 @@ export default function RealBlockMapWidgetClient({
       zoom: Math.max(target.zoom, BLOCK_ENTRY_ZOOM),
       duration: 1400,
     });
-    if (activeScope === 'Nacional') onScopeChange('Santa Cruz');
-  }, [activeScope, onScopeChange]);
+    if (activeScope === 'Nacional') setActiveScope('Santa Cruz');
+  }, [activeScope, setActiveScope]);
 
-  const handleRunAiAnalysis = async () => {
-    setAiLoading(true);
-    try {
-      const res = await fetch('/api/gemini-assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          metroArea: activeScope,
-          blockData: selectedBlock,
-          activeLayer,
-          language,
-        }),
-      });
-      const data = await res.json();
-      setAiAnalysis(data.reply ?? 'AI Spatial Assistant proxy returned no content.');
-    } catch {
-      setAiAnalysis('AI Spatial Assistant proxy temporarily unavailable.');
-    } finally {
-      setAiLoading(false);
+  const handleCenterOnUser = useCallback(() => {
+    if (!userLocation) return;
+    mapRef.current?.flyTo({
+      center: [userLocation.lng, userLocation.lat],
+      zoom: 14,
+      duration: 1600,
+    });
+  }, [userLocation]);
+
+  const activeLayerMeta = useMemo(() => {
+    for (const group of CENSUS_LAYER_GROUPS) {
+      const found = group.layers.find((l) => l.code === activeLayer);
+      if (found) return found;
     }
-  };
+    return CENSUS_LAYER_GROUPS[0].layers[0];
+  }, [activeLayer]);
 
-  const activeLayerColor =
-    CENSUS_LAYERS.find((l) => l.code === activeLayer)?.primaryColor || '#14b8a6';
+  const thresholdLabel = threshold
+    ? `${threshold.min}${threshold.max !== null ? `–${threshold.max}` : '+'} ${LAYER_PAINT[activeLayer].unitLabel}`
+    : null;
 
   return (
-    <div className="space-y-4 font-sans">
-      {/* Scope selector */}
-      <div className="p-3 bg-slate-900 border border-slate-800 rounded-t-xl space-y-3">
+    <div className={isFocused ? 'flex h-full flex-col font-sans' : 'space-y-4 font-sans'}>
+      {/* Scope + layer controls */}
+      <div
+        className={`bg-slate-900 border border-slate-800 p-3 space-y-3 ${
+          isFocused ? 'border-x-0 border-t-0' : 'rounded-t-xl'
+        }`}
+      >
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
           <div className="flex items-center space-x-2 min-w-0">
             <Layers className="w-4 h-4 text-teal-400 shrink-0" />
@@ -346,16 +454,16 @@ export default function RealBlockMapWidgetClient({
             </span>
           </div>
 
-          <a
-            href="https://mauforonda.github.io/atlasurbano/"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] font-mono-tech text-teal-300 hover:text-teal-200 hidden sm:flex items-center gap-1 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-          >
-            <Info className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-            <span>{t('flagship.atlasLinkLabel')}</span>
-            <ExternalLink className="w-3 h-3 text-slate-400 shrink-0" />
-          </a>
+          {userLocation && (
+            <button
+              type="button"
+              onClick={handleCenterOnUser}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-950/80 border border-teal-500/40 text-teal-300 hover:bg-slate-800 text-[11px] font-mono-tech transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            >
+              <Crosshair className="w-3.5 h-3.5 shrink-0" />
+              <span>{t('flagship.centerOnMe')}</span>
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="group" aria-label={t('flagship.scopeSelectorLabel')}>
@@ -365,7 +473,7 @@ export default function RealBlockMapWidgetClient({
               type="button"
               aria-pressed={activeScope === scope}
               onClick={() => {
-                onScopeChange(scope);
+                setActiveScope(scope);
                 setSelectedBlock(null);
               }}
               className={`min-h-[44px] py-2 px-3 rounded-lg text-xs font-mono-tech font-bold transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
@@ -385,62 +493,74 @@ export default function RealBlockMapWidgetClient({
           ))}
         </div>
 
-        {/* Census layer pills */}
-        <div className="pt-1 flex flex-wrap items-center gap-1.5" role="group" aria-label={t('flagship.layerLabel')}>
-          <span className="text-[10px] font-mono-tech text-slate-400 uppercase mr-1">
+        {/* Categorized census layer selector */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <label
+            htmlFor="census-layer-select"
+            className="text-[10px] font-mono-tech text-slate-400 uppercase"
+          >
             {t('flagship.layerLabel')}
-          </span>
-          {CENSUS_LAYERS.map((layer) => (
-            <button
-              key={layer.code}
-              type="button"
-              aria-pressed={activeLayer === layer.code}
-              onClick={() => onLayerChange(layer.code)}
-              className={`min-h-[44px] px-3 py-2 rounded text-[11px] font-mono-tech transition-all flex items-center space-x-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
-                activeLayer === layer.code
-                  ? 'bg-slate-800 text-teal-300 border border-teal-500/50 shadow'
-                  : 'bg-slate-950/60 text-slate-400 hover:text-slate-200 border border-slate-800/60'
-              }`}
-            >
-              <span
-                className="w-2 h-2 rounded-full inline-block shrink-0"
-                style={{ backgroundColor: layer.primaryColor }}
-              />
-              <span>{language === 'es' ? layer.labelEs : layer.labelEn}</span>
-            </button>
-          ))}
+          </label>
+          <select
+            id="census-layer-select"
+            value={activeLayer}
+            onChange={(e) => setActiveLayer(e.target.value as LayerCode)}
+            className="flex-1 min-w-[200px] min-h-[44px] px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 text-xs font-mono-tech focus:outline-none focus:border-teal-500 focus-visible:ring-2 focus-visible:ring-teal-400"
+          >
+            {CENSUS_LAYER_GROUPS.map((group) => (
+              <optgroup key={group.code} label={language === 'es' ? group.labelEs : group.labelEn}>
+                {group.layers.map((layer) => (
+                  <option key={layer.code} value={layer.code}>
+                    {language === 'es' ? layer.labelEs : layer.labelEn} ({layer.unitLabel})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </div>
+
+        {thresholdLabel && (
+          <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-teal-500/10 border border-teal-500/40 text-[11px] font-mono-tech text-teal-200">
+            <span className="flex items-center gap-1.5 min-w-0">
+              <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {t('flagship.thresholdActive')} {thresholdLabel}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setThreshold(null)}
+              aria-label={t('flagship.thresholdClear')}
+              className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center rounded hover:bg-teal-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Map canvas */}
-      <div className="relative h-[460px] sm:h-[520px] w-full overflow-hidden border border-slate-800 shadow-2xl rounded-b-xl">
+      <div
+        className={`relative w-full overflow-hidden border border-slate-800 shadow-2xl ${
+          isFocused ? 'flex-1 border-x-0 border-b-0' : 'h-[460px] sm:h-[520px] rounded-b-xl'
+        }`}
+      >
         <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
-
-        <div className="absolute top-3 right-3 z-10 flex items-center space-x-2">
-          <button
-            type="button"
-            onClick={handleRunAiAnalysis}
-            disabled={aiLoading}
-            className="flex items-center space-x-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-mono-tech font-bold text-xs shadow-xl transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-          >
-            <Sparkles className="w-3.5 h-3.5 shrink-0" />
-            <span>{aiLoading ? t('flagship.aiLoading') : t('flagship.runAi')}</span>
-          </button>
-        </div>
 
         {/* Legend */}
         <div className="absolute top-3 left-3 z-10 hidden sm:block bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl max-w-xs">
           <div className="text-teal-400 font-bold tracking-wider uppercase">
-            {t('flagship.legendLayerTitle')}
+            {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-slate-400">{t('flagship.legendLow')}</span>
             <div
               className="h-2 w-20 rounded"
-              style={{ background: `linear-gradient(to right, #0f172a, ${activeLayerColor})` }}
+              style={{ background: `linear-gradient(to right, #0f172a, ${activeLayerMeta.primaryColor})` }}
             />
             <span className="text-slate-200 font-bold">{t('flagship.legendHigh')}</span>
           </div>
+          <div className="text-slate-500">{activeLayerMeta.unitLabel}</div>
         </div>
 
         {/* Honest empty state: the archive has no geometry below zoom 8. */}
@@ -465,7 +585,7 @@ export default function RealBlockMapWidgetClient({
       </div>
 
       {/* Block inspector */}
-      {selectedBlock && (
+      {selectedBlock && !isFocused && (
         <div className="p-3.5 rounded-xl bg-slate-900 border border-teal-500/50 font-mono-tech text-xs text-slate-200 space-y-2.5 shadow-xl">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -512,23 +632,6 @@ export default function RealBlockMapWidgetClient({
           <p className="text-[10px] text-slate-500 leading-relaxed font-sans border-t border-slate-800 pt-2">
             {t('flagship.blockIndexNote')}
           </p>
-        </div>
-      )}
-
-      {/* AI narrative */}
-      {aiAnalysis && (
-        <div className="p-4 rounded-xl bg-slate-900 border border-teal-500/40 font-mono-tech text-xs text-slate-200 space-y-2 shadow-xl">
-          <div className="flex items-center justify-between text-teal-400 font-bold border-b border-slate-800 pb-2 gap-2">
-            <div className="flex items-center space-x-2 min-w-0">
-              <Sparkles className="w-4 h-4 text-teal-400 shrink-0" />
-              <span className="truncate">{t('flagship.aiHeaderTitle')}</span>
-            </div>
-            <span className="text-[10px] text-slate-400 font-normal shrink-0">GEMINI REST PROXY</span>
-          </div>
-          <p className="whitespace-pre-line leading-relaxed text-slate-300">{aiAnalysis}</p>
-          {!selectedBlock && (
-            <p className="text-[10px] text-slate-500 font-sans">{t('flagship.aiNoBlockSelected')}</p>
-          )}
         </div>
       )}
     </div>

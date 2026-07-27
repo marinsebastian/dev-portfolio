@@ -45,6 +45,7 @@ export interface TranslationDictionary {
     verifiedPattern: string;
     keyTechnologies: string;
     implementationSample: string;
+    liveDemo: string;
   };
   flagship: {
     badge: string;
@@ -168,11 +169,70 @@ export interface TranslationDictionary {
     sentSuccessDesc: string;
     formNote: string;
     reopenMailClient: string;
+    revealPhone: string;
   };
   footer: {
     tagline: string;
     builtWith: string;
     location: string;
+  };
+  copilot: {
+    title: string;
+    trigger: string;
+    focusedTitle: string;
+    exitFocused: string;
+    providerLabel: string;
+    noProvider: string;
+    reset: string;
+    send: string;
+    placeholder: string;
+    thinking: string;
+    intro: string;
+    introTools: string;
+  };
+  geo: {
+    title: string;
+    body: string;
+    privacy: string;
+    allow: string;
+    approximate: string;
+    dismiss: string;
+    errorFallback: string;
+    sourceGps: string;
+    sourceIp: string;
+    unknownPlace: string;
+  };
+  micro: {
+    telemetryTitle: string;
+    telemetryLive: string;
+    telemetryFps: string;
+    telemetrySession: string;
+    telemetryClicks: string;
+    telemetryLatency: string;
+    telemetryNote: string;
+    apiTitle: string;
+    apiEndpoint: string;
+    apiSend: string;
+    apiHint: string;
+    spatialTitle: string;
+    spatialDepartment: string;
+    spatialSource: string;
+    spatialCoords: string;
+    spatialAccuracy: string;
+    spatialCityLevel: string;
+    spatialNote: string;
+    terminalTitle: string;
+    terminalRun: string;
+    terminalRunning: string;
+    terminalIdle: string;
+    terminalNote: string;
+  };
+  runner: {
+    title: string;
+    run: string;
+    running: string;
+    passed: string;
+    note: string;
   };
 }
 
@@ -225,7 +285,8 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       subtitle: "Desarrollo de interfaces responsivas, servicios backend REST, visualizadores de datos espaciales y automatización de procesos.",
       verifiedPattern: "PATRÓN VERIFICADO",
       keyTechnologies: "TECNOLOGÍAS CLAVE:",
-      implementationSample: "EJEMPLO DE IMPLEMENTACIÓN:"
+      implementationSample: "EJEMPLO DE IMPLEMENTACIÓN:",
+      liveDemo: "MICRO-APP EN VIVO:"
     },
     flagship: {
       badge: "PROYECTO DESTACADO GIS Y DATOS",
@@ -348,12 +409,71 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       sentSuccess: "BORRADOR ABIERTO EN TU CLIENTE DE CORREO",
       sentSuccessDesc: "Este sitio es estático y no tiene servidor de correo: el formulario prepara el mensaje y lo abre en tu aplicación de correo. Revísalo y pulsa enviar allí. Si no se abrió, escribe directamente a marinsebastian143@gmail.com.",
       formNote: "Este formulario no envía nada por sí solo: arma un borrador y lo abre en tu cliente de correo para que tú lo envíes.",
-      reopenMailClient: "Volver a abrir el borrador"
+      reopenMailClient: "Volver a abrir el borrador",
+      revealPhone: "Mostrar el número de teléfono"
     },
     footer: {
       tagline: "Consola de Ingeniería Operativa v1.0",
       builtWith: "Construido con Next.js 16, TypeScript, Tailwind CSS, MapLibre GL, Leaflet y Framer Motion",
       location: "Cochabamba, Bolivia"
+    },
+    copilot: {
+      title: "Copiloto del Mapa",
+      trigger: "Abrir Copiloto IA del Mapa",
+      focusedTitle: "Consola Enfocada — Mapa + Copiloto",
+      exitFocused: "Salir",
+      providerLabel: "Proveedor de IA",
+      noProvider: "SIN PROVEEDOR",
+      reset: "Reiniciar conversación",
+      send: "Enviar mensaje",
+      placeholder: "Pregunta sobre los manzanos del Censo 2024…",
+      thinking: "Consultando…",
+      intro: "Puedo leer el mapa y también moverlo: cambiar de capa, volar a una zona o filtrar manzanos por umbral. Pregúntame en lenguaje natural.",
+      introTools: "Los indicadores por manzano provienen del archivo PMTiles del Censo 2024. Las tarjetas de resumen por zona son referencias ilustrativas.",
+    },
+    geo: {
+      title: "Centrar el visor en tu zona",
+      body: "Solicitamos acceso a tu ubicación únicamente para centrar el visor del Censo 2024 en tu departamento y barrio actual.",
+      privacy: "Tu ubicación exacta no sale del navegador: sólo se usa para mover la cámara del mapa. No la enviamos a ningún servidor ni la almacenamos.",
+      allow: "Permitir Ubicación",
+      approximate: "Usar Ubicación Aproximada",
+      dismiss: "Cerrar",
+      errorFallback: "No pudimos determinar tu ubicación. Puedes seguir eligiendo la ciudad manualmente.",
+      sourceGps: "GPS del navegador",
+      sourceIp: "aproximada por IP",
+      unknownPlace: "Ubicación desconocida",
+    },
+    micro: {
+      telemetryTitle: "Telemetría de esta página",
+      telemetryLive: "en vivo",
+      telemetryFps: "Cuadros/s",
+      telemetrySession: "Sesión",
+      telemetryClicks: "Clics",
+      telemetryLatency: "Latencia API",
+      telemetryNote: "Medido en tu navegador con Navigation Timing y requestAnimationFrame.",
+      apiTitle: "Probador de API REST",
+      apiEndpoint: "Endpoint",
+      apiSend: "Enviar",
+      apiHint: "Elige un endpoint y pulsa Enviar: la petición sale de tu navegador hacia las rutas reales de este sitio.",
+      spatialTitle: "Tu ubicación en el mapa",
+      spatialDepartment: "Departamento",
+      spatialSource: "Origen del dato",
+      spatialCoords: "Coordenadas",
+      spatialAccuracy: "Precisión",
+      spatialCityLevel: "nivel ciudad",
+      spatialNote: "La ubicación por IP se resuelve en el servidor para que ningún tercero vea tu dirección junto al referente de este sitio.",
+      terminalTitle: "Consola de sincronización",
+      terminalRun: "Reproducir sesión",
+      terminalRunning: "Ejecutando…",
+      terminalIdle: "Pulsa «Reproducir sesión» para ver la ejecución del cron y el estado de los contenedores.",
+      terminalNote: "Transcripción grabada de una ejecución real de cron_sync.php. No es una shell remota: este panel no ejecuta comandos.",
+    },
+    runner: {
+      title: "Runner de pruebas E2E",
+      run: "Ejecutar pruebas",
+      running: "Ejecutando…",
+      passed: "pasaron",
+      note: "Reproduce la suite real de tests/smoke.spec.ts.",
     }
   },
   en: {
@@ -402,7 +522,8 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       subtitle: "Building responsive frontends, REST backend microservices, spatial data visualizers, and process automation.",
       verifiedPattern: "VERIFIED PATTERN",
       keyTechnologies: "KEY TECHNOLOGIES:",
-      implementationSample: "IMPLEMENTATION SAMPLE:"
+      implementationSample: "IMPLEMENTATION SAMPLE:",
+      liveDemo: "LIVE MICRO-APP:"
     },
     flagship: {
       badge: "FLAGSHIP GIS & DATA EXPLORER",
@@ -525,12 +646,71 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       sentSuccess: "DRAFT OPENED IN YOUR EMAIL CLIENT",
       sentSuccessDesc: "This is a static site with no mail server: the form composes the message and opens it in your email application. Review it and hit send there. If nothing opened, write directly to marinsebastian143@gmail.com.",
       formNote: "This form does not send anything on its own — it composes a draft and opens it in your email client so you can send it.",
-      reopenMailClient: "Reopen the draft"
+      reopenMailClient: "Reopen the draft",
+      revealPhone: "Reveal the phone number"
     },
     footer: {
       tagline: "Operational Engineering Console v1.0",
       builtWith: "Built with Next.js 16, TypeScript, Tailwind CSS, MapLibre GL, Leaflet & Framer Motion",
       location: "Cochabamba, Bolivia"
+    },
+    copilot: {
+      title: "Map Copilot",
+      trigger: "Open AI Map Copilot",
+      focusedTitle: "Focused Console — Map + Copilot",
+      exitFocused: "Exit",
+      providerLabel: "AI provider",
+      noProvider: "NO PROVIDER",
+      reset: "Reset conversation",
+      send: "Send message",
+      placeholder: "Ask about the 2024 Census blocks…",
+      thinking: "Thinking…",
+      intro: "I can read the map and drive it too: switch layers, fly to an area, or filter blocks by threshold. Just ask in plain language.",
+      introTools: "Per-block indicators come from the 2024 Census PMTiles archive. The zone summary cards are illustrative references.",
+    },
+    geo: {
+      title: "Centre the viewer on your area",
+      body: "We ask for your location only to centre the 2024 Census viewer on your department and neighbourhood.",
+      privacy: "Your precise location never leaves the browser: it is used to move the map camera and nothing else. We do not send or store it.",
+      allow: "Allow Location",
+      approximate: "Use Approximate Location",
+      dismiss: "Close",
+      errorFallback: "We could not determine your location. You can still pick a city manually.",
+      sourceGps: "browser GPS",
+      sourceIp: "approximate, by IP",
+      unknownPlace: "Unknown location",
+    },
+    micro: {
+      telemetryTitle: "Telemetry for this page",
+      telemetryLive: "live",
+      telemetryFps: "Frames/s",
+      telemetrySession: "Session",
+      telemetryClicks: "Clicks",
+      telemetryLatency: "API latency",
+      telemetryNote: "Measured in your browser via Navigation Timing and requestAnimationFrame.",
+      apiTitle: "REST API tester",
+      apiEndpoint: "Endpoint",
+      apiSend: "Send",
+      apiHint: "Pick an endpoint and hit Send: the request goes from your browser to this site's real routes.",
+      spatialTitle: "Your location on the map",
+      spatialDepartment: "Department",
+      spatialSource: "Data source",
+      spatialCoords: "Coordinates",
+      spatialAccuracy: "Accuracy",
+      spatialCityLevel: "city level",
+      spatialNote: "IP lookup is proxied server-side so no third party sees your address alongside this site's referrer.",
+      terminalTitle: "Sync console",
+      terminalRun: "Replay session",
+      terminalRunning: "Running…",
+      terminalIdle: "Press \u00abReplay session\u00bb to watch the cron run and container health.",
+      terminalNote: "Recorded transcript of a real cron_sync.php run. Not a remote shell: this panel executes nothing.",
+    },
+    runner: {
+      title: "E2E test runner",
+      run: "Run tests",
+      running: "Running…",
+      passed: "passed",
+      note: "Replays the real suite in tests/smoke.spec.ts.",
     }
   }
 };

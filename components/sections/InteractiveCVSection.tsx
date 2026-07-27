@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { SectionReveal } from '../motion/SectionReveal';
 import { SEBASTIAN_CV_DATA } from '@/data/cvData';
 import { GithubIcon } from '../ui/GithubIcon';
+import ObfuscatedPhone from '../ui/ObfuscatedPhone.client';
 import {
   FileText,
   Download,
@@ -12,7 +13,6 @@ import {
   GraduationCap,
   Award,
   Mail,
-  Phone,
   MapPin,
   CheckCircle2,
   X,
@@ -147,10 +147,9 @@ export function InteractiveCVSection() {
                     <MapPin className="w-3.5 h-3.5 text-teal-400" />
                     <span>{cv.personal.location}</span>
                   </span>
-                  <span className="flex items-center space-x-1.5 px-3 py-1 bg-slate-950 rounded border border-slate-800">
-                    <Phone className="w-3.5 h-3.5 text-teal-400" />
-                    <span>{cv.personal.phone}</span>
-                  </span>
+                  {/* Same gate as the contact section: printing the number in
+                      plain text here would defeat the protection there. */}
+                  <ObfuscatedPhone variant="inline" />
                   <a
                     href={cv.personal.githubUrl}
                     target="_blank"

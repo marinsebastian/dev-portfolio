@@ -1,19 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
-import {
-  URBAN_CENSUS_ZONES,
-  UrbanCensusZone,
-  ScopeType,
-  LayerCode,
-} from '@/data/mauForondaCensusData';
+import { URBAN_CENSUS_ZONES } from '@/data/mauForondaCensusData';
 import { CASE_STUDIES } from '@/data/portfolioData';
 import { CodeBlock } from '../ui/CodeBlock';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { MapPin, Database, Server, CheckCircle2, Globe, Info } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useGeoConsole } from '@/context/GeoConsoleContext';
+import { CopilotTrigger, LocationBadge } from '../ai/MapCopilot.client';
 
 // Dynamic import for MapLibre GL + PMTiles map component
 const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget.client'), {
@@ -21,18 +18,14 @@ const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget
   loading: () => (
     <div className="h-[480px] w-full rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center space-y-3 font-mono-tech text-xs text-slate-400">
       <div className="w-8 h-8 rounded-full border-2 border-teal-400 border-t-transparent animate-spin" />
-      <span>Loading Mauricio Foronda Censo 2024 PMTiles Vector Engine (100% Real INE Block Geometry)...</span>
+      <span>Cargando manzanos reales del Censo 2024 (PMTiles)…</span>
     </div>
   ),
 });
 
 export function FlagshipGeoSection() {
   const { t, language } = useLanguage();
-  const [activeScope, setActiveScope] = useState<ScopeType>('Santa Cruz');
-  const [activeLayer, setActiveLayer] = useState<LayerCode>('DENSITY');
-  const [selectedZone, setSelectedZone] = useState<UrbanCensusZone>(
-    URBAN_CENSUS_ZONES.find((z) => z.metroArea === 'Santa Cruz') || URBAN_CENSUS_ZONES[0]
-  );
+  const { activeScope, activeLayer, setFocusedMode } = useGeoConsole();
 
   const flagshipData = CASE_STUDIES.find((c) => c.id === 'geoinsights-bolivia')!;
 
@@ -49,7 +42,14 @@ export function FlagshipGeoSection() {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);
   };
 
-  const scopeZones = URBAN_CENSUS_ZONES.filter((z) => z.metroArea === activeScope);
+  const scopeZones = useMemo(
+    () => URBAN_CENSUS_ZONES.filter((z) => z.metroArea === activeScope),
+    [activeScope]
+  );
+
+  // The reference card follows the scope rather than a separate selection, so
+  // the panel and the map can never disagree about which area is in view.
+  const referenceZone = scopeZones[0] ?? URBAN_CENSUS_ZONES[0];
 
   const chartData = scopeZones.map((z) => ({
     name: z.name.split(' ')[0],
@@ -61,7 +61,7 @@ export function FlagshipGeoSection() {
   return (
     <section id="flagship" className="py-20 bg-[#070a11] relative border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        
+
         {/* Flagship Header */}
         <SectionReveal className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -71,8 +71,9 @@ export function FlagshipGeoSection() {
             </div>
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono-tech text-xs">
               <Globe className="w-3.5 h-3.5 text-cyan-400" />
-              <span>PMTiles Vector Tiles (@mauforonda atlasurbano)</span>
+              <span>MapLibre GL · PMTiles</span>
             </div>
+            <LocationBadge />
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -82,70 +83,44 @@ export function FlagshipGeoSection() {
             {t('flagship.summary')}
           </p>
 
-          {/* PMTiles dataset provenance banner */}
-          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 font-mono-tech text-xs space-y-1.5 max-w-4xl text-slate-300">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
-              <span className="text-teal-300 font-bold flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                {t('flagship.datasetBannerTitle')}
-              </span>
-              <a
-                href="https://mauforonda.github.io/atlasurbano/"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] text-cyan-400 hover:underline inline-flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-              >
-                <span>mauforonda/atlasurbano</span>
-              </a>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-              {t('flagship.datasetBannerDesc')}
-            </p>
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <CopilotTrigger onClick={() => setFocusedMode(true)} />
+            <span className="font-mono-tech text-[11px] text-slate-500 max-w-md leading-relaxed">
+              {t('copilot.introTools')}
+            </span>
           </div>
         </SectionReveal>
 
         {/* Main Console Grid: Map Viewer & Urban Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column: Interactive MapLibre GL PMTiles Map with Multi-Scope Switcher */}
+
           <div className="lg:col-span-7">
-            <RealBlockMapWidgetClient
-              activeScope={activeScope}
-              onScopeChange={(scope) => {
-                setActiveScope(scope);
-                const firstZone = URBAN_CENSUS_ZONES.find((z) => z.metroArea === scope);
-                if (firstZone) setSelectedZone(firstZone);
-              }}
-              activeLayer={activeLayer}
-              onLayerChange={(layer) => setActiveLayer(layer)}
-            />
+            <RealBlockMapWidgetClient />
           </div>
 
-          {/* Right Column: Selected Urban Zone Metrics & Comparative Chart */}
+          {/* Right Column: Zone reference card & comparative chart */}
           <div className="lg:col-span-5 space-y-6">
-            
-            {/* Active Urban Zone Card */}
+
             <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div>
                   <span className="text-[10px] font-mono-tech text-slate-400 uppercase">
                     {t('flagship.activeZone')}
                   </span>
-                  <h3 className="text-lg font-bold text-teal-300">{selectedZone.name}</h3>
+                  <h3 className="text-lg font-bold text-teal-300">{referenceZone.name}</h3>
                 </div>
                 <span className="px-2.5 py-1 bg-slate-800 rounded text-xs font-mono-tech text-teal-400 border border-teal-500/30">
-                  {selectedZone.metroArea}
+                  {referenceZone.metroArea}
                 </span>
               </div>
 
-              {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
                 <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
                   <span className="text-slate-400 block text-[10px] uppercase">
                     {t('flagship.population')}
                   </span>
                   <span className="text-white font-bold text-sm">
-                    {formatNumber(selectedZone.metrics.population2024)} hab.
+                    {formatNumber(referenceZone.metrics.population2024)} hab.
                   </span>
                 </div>
 
@@ -154,7 +129,7 @@ export function FlagshipGeoSection() {
                     {t('flagship.densityBadge')}
                   </span>
                   <span className="text-emerald-400 font-bold text-sm">
-                    {formatNumber(selectedZone.metrics.densityHabKm2)} hab/km²
+                    {formatNumber(referenceZone.metrics.densityHabKm2)} hab/km²
                   </span>
                 </div>
 
@@ -163,7 +138,7 @@ export function FlagshipGeoSection() {
                     {t('flagship.connectivityBadge')}
                   </span>
                   <span className="text-cyan-400 font-bold text-sm">
-                    {selectedZone.metrics.internetCoveragePct}%
+                    {referenceZone.metrics.internetCoveragePct}%
                   </span>
                 </div>
 
@@ -172,24 +147,22 @@ export function FlagshipGeoSection() {
                     {t('flagship.servicesBadge')}
                   </span>
                   <span className="text-amber-400 font-bold text-sm">
-                    {selectedZone.metrics.basicServicesIndex} / 100
+                    {referenceZone.metrics.basicServicesIndex} / 100
                   </span>
                 </div>
               </div>
 
-              {/* Sector */}
               <div className="space-y-1.5 text-xs">
                 <span className="font-mono-tech text-slate-400 block text-[10px] uppercase">
                   {t('flagship.sectorBadge')}:
                 </span>
                 <span className="px-2.5 py-1 rounded bg-slate-800 text-teal-300 font-mono-tech text-xs inline-block border border-slate-700">
-                  {selectedZone.metrics.primarySector}
+                  {referenceZone.metrics.primarySector}
                 </span>
               </div>
 
-              {/* Narrative Description */}
               <p className="text-xs text-slate-300 leading-relaxed pt-1 border-t border-slate-800/80">
-                {language === 'es' ? selectedZone.narrativeEs : selectedZone.narrativeEn}
+                {language === 'es' ? referenceZone.narrativeEs : referenceZone.narrativeEn}
               </p>
 
               {/* Provenance: which numbers are measured and which are illustrative */}
@@ -253,7 +226,7 @@ export function FlagshipGeoSection() {
 
         </div>
 
-        {/* Technical Proof & Geolabs Relevance Summary */}
+        {/* Technical Proof & dataset attribution */}
         <div className="p-6 rounded-xl bg-slate-900/70 border border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-6 shadow-2xl">
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-white uppercase font-mono-tech flex items-center space-x-2">
@@ -268,6 +241,38 @@ export function FlagshipGeoSection() {
                 </li>
               ))}
             </ul>
+
+            {/* Discrete attribution: the licence obligation is met here in text
+                rather than as a watermark over the map canvas. */}
+            <p className="pt-3 border-t border-slate-800 font-mono-tech text-[10px] leading-relaxed text-slate-500">
+              {t('flagship.datasetBannerTitle')} ·{' '}
+              <a
+                href="https://github.com/mauforonda/atlasurbano"
+                target="_blank"
+                rel="noreferrer"
+                className="text-teal-400 hover:underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+              >
+                @mauforonda / atlasurbano
+              </a>{' '}
+              ·{' '}
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noreferrer"
+                className="text-slate-400 hover:underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+              >
+                © OpenStreetMap
+              </a>{' '}
+              ·{' '}
+              <a
+                href="https://carto.com/attributions"
+                target="_blank"
+                rel="noreferrer"
+                className="text-slate-400 hover:underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+              >
+                © CARTO
+              </a>
+            </p>
           </div>
 
           <div className="space-y-3">
@@ -275,15 +280,13 @@ export function FlagshipGeoSection() {
               <Server className="w-4 h-4 text-cyan-400" />
               <span>{t('flagship.relevanceTitle')}</span>
             </h4>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              {geolabsRelevance}
-            </p>
+            <p className="text-xs text-slate-300 leading-relaxed">{geolabsRelevance}</p>
 
             <div className="pt-2">
               <CodeBlock
-                filename="components/map/RealBlockMapWidget.client.tsx"
+                filename="lib/copilotTools.ts"
                 language="typescript"
-                code={`// Protocol registration for PMTiles vector tile stream\nconst protocol = new pmtiles.Protocol();\nmaplibregl.addProtocol('pmtiles', protocol.tile);\n\nconst PMTILES_URL = 'https://raw.githubusercontent.com/mauforonda/atlasurbano/pmtiles/atlas.pmtiles';`}
+                code={`// The copilot mutates the map through narrow, named tools.\n{\n  name: 'set_metric_threshold',\n  description: 'Dim every block outside a range on the active layer.',\n  parameters: {\n    type: 'object',\n    properties: {\n      min: { type: 'number' },\n      max: { type: 'number' },\n    },\n    required: ['min'],\n  },\n}`}
               />
             </div>
           </div>

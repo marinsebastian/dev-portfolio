@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
 import { CAPABILITY_PILLARS } from '@/data/portfolioData';
-import { CodeBlock } from '../ui/CodeBlock';
 import { Layout, Server, MapPin, Terminal, CheckCircle2, LucideIcon } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -12,6 +12,49 @@ const ICON_MAP: Record<string, LucideIcon> = {
   MapPin,
   Terminal,
 };
+
+/** Placeholder sized to each panel so switching pillars does not jump the layout. */
+function MicroAppSkeleton() {
+  return (
+    <div className="flex h-64 w-full items-center justify-center rounded-xl border border-slate-800 bg-[#070a11]">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-400 border-t-transparent" />
+    </div>
+  );
+}
+
+// Options are inlined rather than shared: the bundler statically analyses this
+// call, so it cannot follow a hoisted options object.
+const WebTelemetryDashboard = dynamic(() => import('../micro/WebTelemetryDashboard.client'), {
+  ssr: false,
+  loading: MicroAppSkeleton,
+});
+const ApiExplorer = dynamic(() => import('../micro/ApiExplorer.client'), {
+  ssr: false,
+  loading: MicroAppSkeleton,
+});
+const UserSpatialMiniMap = dynamic(() => import('../micro/UserSpatialMiniMap.client'), {
+  ssr: false,
+  loading: MicroAppSkeleton,
+});
+const LinuxTerminalConsole = dynamic(() => import('../micro/LinuxTerminalConsole.client'), {
+  ssr: false,
+  loading: MicroAppSkeleton,
+});
+
+function PillarMicroApp({ pillarId }: { pillarId: string }) {
+  switch (pillarId) {
+    case 'web-interfaces':
+      return <WebTelemetryDashboard />;
+    case 'apis-backend':
+      return <ApiExplorer />;
+    case 'spatial-data':
+      return <UserSpatialMiniMap />;
+    case 'automation-devops':
+      return <LinuxTerminalConsole />;
+    default:
+      return null;
+  }
+}
 
 export function WhatIBuild() {
   const { t, language } = useLanguage();
@@ -122,14 +165,13 @@ export function WhatIBuild() {
                 </div>
               </div>
 
-              {/* Code Snippet Preview */}
+              {/* Live micro-app for the active pillar — a working tool rather
+                  than a code sample of one. */}
               <div className="space-y-2 pt-2">
-                <span className="text-xs font-mono-tech text-slate-400 block">{t('pillars.implementationSample')}</span>
-                <CodeBlock
-                  filename={`${activePillar.id}_implementation.ts`}
-                  language="typescript"
-                  code={activePillar.highlightSnippet}
-                />
+                <span className="text-xs font-mono-tech text-slate-400 block">
+                  {t('pillars.liveDemo')}
+                </span>
+                <PillarMicroApp pillarId={activePillar.id} />
               </div>
 
             </SectionReveal>

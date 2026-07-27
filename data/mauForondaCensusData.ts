@@ -98,6 +98,82 @@ export const SCOPE_CONFIG: Record<
   },
 };
 
+/**
+ * Census layers grouped for the selector dropdown.
+ *
+ * `unitLabel` is the unit the layer is actually expressed in, which differs by
+ * field: the archive stores population and density as absolute values and
+ * coverage indicators as 0–1 proportions rendered as percent. Showing the unit
+ * next to the label is what stops "densidad" and "cobertura" from being read on
+ * the same scale.
+ */
+export interface CensusLayerGroup {
+  code: string;
+  labelEs: string;
+  labelEn: string;
+  layers: (LayerConfig & { unitLabel: string })[];
+}
+
+export const CENSUS_LAYER_GROUPS: CensusLayerGroup[] = [
+  {
+    code: 'DEMOGRAFIA',
+    labelEs: 'Demografía y Densidad',
+    labelEn: 'Demographics & Density',
+    layers: [
+      {
+        code: 'DENSITY',
+        labelEs: 'Densidad poblacional',
+        labelEn: 'Population density',
+        descriptionEs: 'Habitantes por hectárea a nivel de manzano urbano (campo b1).',
+        descriptionEn: 'Inhabitants per hectare at the urban block level (field b1).',
+        primaryColor: '#10b981',
+        unitLabel: 'hab/ha',
+      },
+      {
+        code: 'ECONOMIC_HUBS',
+        labelEs: 'Población por manzano',
+        labelEn: 'Population per block',
+        descriptionEs: 'Total de habitantes registrados en cada manzano (campo a1).',
+        descriptionEn: 'Total inhabitants recorded in each block (field a1).',
+        primaryColor: '#14b8a6',
+        unitLabel: 'hab',
+      },
+    ],
+  },
+  {
+    code: 'CONECTIVIDAD',
+    labelEs: 'Conectividad y TICs',
+    labelEn: 'Connectivity & ICT',
+    layers: [
+      {
+        code: 'TECH_CONN',
+        labelEs: 'Cobertura de internet',
+        labelEn: 'Internet coverage',
+        descriptionEs: 'Proporción de viviendas con internet residencial o fibra (campo v1).',
+        descriptionEn: 'Share of households with residential internet or fibre (field v1).',
+        primaryColor: '#06b6d4',
+        unitLabel: '%',
+      },
+    ],
+  },
+  {
+    code: 'VIVIENDA',
+    labelEs: 'Vivienda y Servicios',
+    labelEn: 'Housing & Services',
+    layers: [
+      {
+        code: 'HOUSING_SERVICES',
+        labelEs: 'Agua por cañería',
+        labelEn: 'Piped water',
+        descriptionEs: 'Proporción de viviendas con agua por cañería de red (campo r1).',
+        descriptionEn: 'Share of households with piped mains water (field r1).',
+        primaryColor: '#f59e0b',
+        unitLabel: '%',
+      },
+    ],
+  },
+];
+
 export const CENSUS_LAYERS: LayerConfig[] = [
   {
     code: 'TECH_CONN',

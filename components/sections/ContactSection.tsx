@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { SectionReveal } from '../motion/SectionReveal';
-import { Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
+import { Mail, MapPin, Send, CheckCircle2 } from 'lucide-react';
 import { GithubIcon } from '../ui/GithubIcon';
+import ObfuscatedPhone from '../ui/ObfuscatedPhone.client';
 import { useLanguage } from '@/context/LanguageContext';
 
 const CONTACT_EMAIL = 'marinsebastian143@gmail.com';
@@ -68,16 +69,7 @@ export function ContactSection() {
                     </div>
                   </a>
 
-                  <a
-                    href="tel:+59172295996"
-                    className="flex items-center space-x-3 p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-slate-200 hover:border-teal-500/50 hover:text-teal-300 transition-all"
-                  >
-                    <Phone className="w-4 h-4 text-teal-400 shrink-0" />
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">{t('contact.phoneLabel')}</span>
-                      <span className="font-bold">+591 72295996</span>
-                    </div>
-                  </a>
+                  <ObfuscatedPhone />
 
                   <div className="flex items-center space-x-3 p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-slate-200">
                     <MapPin className="w-4 h-4 text-teal-400 shrink-0" />

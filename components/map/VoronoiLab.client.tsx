@@ -97,16 +97,39 @@ function clipPolygon(
   return out;
 }
 
+/** Metres per degree of latitude — close enough at this scale for a coverage ring. */
+const M_PER_DEG_LAT = 111_320;
+
+/** Circle of `radiusM` around a point, as a closed ring in [lat, lng]. */
+function coverageRing(pt: Point, radiusM: number, segments = 48): [number, number][] {
+  const dLat = radiusM / M_PER_DEG_LAT;
+  const dLng = radiusM / (M_PER_DEG_LAT * Math.cos((pt.lat * Math.PI) / 180));
+
+  return Array.from({ length: segments }, (_, i) => {
+    const angle = (i / segments) * 2 * Math.PI;
+    return [pt.lat + dLat * Math.sin(angle), pt.lng + dLng * Math.cos(angle)] as [number, number];
+  });
+}
+
 export default function VoronoiLabClient() {
   const [points, setPoints] = useState<Point[]>([
     { id: 1, lat: -17.3895, lng: -66.1568, name: 'Cochabamba Node 1' },
     { id: 2, lat: -17.32, lng: -66.22, name: 'Quillacollo Station' },
     { id: 3, lat: -17.43, lng: -66.1, name: 'Sacaba Hub' },
   ]);
+  const [radiusM, setRadiusM] = useState(3000);
 
   const cells = useMemo(
     () => points.map((p, idx) => ({ point: p, polygon: voronoiCell(p, points), color: PALETTE[idx % PALETTE.length] })),
     [points]
+  );
+
+  // A service point covers the intersection of its Voronoi cell (everything it
+  // is nearest to) and its physical reach — which is what actually determines
+  // whether a location is served.
+  const coverageAreaKm2 = useMemo(
+    () => (Math.PI * (radiusM / 1000) ** 2 * points.length).toFixed(1),
+    [radiusM, points.length]
   );
 
   const handleAddPoint = (lat: number, lng: number) => {
@@ -194,6 +217,23 @@ export default function VoronoiLabClient() {
               )
           )}
 
+          {/* Physical reach of each service point, dashed so it reads as a
+              constraint layered over the nearest-neighbour cells. */}
+          {points.map((pt) => (
+            <Polygon
+              key={`reach-${pt.id}`}
+              positions={coverageRing(pt, radiusM)}
+              pathOptions={{
+                color: '#f8fafc',
+                weight: 1,
+                opacity: 0.45,
+                dashArray: '3, 5',
+                fillOpacity: 0.04,
+                fillColor: '#f8fafc',
+              }}
+            />
+          ))}
+
           {/* CircleMarker avoids Leaflet's default icon, which resolves to a CDN
               path that 404s under a bundler. */}
           {cells.map((c) => (
@@ -216,9 +256,33 @@ export default function VoronoiLabClient() {
         </MapContainer>
       </div>
 
-      <p className="text-[11px] text-slate-500 leading-relaxed">
+      {/* Service coverage radius */}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-3 font-mono-tech text-xs">
+        <label htmlFor="voronoi-radius" className="shrink-0 text-slate-400">
+          RADIO DE COBERTURA
+        </label>
+        <input
+          id="voronoi-radius"
+          type="range"
+          min={500}
+          max={12000}
+          step={500}
+          value={radiusM}
+          onChange={(e) => setRadiusM(Number(e.target.value))}
+          className="h-2 min-w-[140px] flex-1 cursor-pointer appearance-none rounded-full bg-slate-800 accent-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+        />
+        <span className="shrink-0 font-bold text-teal-300">
+          {(radiusM / 1000).toFixed(1)} km
+        </span>
+        <span className="shrink-0 text-slate-500">
+          ≈ {coverageAreaKm2} km² · {points.length} nodos
+        </span>
+      </div>
+
+      <p className="text-[11px] leading-relaxed text-slate-500">
         Cada celda contiene todos los puntos cuyo punto de servicio más cercano es el marcador que la genera.
         Se calcula por intersección de semiplanos (bisectrices perpendiculares) recortada al área de trabajo, en el navegador.
+        El círculo punteado marca el alcance físico configurado: una ubicación queda realmente atendida donde la celda y el radio se solapan.
       </p>
     </div>
   );

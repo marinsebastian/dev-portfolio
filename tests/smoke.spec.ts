@@ -1,5 +1,17 @@
 import { test, expect } from '@playwright/test';
 
+/**
+ * The location prompt appears 2.5s into a first visit and covers the page.
+ * Every suite except the geolocation one pre-seeds a decision so the modal
+ * stays out of the way; the geolocation suite clears it to test the real
+ * first-visit path.
+ */
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => {
+    window.localStorage.setItem('portfolio_geo_consent', 'declined');
+  });
+});
+
 test.describe('Portfolio — core content', () => {
   test('renders the hero with the Spanish positioning statement by default', async ({ page }) => {
     await page.goto('/');
@@ -158,25 +170,27 @@ test.describe('Flagship map', () => {
     await expect(page.getByText(/SIN COBERTURA DE MANZANOS/i)).toBeHidden({ timeout: 15000 });
   });
 
-  test('marks the active scope and layer for assistive technology', async ({ page }) => {
+  test('marks the active scope for assistive technology', async ({ page }) => {
     await page.goto('/#flagship');
 
     const santaCruz = page.getByRole('button', { name: /ZM Santa Cruz/i });
     await santaCruz.click();
     await expect(santaCruz).toHaveAttribute('aria-pressed', 'true');
 
-    const servicesLayer = page.getByRole('button', { name: /Servicios Básicos y Agua/i });
-    await servicesLayer.click();
-    await expect(servicesLayer).toHaveAttribute('aria-pressed', 'true');
+    const nacional = page.getByRole('button', { name: /Bolivia Nacional/i });
+    await expect(nacional).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('renders map attribution for CARTO, OSM and the dataset author', async ({ page }) => {
+  test('credits CARTO, OSM and the dataset author without a canvas watermark', async ({ page }) => {
     await page.goto('/#flagship');
 
-    const attribution = page.locator('#flagship .maplibregl-ctrl-attrib').first();
-    await expect(attribution).toBeAttached({ timeout: 15000 });
-    await expect(attribution).toContainText(/OpenStreetMap/i);
-    await expect(attribution).toContainText(/mauforonda/i);
+    // The map canvas stays clean; attribution is discrete text in the info card.
+    const flagship = page.locator('#flagship');
+    await expect(flagship.getByRole('link', { name: /OpenStreetMap/i })).toBeVisible();
+    await expect(flagship.getByRole('link', { name: /CARTO/i })).toBeVisible();
+    await expect(flagship.getByRole('link', { name: /mauforonda/i }).first()).toBeVisible();
+
+    await expect(page.locator('#flagship .maplibregl-ctrl-attrib')).toHaveCount(0);
   });
 });
 
@@ -312,5 +326,255 @@ test.describe('Social metadata', () => {
     const res = await request.get(new URL(ogImageUrl!).pathname);
     expect(res.status()).toBe(200);
     expect(res.headers()['content-type']).toContain('image/png');
+  });
+});
+
+test.describe('AI copilot', () => {
+  test('reports which providers are configured without leaking keys', async ({ request }) => {
+    const res = await request.get('/api/ai-copilot');
+    expect(res.status()).toBe(200);
+
+    const body = await res.json();
+    expect(Array.isArray(body.available)).toBe(true);
+    for (const provider of body.available) {
+      expect(['nvidia', 'gemini', 'openai']).toContain(provider.id);
+      expect(provider.label).toBeTruthy();
+      // The payload must never carry anything key-shaped.
+      expect(JSON.stringify(provider)).not.toMatch(/sk-|AIza|nvapi-/);
+    }
+  });
+
+  test('validates the request before reaching a paid provider', async ({ request }) => {
+    const empty = await request.post('/api/ai-copilot', { data: { messages: [] } });
+    expect(empty.status()).toBe(400);
+
+    const tooLong = await request.post('/api/ai-copilot', {
+      data: { messages: Array.from({ length: 80 }, () => ({ role: 'user', content: 'hi' })) },
+    });
+    expect(tooLong.status()).toBe(400);
+    expect((await tooLong.json()).error).toContain('too long');
+  });
+
+  test('opens focused mode with the map and chat side by side', async ({ page }) => {
+    await page.goto('/#flagship');
+    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+
+    const console_ = page.getByTestId('focused-console');
+    await expect(console_).toBeVisible();
+    // Both halves are present: a live map canvas and the chat composer.
+    await expect(console_.locator('canvas.maplibregl-canvas')).toBeVisible();
+    await expect(console_.getByRole('button', { name: /Enviar mensaje|Send message/i })).toBeVisible();
+    await expect(console_.getByRole('combobox', { name: /Proveedor de IA|AI provider/i })).toBeVisible();
+
+    // Escape closes it and returns to the page.
+    await page.keyboard.press('Escape');
+    await expect(console_).toBeHidden();
+  });
+
+  test('offers starter suggestion chips', async ({ page }) => {
+    await page.goto('/#flagship');
+    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+
+    const console_ = page.getByTestId('focused-console');
+    await expect(console_.getByRole('button', { name: /fibra > 80%|fibre > 80%/i })).toBeVisible();
+  });
+});
+
+test.describe('Live micro-apps', () => {
+  test('the API tester issues a real request and shows the response', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /APIs e Integraciones|APIs & Integration/i }).click();
+
+    await expect(page.getByText(/Probador de API REST|REST API tester/i)).toBeVisible();
+    await page.getByRole('button', { name: /^Enviar$|^Send$/ }).click();
+
+    // A real 200 from /api/spatial, rendered into the response pane.
+    await expect(page.getByText('200', { exact: true })).toBeVisible({ timeout: 15000 });
+
+    const responseBody = page.locator('pre').filter({ hasText: '"status": "success"' }).first();
+    await expect(responseBody).toBeVisible();
+    await expect(responseBody).toContainText('Cochabamba');
+  });
+
+  test('the telemetry dashboard measures this page, not a mock', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText(/Telemetría de esta página|Telemetry for this page/i)).toBeVisible();
+    // TTFB comes from the Navigation Timing API of the real page load.
+    await expect(page.getByText(/TTFB:\s*\d+\s*ms/)).toBeVisible({ timeout: 15000 });
+  });
+
+  test('the terminal replays a recorded session and says it is not a shell', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Linux, CLI/i }).click();
+
+    await expect(page.getByText(/Consola de sincronización|Sync console/i)).toBeVisible();
+    await expect(page.getByText(/No es una shell remota|Not a remote shell/i)).toBeVisible();
+
+    await page.getByRole('button', { name: /Reproducir sesión|Replay session/i }).click();
+    await expect(page.getByText(/crontab -l/)).toBeVisible({ timeout: 15000 });
+  });
+});
+
+test.describe('Playwright runner panel', () => {
+  test('runs through every step and reports them all passing', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('runner-start').scrollIntoViewIfNeeded();
+    await page.getByTestId('runner-start').click();
+
+    const progress = page.getByTestId('runner-progress');
+    await expect(progress).toContainText('10 / 10', { timeout: 30000 });
+  });
+});
+
+test.describe('Contact privacy', () => {
+  test('keeps the phone number out of the served HTML', async ({ request }) => {
+    const res = await request.get('/');
+    const html = await res.text();
+    expect(html).not.toContain('72295996');
+  });
+
+  test('reveals the number only after an explicit click', async ({ page }) => {
+    await page.goto('/#contact');
+
+    const trigger = page.getByTestId('reveal-phone');
+    await expect(trigger).toBeVisible();
+
+    await trigger.click();
+    const link = page.getByTestId('phone-link').first();
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', /^tel:\+\d+$/);
+  });
+});
+
+test.describe('Geolocation consent', () => {
+  // Undo the global seed: this suite tests the first-visit path itself.
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => {
+      window.localStorage.removeItem('portfolio_geo_consent');
+    });
+  });
+
+  test('asks before reading location and records a decline', async ({ page }) => {
+    await page.goto('/');
+
+    const dialog = page.getByTestId('geo-consent');
+    await expect(dialog).toBeVisible({ timeout: 15000 });
+    await expect(dialog).toHaveAttribute('aria-modal', 'true');
+    // The copy must state why the permission is wanted.
+    await expect(dialog.getByText(/Censo 2024|2024 Census/i)).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    const consent = await page.evaluate(() => localStorage.getItem('portfolio_geo_consent'));
+    expect(consent).toBe('declined');
+  });
+
+  test('/api/geo-ip answers with a usable Bolivian fallback', async ({ request }) => {
+    const res = await request.get('/api/geo-ip');
+    expect(res.status()).toBe(200);
+
+    const body = await res.json();
+    expect(typeof body.lat).toBe('number');
+    expect(typeof body.lng).toBe('number');
+    expect(body.source).toBe('ip');
+  });
+});
+
+test.describe('Map layer selector', () => {
+  test('groups census layers by theme and states their units', async ({ page }) => {
+    await page.goto('/#flagship');
+
+    const select = page.locator('#census-layer-select');
+    await expect(select).toBeVisible();
+
+    const groups = await select.locator('optgroup').allTextContents();
+    expect(groups.length).toBeGreaterThanOrEqual(3);
+
+    // Units belong on the option so density and coverage are not read alike.
+    await expect(select.locator('option', { hasText: 'hab/ha' })).toHaveCount(1);
+    await expect(select.locator('option', { hasText: '(%)' }).first()).toBeAttached();
+
+    await select.selectOption('TECH_CONN');
+    await expect(select).toHaveValue('TECH_CONN');
+  });
+});
+
+test.describe('Gemini tool-call contract', () => {
+  /**
+   * Gemini's OpenAI-compat layer attaches `extra_content.google.thought_signature`
+   * to every tool call and rejects the following turn with 400 INVALID_ARGUMENT
+   * if it is not echoed back verbatim. This guards both directions of that
+   * contract. It self-skips when no Gemini key is configured.
+   */
+  test('requires the thought_signature to be echoed back', async ({ request }) => {
+    const providers = await (await request.get('/api/ai-copilot')).json();
+    const hasGemini = (providers.available ?? []).some(
+      (p: { id: string }) => p.id === 'gemini'
+    );
+    test.skip(!hasGemini, 'GEMINI_API_KEY is not configured in this environment.');
+
+    const tools = [
+      {
+        type: 'function',
+        function: {
+          name: 'set_map_layer',
+          description: 'Switch the census metric layer.',
+          parameters: {
+            type: 'object',
+            properties: { layer: { type: 'string', enum: ['DENSITY', 'TECH_CONN'] } },
+            required: ['layer'],
+          },
+        },
+      },
+    ];
+    const base = [
+      { role: 'system', content: 'You control a census map. Use tools when asked.' },
+      { role: 'user', content: 'Switch the layer to density please' },
+    ];
+
+    const first = await request.post('/api/ai-copilot', {
+      data: { provider: 'gemini', tools, messages: base },
+    });
+    expect(first.status()).toBe(200);
+
+    // Reassemble the tool call from the stream, extra_content included.
+    let call: Record<string, unknown> | null = null;
+    for (const line of (await first.text()).split('\n')) {
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === '[DONE]') continue;
+      const fragment = JSON.parse(payload)?.choices?.[0]?.delta?.tool_calls?.[0];
+      if (!fragment) continue;
+      call = {
+        id: fragment.id,
+        type: 'function',
+        function: { name: fragment.function.name, arguments: fragment.function.arguments },
+        extra_content: fragment.extra_content,
+      };
+    }
+
+    expect(call, 'Gemini should have returned a tool call').not.toBeNull();
+    expect(call!.extra_content).toBeTruthy();
+
+    const toolTurn = (assistantCall: Record<string, unknown>) => [
+      ...base,
+      { role: 'assistant', content: '', tool_calls: [assistantCall] },
+      { role: 'tool', tool_call_id: assistantCall.id, content: '{"ok":true}' },
+    ];
+
+    const withSignature = await request.post('/api/ai-copilot', {
+      data: { provider: 'gemini', messages: toolTurn(call!) },
+    });
+    expect(withSignature.status()).toBe(200);
+
+    const stripped = { ...call! };
+    delete stripped.extra_content;
+    const withoutSignature = await request.post('/api/ai-copilot', {
+      data: { provider: 'gemini', messages: toolTurn(stripped) },
+    });
+    expect(withoutSignature.status()).toBe(400);
+    // Also proves the array-wrapped Gemini error body is unwrapped correctly.
+    expect((await withoutSignature.json()).error).toContain('thought_signature');
   });
 });

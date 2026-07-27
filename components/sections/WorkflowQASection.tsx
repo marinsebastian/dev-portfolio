@@ -1,7 +1,17 @@
 'use client';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
 import { CodeBlock } from '../ui/CodeBlock';
+
+const PlaywrightTestRunner = dynamic(() => import('../micro/PlaywrightTestRunner.client'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-64 w-full items-center justify-center rounded-xl border border-slate-800 bg-[#070a11]">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-400 border-t-transparent" />
+    </div>
+  ),
+});
 import { Terminal, Shield } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -175,7 +185,8 @@ volumes:
           </div>
 
           {/* Active File Viewer */}
-          <div className="lg:col-span-8 h-full">
+          <div className="lg:col-span-8 h-full space-y-4">
+            <PlaywrightTestRunner />
             <CodeBlock
               filename={activeFile.filename}
               language={activeFile.language}

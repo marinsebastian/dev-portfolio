@@ -77,6 +77,56 @@ body {
   background: #1e293b !important;
 }
 
+/* Rotating conic-gradient border for the AI copilot trigger.
+   The angle is a registered custom property so the browser can interpolate it
+   directly; animating a raw `background-image` string would repaint the element
+   on every frame instead. */
+@property --copilot-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.copilot-gradient-border {
+  position: relative;
+  background: #0f172a;
+  isolation: isolate;
+}
+
+.copilot-gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--copilot-angle),
+    #14b8a6,
+    #06b6d4,
+    #6366f1,
+    #14b8a6
+  );
+  animation: copilot-border-spin 4s linear infinite;
+}
+
+.copilot-gradient-border::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  z-index: -2;
+  border-radius: inherit;
+  background: conic-gradient(from var(--copilot-angle), #14b8a6, #06b6d4, #6366f1, #14b8a6);
+  filter: blur(14px);
+  opacity: 0.35;
+  animation: copilot-border-spin 4s linear infinite;
+}
+
+@keyframes copilot-border-spin {
+  to {
+    --copilot-angle: 360deg;
+  }
+}
+
 /* Reduced Motion fallback */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
@@ -84,5 +134,12 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* The copilot border stops rotating but keeps a static gradient, so the
+     button still reads as the primary action rather than losing its identity. */
+  .copilot-gradient-border::before,
+  .copilot-gradient-border::after {
+    animation: none !important;
   }
 }
