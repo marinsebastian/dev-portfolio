@@ -1,13 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import * as maplibregl from 'maplibre-gl';
 import * as pmtiles from 'pmtiles';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { CENSUS_LAYER_GROUPS, SCOPE_CONFIG, ScopeType, LayerCode } from '@/data/mauForondaCensusData';
 import { useLanguage } from '@/context/LanguageContext';
-import { useGeoConsole, type VisibleStats } from '@/context/GeoConsoleContext';
-import { Layers, ZoomIn, Crosshair, SlidersHorizontal, X } from 'lucide-react';
+import { useGeoConsole, type VisibleStats, type SelectedBlock } from '@/context/GeoConsoleContext';
+import { Layers, ZoomIn, Crosshair, SlidersHorizontal } from 'lucide-react';
+import { XIcon } from '@animateicons/react/lucide';
+import { useIconAnimator } from '@/lib/useIconAnimator';
+import Tippy from '@tippyjs/react';
 
 const PMTILES_URL = 'https://raw.githubusercontent.com/mauforonda/atlasurbano/pmtiles/atlas.pmtiles';
 
@@ -59,6 +63,14 @@ const FILL_LAYER = 'ine-manzanos-fill';
 const STROKE_LAYER = 'ine-manzanos-stroke';
 const SELECTED_SOURCE = 'selected-block';
 const SELECTED_LAYER = 'selected-block-glow';
+const SELECTED_LAYER_HALO = 'selected-block-halo';
+
+/** Fill-opacity applied to every block once one is selected — a small, even
+ * dim across the whole layer (there is no per-feature id to exclude just the
+ * selected one from), so the gradient-stroked block reads as the one thing
+ * still at full strength. */
+const DIMMED_FILL_OPACITY = 0.6;
+const DIMMED_THRESHOLD_MATCH_OPACITY = 0.75;
 
 /**
  * Mauricio Foronda minifies the Censo 2024 attribute names to two-character
@@ -151,6 +163,117 @@ interface RealBlockMapWidgetProps {
   variant?: 'panel' | 'focused';
 }
 
+/**
+ * The selected-block inspector, as a map tooltip anchored to the block's own
+ * screen position rather than a panel below the fold — the only way a mobile
+ * visitor in Focused Mode (map on top, half the viewport) ever saw this data
+ * before was by scrolling to a panel that did not exist in that layout at all.
+ */
+function SelectedBlockTooltip({
+  anchorRef,
+  position,
+  block,
+  t,
+  onClose,
+}: {
+  anchorRef: React.RefObject<HTMLDivElement | null>;
+  position: { x: number; y: number } | null;
+  block: SelectedBlock | null;
+  t: (key: string) => string;
+  onClose: () => void;
+}) {
+  const prefersReducedMotion = useReducedMotion();
+  const { ref: closeIconRef, handlers: closeIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+
+  return (
+    <>
+      <div
+        ref={anchorRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute h-px w-px"
+        style={{ left: position?.x ?? -9999, top: position?.y ?? -9999 }}
+      />
+      <Tippy
+        // @tippyjs/react's `reference` type predates React 19's nullable
+        // `RefObject`; the runtime accepts it fine — this only reconciles types.
+        reference={anchorRef as React.RefObject<Element>}
+        visible={Boolean(block && position)}
+        interactive
+        placement="top"
+        offset={[0, 14]}
+        appendTo={() => document.body}
+        render={(attrs) =>
+          block ? (
+            <div
+              {...attrs}
+              className="z-[2100] w-64 space-y-2 rounded-xl border border-teal-500/50 bg-slate-900/95 p-3 font-mono-tech text-xs text-slate-200 shadow-2xl backdrop-blur-md"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-bold uppercase text-teal-400">
+                    {t('flagship.blockInspectorTitle')}
+                  </div>
+                  <div className="truncate text-[10px] text-slate-400">
+                    {t('flagship.blockInspectorSubtitle')}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label={t('flagship.blockClose')}
+                  {...closeIconHandlers}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-teal-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                >
+                  <XIcon ref={closeIconRef} size={12} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+                <div>
+                  {t('flagship.blockPopulationLabel')}:{' '}
+                  <strong className="text-slate-100">
+                    {block.population !== null ? `${block.population} hab.` : '—'}
+                  </strong>
+                </div>
+                <div>
+                  {t('flagship.blockDensityLabel')}:{' '}
+                  <strong className="text-emerald-400">
+                    {block.densityPerHa !== null ? `${block.densityPerHa} hab/ha` : '—'}
+                  </strong>
+                </div>
+                <div>
+                  {t('flagship.blockInternetLabel')}:{' '}
+                  <strong className="text-cyan-300">
+                    {block.internetPct !== null ? `${block.internetPct}%` : '—'}
+                  </strong>
+                </div>
+                <div>
+                  {t('flagship.blockWaterLabel')}:{' '}
+                  <strong className="text-amber-400">
+                    {block.waterPct !== null ? `${block.waterPct}%` : '—'}
+                  </strong>
+                </div>
+                <div className="col-span-2">
+                  {t('flagship.blockEducationLabel')}:{' '}
+                  <strong className="text-teal-300">
+                    {block.educationPct !== null ? `${block.educationPct}%` : '—'}
+                  </strong>
+                </div>
+              </div>
+
+              <p className="border-t border-slate-800 pt-1.5 font-sans text-[10px] leading-relaxed text-slate-500">
+                {t('flagship.blockIndexNote')}
+              </p>
+            </div>
+          ) : (
+            <></>
+          )
+        }
+      />
+    </>
+  );
+}
+
 export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBlockMapWidgetProps) {
   const { t, language } = useLanguage();
   const {
@@ -164,6 +287,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     setSelectedBlock,
     userLocation,
     registerMapController,
+    focusedMode,
   } = useGeoConsole();
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -173,6 +297,13 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
   const [belowDataZoom, setBelowDataZoom] = useState(SCOPE_CONFIG[activeScope].zoom < BLOCK_MIN_ZOOM);
 
   const isFocused = variant === 'focused';
+
+  const prefersReducedMotion = useReducedMotion();
+  // Both branches below render at most one of these per mount (panel vs
+  // focused), so the same ref/handlers pair is safe to reuse across them.
+  const { ref: clearThresholdIconRef, handlers: clearThresholdIconHandlers } = useIconAnimator(
+    prefersReducedMotion ?? false
+  );
 
 
   // The imperative controller is registered once but reads the layer at call
@@ -213,6 +344,9 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
           [SELECTED_SOURCE]: {
             type: 'geojson',
             data: EMPTY_COLLECTION,
+            // Required for `line-gradient` below — it paints along the
+            // line's own progress (0 → 1), not by feature property.
+            lineMetrics: true,
           },
         },
         layers: [
@@ -243,14 +377,31 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             // The vector layer carries no id field, so the selected block is
             // highlighted by copying its geometry into a small GeoJSON source
             // rather than by filtering on a key that does not exist.
+            // A soft, wide, blurred halo sits under the crisp gradient line
+            // (below) so the selection reads clearly even against a bright
+            // fill colour, rather than just a thin outline competing with it.
+            id: SELECTED_LAYER_HALO,
+            type: 'line',
+            source: SELECTED_SOURCE,
+            paint: {
+              // Teal → cyan → emerald: the same three stops as the top
+              // scroll-progress bar, so the selected-block outline echoes the
+              // site's own accent gradient instead of a fourth colour language.
+              'line-gradient': ['interpolate', ['linear'], ['line-progress'], 0, '#14b8a6', 0.5, '#22d3ee', 1, '#14b8a6'],
+              'line-width': 11,
+              'line-opacity': 0.35,
+              'line-blur': 3,
+            },
+          },
+          {
             id: SELECTED_LAYER,
             type: 'line',
             source: SELECTED_SOURCE,
             paint: {
-              'line-color': '#14b8a6',
-              'line-width': 3.5,
-              'line-opacity': 0.9,
-              'line-blur': 0.6,
+              'line-gradient': ['interpolate', ['linear'], ['line-progress'], 0, '#14b8a6', 0.5, '#22d3ee', 1, '#14b8a6'],
+              'line-width': 4.5,
+              'line-opacity': 1,
+              'line-blur': 0.2,
             },
           },
         ],
@@ -389,13 +540,16 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       map.setPaintProperty(FILL_LAYER, 'fill-opacity', [
         'case',
         ['all', ['>=', ['coalesce', ['get', field], -1], min], ['<=', ['coalesce', ['get', field], -1], max]],
-        0.9,
+        selectedBlock ? DIMMED_THRESHOLD_MATCH_OPACITY : 0.9,
         0.07,
       ]);
     } else {
-      map.setPaintProperty(FILL_LAYER, 'fill-opacity', 0.85);
+      // A block selection dims the whole layer a little so the gradient-
+      // stroked outline reads as the one thing still at full strength —
+      // there is no per-feature id to exclude just that block from the dim.
+      map.setPaintProperty(FILL_LAYER, 'fill-opacity', selectedBlock ? DIMMED_FILL_OPACITY : 0.85);
     }
-  }, [activeLayer, threshold, styleReady]);
+  }, [activeLayer, threshold, styleReady, selectedBlock]);
 
   // Clearing the selection from elsewhere (scope change, copilot) must also
   // clear the highlight geometry.
@@ -404,6 +558,29 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     if (!map || !styleReady || selectedBlock) return;
     const source = map.getSource(SELECTED_SOURCE) as maplibregl.GeoJSONSource | undefined;
     source?.setData(EMPTY_COLLECTION);
+  }, [selectedBlock, styleReady]);
+
+  // Tracks the selected block's on-screen position so the tooltip can follow
+  // it — projected fresh on every pan/zoom, not just once at selection time.
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const tooltipAnchorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady || !selectedBlock) {
+      setTooltipPos(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const point = map.project([selectedBlock.lng, selectedBlock.lat]);
+      setTooltipPos({ x: point.x, y: point.y });
+    };
+    updatePosition();
+    map.on('move', updatePosition);
+    return () => {
+      map.off('move', updatePosition);
+    };
   }, [selectedBlock, styleReady]);
 
   const handleZoomToBlocks = useCallback(() => {
@@ -486,6 +663,14 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
         <div className="relative min-h-0 flex-1">
           <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
 
+          <SelectedBlockTooltip
+            anchorRef={tooltipAnchorRef}
+            position={tooltipPos}
+            block={selectedBlock}
+            t={t}
+            onClose={() => setSelectedBlock(null)}
+          />
+
           {thresholdLabel && (
             <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-teal-500/40 bg-slate-900/90 px-2.5 py-1.5 font-mono-tech text-[10px] text-teal-200 backdrop-blur-md">
               <SlidersHorizontal className="h-3 w-3 shrink-0" />
@@ -494,9 +679,10 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
                 type="button"
                 onClick={() => setThreshold(null)}
                 aria-label={t('flagship.thresholdClear')}
+                {...clearThresholdIconHandlers}
                 className="rounded p-0.5 hover:bg-teal-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
               >
-                <X className="h-3 w-3" />
+                <XIcon ref={clearThresholdIconRef} size={12} />
               </button>
             </div>
           )}
@@ -608,9 +794,10 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
               type="button"
               onClick={() => setThreshold(null)}
               aria-label={t('flagship.thresholdClear')}
+              {...clearThresholdIconHandlers}
               className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center rounded hover:bg-teal-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             >
-              <X className="w-3.5 h-3.5" />
+              <XIcon ref={clearThresholdIconRef} size={14} />
             </button>
           </div>
         )}
@@ -619,6 +806,18 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       {/* Map canvas */}
       <div className="relative h-[460px] w-full overflow-hidden rounded-b-xl border border-slate-800 shadow-2xl sm:h-[520px]">
         <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
+
+        <SelectedBlockTooltip
+          anchorRef={tooltipAnchorRef}
+          // Focused Mode covers this exact instance with its own map + its
+          // own copy of this same tooltip — without this, both would render
+          // at once (each projecting the shared selection through its own
+          // camera), showing two competing tooltips for one selection.
+          position={focusedMode ? null : tooltipPos}
+          block={selectedBlock}
+          t={t}
+          onClose={() => setSelectedBlock(null)}
+        />
 
         {/* Legend */}
         <div className="absolute top-3 left-3 z-10 hidden sm:block bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl max-w-xs">
@@ -656,57 +855,6 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
           </div>
         )}
       </div>
-
-      {/* Block inspector */}
-      {selectedBlock && (
-        <div className="p-3.5 rounded-xl bg-slate-900 border border-teal-500/50 font-mono-tech text-xs text-slate-200 space-y-2.5 shadow-xl">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <span className="text-teal-400 font-bold block uppercase">
-                {t('flagship.blockInspectorTitle')}
-              </span>
-              <span className="text-slate-400 text-[10px]">
-                {t('flagship.blockInspectorSubtitle')} · {selectedBlock.lngLat}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
-              <div>
-                {t('flagship.blockPopulationLabel')}:{' '}
-                <strong className="text-slate-100">
-                  {selectedBlock.population !== null ? `${selectedBlock.population} hab.` : '—'}
-                </strong>
-              </div>
-              <div>
-                {t('flagship.blockDensityLabel')}:{' '}
-                <strong className="text-emerald-400">
-                  {selectedBlock.densityPerHa !== null ? `${selectedBlock.densityPerHa} hab/ha` : '—'}
-                </strong>
-              </div>
-              <div>
-                {t('flagship.blockInternetLabel')}:{' '}
-                <strong className="text-cyan-300">
-                  {selectedBlock.internetPct !== null ? `${selectedBlock.internetPct}%` : '—'}
-                </strong>
-              </div>
-              <div>
-                {t('flagship.blockWaterLabel')}:{' '}
-                <strong className="text-amber-400">
-                  {selectedBlock.waterPct !== null ? `${selectedBlock.waterPct}%` : '—'}
-                </strong>
-              </div>
-              <div>
-                {t('flagship.blockEducationLabel')}:{' '}
-                <strong className="text-teal-300">
-                  {selectedBlock.educationPct !== null ? `${selectedBlock.educationPct}%` : '—'}
-                </strong>
-              </div>
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-500 leading-relaxed font-sans border-t border-slate-800 pt-2">
-            {t('flagship.blockIndexNote')}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

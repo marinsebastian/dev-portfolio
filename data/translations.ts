@@ -105,6 +105,7 @@ export interface TranslationDictionary {
     blockInternetLabel: string;
     blockWaterLabel: string;
     blockEducationLabel: string;
+    blockClose: string;
     aiNoBlockSelected: string;
   };
   caseStudies: {
@@ -346,6 +347,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       blockInternetLabel: "Internet/TIC",
       blockWaterLabel: "Agua por cañería",
       blockEducationLabel: "Educación superior",
+      blockClose: "Cerrar selección",
       aiNoBlockSelected: "Selecciona un manzano en el mapa para incluir sus indicadores en el análisis."
     },
     caseStudies: {
@@ -583,6 +585,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       blockInternetLabel: "Internet/ICT",
       blockWaterLabel: "Piped water",
       blockEducationLabel: "Higher education",
+      blockClose: "Close selection",
       aiNoBlockSelected: "Select a block on the map to include its indicators in the analysis."
     },
     caseStudies: {
