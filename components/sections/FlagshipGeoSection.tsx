@@ -81,13 +81,6 @@ export function FlagshipGeoSection() {
           <p className="text-slate-300 text-base max-w-3xl leading-relaxed">
             {t('flagship.summary')}
           </p>
-
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            <CopilotTrigger onClick={() => setFocusedMode(true)} />
-            <span className="font-mono-tech text-[11px] text-slate-500 max-w-md leading-relaxed">
-              {t('copilot.introTools')}
-            </span>
-          </div>
         </SectionReveal>
 
         {/* Main Console Grid: Map Viewer & Urban Analytics */}

@@ -68,8 +68,8 @@ function DesktopNavItem({
       >
         <Icon ref={iconRef} size={16} className="text-teal-400 shrink-0" />
         <span
-          className={`transition-all duration-300 ease-out whitespace-nowrap text-xs font-semibold ${
-            isActive ? 'max-w-xs opacity-100 uppercase tracking-wide' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'
+          className={`transition-all duration-300 ease-out whitespace-nowrap text-xs font-semibold uppercase tracking-wider ${
+            isActive ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'
           }`}
         >
           {link.label}
@@ -109,7 +109,7 @@ function MobileNavItem({
       }`}
     >
       <Icon ref={iconRef} size={16} className="text-teal-400 shrink-0" />
-      <span>{link.label}</span>
+      <span className="uppercase tracking-wider font-semibold">{link.label}</span>
     </Link>
   );
 }

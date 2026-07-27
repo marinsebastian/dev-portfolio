@@ -295,6 +295,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     userLocation,
     registerMapController,
     focusedMode,
+    setFocusedMode,
     setVisibleStats,
   } = useGeoConsole();
 
@@ -424,7 +425,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     void ensureWorkerProtocol();
 
     map.on('load', () => {
-      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
       setStyleReady(true);
     });
 
@@ -849,6 +850,26 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
           t={t}
           onClose={() => setSelectedBlock(null)}
         />
+
+        {/* Top Right Floating IA Copilot Button */}
+        <div className="absolute top-3 right-3 z-10">
+          <button
+            type="button"
+            onClick={() => setFocusedMode(true)}
+            aria-label="Abrir Copiloto IA del mapa"
+            className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
+          >
+            <div className="inline-flex items-center justify-center shrink-0 text-teal-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" opacity="1"></path>
+                <path d="M20 2v4" opacity="0.9"></path>
+                <path d="M22 4h-4" opacity="0.9"></path>
+                <circle cx="4" cy="20" r="2" opacity="1"></circle>
+              </svg>
+            </div>
+            <span className="font-extrabold text-teal-300 group-hover:text-white transition-colors">IA</span>
+          </button>
+        </div>
 
         {/* Legend */}
         <div className="absolute top-3 left-3 z-10 hidden sm:block bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl max-w-xs">
