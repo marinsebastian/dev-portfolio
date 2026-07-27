@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
-import { Terminal, Shield, CheckCircle2 } from 'lucide-react';
+import { Terminal, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 const PlaywrightTestRunner = dynamic(() => import('../micro/PlaywrightTestRunner.client'), {

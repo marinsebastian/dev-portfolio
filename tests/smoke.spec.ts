@@ -276,11 +276,26 @@ test.describe('Responsive layout & accessibility', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
   });
 
-  test('keeps action buttons on screen at 360px', async ({ page }) => {
+  test('keeps the mobile nav menu button fully on screen at 360px', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/');
 
-    const actionButton = page.locator('button').first();
+    const menuButton = page.getByRole('button', { name: /Open menu|Close menu/i });
+    const box = await menuButton.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(360);
+  });
+
+  test('keeps micro-app action buttons on screen at 360px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto('/');
+
+    // The API Explorer (with its "Enviar/Send" button) only mounts once its
+    // capability-pillar tab is active — it is not the default pillar shown on load.
+    await page.getByRole('button', { name: /APIs e Integraciones Backend|APIs & Backend Integrations/i }).click();
+
+    const actionButton = page.getByRole('button', { name: /Enviar|Send|GPS/i }).first();
     await actionButton.scrollIntoViewIfNeeded();
     const box = await actionButton.boundingBox();
     expect(box).not.toBeNull();
@@ -576,5 +591,42 @@ test.describe('Gemini tool-call contract', () => {
     expect(withoutSignature.status()).toBe(400);
     // Also proves the array-wrapped Gemini error body is unwrapped correctly.
     expect((await withoutSignature.json()).error).toContain('thought_signature');
+  });
+
+  /**
+   * Gemini's OpenAI-compat layer omits the `index` field on tool-call deltas
+   * (unlike OpenAI/NVIDIA, which always send one), so a compound request that
+   * makes the model call two tools in the same turn used to be silently
+   * merged into one corrupted tool call by the client's stream-accumulation
+   * logic (concatenated names like "set_map_layerset_map_scope", concatenated
+   * invalid-JSON arguments), which the model then rejected on echo-back with
+   * a 400. This drives the real UI end-to-end — it is a client-side bug, not
+   * a server one, so a request-level test cannot exercise it.
+   */
+  test('handles a Gemini turn where two tools are requested at once', async ({ page }) => {
+    const providers = await (await page.request.get('/api/ai-copilot')).json();
+    const hasGemini = (providers.available ?? []).some((p: { id: string }) => p.id === 'gemini');
+    test.skip(!hasGemini, 'GEMINI_API_KEY is not configured in this environment.');
+
+    await page.goto('/#flagship');
+    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+
+    const console_ = page.getByTestId('focused-console');
+    await console_.getByRole('combobox', { name: /Proveedor de IA|AI provider/i }).selectOption('gemini');
+
+    await console_.getByPlaceholder(/Pregunta sobre|Ask about/i).fill(
+      'Cambia a la capa de densidad y centra el mapa en La Paz'
+    );
+    await console_.getByRole('button', { name: /Enviar mensaje|Send message/i }).click();
+
+    // A partially-signed multi-tool Gemini turn used to surface as this error.
+    await expect(console_.getByText(/no pudo responder|could not respond/i)).toHaveCount(0, {
+      timeout: 20000,
+    });
+    await expect(console_.getByText('set_map_layer()')).toBeVisible({ timeout: 20000 });
+    await expect(console_.getByText('set_map_scope()')).toBeVisible();
+
+    // Prove the map itself moved — not just that the chat claimed it did.
+    await expect(console_.locator('select').first()).toHaveValue('DENSITY');
   });
 });

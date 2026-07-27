@@ -38,15 +38,15 @@ export function Header() {
         <div className="flex items-center justify-between h-11">
           
           {/* Main Name & Irrefutable Title Branding */}
-          <Link href="#overview" className="flex items-center space-x-3 group whitespace-nowrap shrink-0">
-            <div className="w-9 h-9 rounded-lg bg-slate-900 border border-teal-500/50 flex items-center justify-center text-teal-400 font-mono-tech font-extrabold text-sm group-hover:border-teal-400 group-hover:shadow-[0_0_15px_rgba(20,184,166,0.4)] transition-all">
+          <Link href="#overview" className="flex items-center space-x-3 group min-w-0 flex-1">
+            <div className="w-9 h-9 rounded-lg bg-slate-900 border border-teal-500/50 flex items-center justify-center text-teal-400 font-mono-tech font-extrabold text-sm shrink-0 group-hover:border-teal-400 group-hover:shadow-[0_0_15px_rgba(20,184,166,0.4)] transition-all">
               SM
             </div>
-            <div className="flex flex-col">
-              <span className="text-base sm:text-lg font-extrabold tracking-tight text-white group-hover:text-teal-400 transition-colors leading-none">
+            <div className="flex flex-col min-w-0">
+              <span className="truncate text-base sm:text-lg font-extrabold tracking-tight text-white group-hover:text-teal-400 transition-colors leading-none">
                 Sebastian Marin
               </span>
-              <span className="text-[10px] font-mono-tech text-teal-400/90 font-semibold tracking-wide mt-0.5">
+              <span className="truncate text-[10px] font-mono-tech text-teal-400/90 font-semibold tracking-wide mt-0.5">
                 {language === 'es' ? 'Ingeniero de Sistemas | Full-Stack' : 'Systems Engineer | Full-Stack'}
               </span>
             </div>

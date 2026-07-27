@@ -56,7 +56,11 @@ async function readStream(
 
   let buffer = '';
   let content = '';
-  const toolCallsByIndex = new Map<number, ToolCall>();
+  const toolCallsByIndex = new Map<number | string, ToolCall>();
+  // Only used when a fragment carries neither `index` nor `id` — a
+  // same-call continuation fragment falls back to whichever key was last
+  // touched.
+  let lastKey: number | string = 0;
 
   for (;;) {
     const { done, value } = await reader.read();
@@ -104,8 +108,21 @@ async function readStream(
 
       if (Array.isArray(delta.tool_calls)) {
         for (const fragment of delta.tool_calls) {
-          const index = fragment.index ?? 0;
-          const existing = toolCallsByIndex.get(index) ?? {
+          // OpenAI and NVIDIA always send a numeric `index` to disambiguate
+          // concurrent tool calls in one turn. Gemini's OpenAI-compat layer
+          // omits it entirely — a naive `index ?? 0` default silently merges
+          // two simultaneous tool calls into one corrupted entry (concatenated
+          // names like "set_map_layerset_map_scope", concatenated/invalid
+          // arguments JSON), which the model then rejects on the next turn.
+          // Gemini does give each call its own `id`, so use that to
+          // disambiguate when index is absent; a continuation fragment with
+          // neither (a same-call fragment split across chunks) falls back to
+          // whichever key was last touched.
+          const key: number | string =
+            typeof fragment.index === 'number' ? fragment.index : (fragment.id ?? lastKey);
+          lastKey = key;
+
+          const existing = toolCallsByIndex.get(key) ?? {
             id: '',
             type: 'function' as const,
             function: { name: '', arguments: '' },
@@ -117,7 +134,7 @@ async function readStream(
           // Gemini's thought_signature rides here and must survive untouched.
           if (fragment.extra_content !== undefined) existing.extra_content = fragment.extra_content;
 
-          toolCallsByIndex.set(index, existing);
+          toolCallsByIndex.set(key, existing);
         }
       }
     }

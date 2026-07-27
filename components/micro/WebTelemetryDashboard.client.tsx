@@ -51,7 +51,7 @@ function subscribeNoop(): () => void {
  * comes from rAF deltas, load timings from the Navigation Timing API, and the
  * API latency figure from an actual round trip to /api/spatial.
  */
-let globalTelemetryState = {
+const globalTelemetryState = {
   clicks: 0,
   seconds: 0,
 };
