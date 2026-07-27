@@ -276,13 +276,13 @@ test.describe('Responsive layout & accessibility', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
   });
 
-  test('keeps the code block Copy button on screen at 360px', async ({ page }) => {
+  test('keeps micro-app action buttons on screen at 360px', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/');
 
-    const copyButton = page.getByRole('button', { name: /Copy code to clipboard/i }).first();
-    await copyButton.scrollIntoViewIfNeeded();
-    const box = await copyButton.boundingBox();
+    const actionButton = page.getByRole('button', { name: /Enviar|Send|GPS/i }).first();
+    await actionButton.scrollIntoViewIfNeeded();
+    const box = await actionButton.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.x + box!.width).toBeLessThanOrEqual(360);
   });
