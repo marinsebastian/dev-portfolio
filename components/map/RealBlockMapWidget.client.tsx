@@ -703,8 +703,24 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             onClose={() => setSelectedBlock(null)}
           />
 
+          {/* Legend overlay in Focused Mode */}
+          <div className="absolute top-3 left-3 z-10 block max-w-[190px] sm:max-w-xs bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl">
+            <div className="text-teal-400 font-bold tracking-wider uppercase">
+              {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-400">{t('flagship.legendLow')}</span>
+              <div
+                className="h-2 w-16 sm:w-20 rounded"
+                style={{ background: `linear-gradient(to right, #0f172a, ${activeLayerMeta.primaryColor})` }}
+              />
+              <span className="text-slate-200 font-bold">{t('flagship.legendHigh')}</span>
+            </div>
+            <div className="text-slate-500">{activeLayerMeta.unitLabel}</div>
+          </div>
+
           {thresholdLabel && (
-            <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-teal-500/40 bg-slate-900/90 px-2.5 py-1.5 font-mono-tech text-[10px] text-teal-200 backdrop-blur-md">
+            <div className="absolute left-3 top-20 z-10 flex items-center gap-2 rounded-lg border border-teal-500/40 bg-slate-900/90 px-2.5 py-1.5 font-mono-tech text-[10px] text-teal-200 backdrop-blur-md">
               <SlidersHorizontal className="h-3 w-3 shrink-0" />
               <span>{thresholdLabel}</span>
               <button
@@ -871,8 +887,8 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
           </button>
         </div>
 
-        {/* Legend */}
-        <div className="absolute top-3 left-3 z-10 hidden sm:block bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl max-w-xs">
+        {/* Legend — visible on both desktop and mobile, and in Focused Mode */}
+        <div className="absolute top-3 left-3 z-10 block max-w-[190px] sm:max-w-xs bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl">
           <div className="text-teal-400 font-bold tracking-wider uppercase">
             {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
           </div>
