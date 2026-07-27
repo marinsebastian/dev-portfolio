@@ -90,6 +90,7 @@ export const ATLAS_FIELDS = {
   alcantarillado: 'z1', // Sewage / Basic Services coverage — proportion, 0 … 1
   tics_internet: 'x1', // Internet / ICT coverage — proportion, 0 … 1
   telefonia_fija: 'v1', // Fixed landline telephone coverage — proportion, 0 … 1
+  seguro_privado: 'i1', // Private health insurance coverage — proportion, 0 … 1
 } as const;
 
 interface LayerPaint {
@@ -111,6 +112,12 @@ interface LayerPaint {
  * extreme outliers, so the ramps top out at a readable urban range instead.
  */
 const LAYER_PAINT: Record<LayerCode, LayerPaint> = {
+  HEALTH_INSURANCE: {
+    field: ATLAS_FIELDS.seguro_privado,
+    stops: [0.0, '#0f172a', 0.05, '#0369a1', 0.15, '#0284c7', 0.35, '#38bdf8', 0.6, '#7dd3fc'],
+    unitScale: 100,
+    unitLabel: '%',
+  },
   TECH_CONN: {
     field: ATLAS_FIELDS.tics_internet,
     stops: [0.0, '#0f172a', 0.2, '#155e75', 0.4, '#0e7490', 0.65, '#06b6d4', 0.9, '#22d3ee'],
@@ -255,12 +262,12 @@ function SelectedBlockTooltip({
                   </strong>
                 </div>
                 <div>
-                  {t('flagship.blockWaterLabel')}:{' '}
-                  <strong className="text-amber-400">
-                    {block.waterPct !== null ? `${block.waterPct}%` : '—'}
+                  Seguro Privado:{' '}
+                  <strong className="text-sky-300">
+                    {block.healthInsurancePct !== null ? `${block.healthInsurancePct}%` : '—'}
                   </strong>
                 </div>
-                <div className="col-span-2">
+                <div>
                   {t('flagship.blockEducationLabel')}:{' '}
                   <strong className="text-teal-300">
                     {block.educationPct !== null ? `${block.educationPct}%` : '—'}
@@ -471,6 +478,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
         internetPct: toPercent(props[ATLAS_FIELDS.tics_internet]),
         waterPct: toPercent(props[ATLAS_FIELDS.agua_caneria]),
         educationPct: toPercent(props[ATLAS_FIELDS.educacion_superior]),
+        healthInsurancePct: toPercent(props[ATLAS_FIELDS.seguro_privado]),
       });
 
       const source = map.getSource(SELECTED_SOURCE) as maplibregl.GeoJSONSource | undefined;
