@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, MapPin, Server, Terminal, ShieldCheck, Sparkles, Code2, Database } from 'lucide-react';
 import { FileTextIcon } from '@animateicons/react/lucide';
 import { useIconAnimator } from '@/lib/useIconAnimator';
-import Link from 'next/link';
+import { scrollToSection } from '@/lib/scrollToSection';
 import { useLanguage } from '@/context/LanguageContext';
 
 export function HeroSection() {
@@ -51,7 +51,7 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl font-medium"
+              className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl font-medium text-balance"
             >
               {language === 'es' ? t('hero.headlineEs') : t('hero.headlineEn')}
             </motion.p>
@@ -85,37 +85,50 @@ export function HeroSection() {
                 narrative column is full-width and no longer left-anchored by
                 the executive card sitting beside it, so left-aligned buttons
                 read as accidental rather than intentional). The main CTA
-                takes its own full-width row on small screens; flex-wrap's
-                per-line justify-content then centers the two secondary
-                buttons together on the row below it. */}
+                keeps its natural (content-sized) width; flex-wrap's per-line
+                justify-content centers it alone on its row, then centers the
+                two secondary buttons together on the row below. Those two
+                share a 2-col grid so they match widths regardless of which
+                label is longer, instead of "Ver Casos de Estudio" dwarfing
+                the CV button next to it. */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
               className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-4"
             >
-              <Link
+              <a
                 href="#flagship"
-                className="apple-intelligence-glow-btn uppercase tracking-wider min-h-[44px] w-full sm:w-auto justify-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection('flagship', prefersReducedMotion ? 'auto' : 'smooth');
+                }}
+                className="apple-intelligence-glow-btn uppercase tracking-wider min-h-[44px]"
               >
                 <span>{t('hero.launchGeo')}</span>
                 <ArrowRight className="w-4 h-4 text-teal-300" />
-              </Link>
-              <Link
-                href="#projects"
-                className="flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs font-mono-tech transition-all"
-              >
-                <span>{t('hero.viewProjects')}</span>
-              </Link>
-              <a
-                href="/CV Sebastian Marin.pdf"
-                download="CV Sebastian Marin.pdf"
-                {...cvIconHandlers}
-                className="flex items-center justify-center space-x-2 px-4 py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-teal-500/40 text-teal-300 font-mono-tech text-xs transition-all"
-              >
-                <FileTextIcon ref={cvIconRef} size={16} className="text-teal-400" />
-                <span>{t('hero.cvPdf')}</span>
               </a>
+              <div className="grid grid-cols-2 gap-3">
+                <a
+                  href="#projects"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollToSection('projects', prefersReducedMotion ? 'auto' : 'smooth');
+                  }}
+                  className="flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs font-mono-tech transition-all"
+                >
+                  <span>{t('hero.viewProjects')}</span>
+                </a>
+                <a
+                  href="/CV Sebastian Marin.pdf"
+                  download="CV Sebastian Marin.pdf"
+                  {...cvIconHandlers}
+                  className="flex items-center justify-center space-x-2 px-4 py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-teal-500/40 text-teal-300 font-mono-tech text-xs font-bold transition-all"
+                >
+                  <FileTextIcon ref={cvIconRef} size={16} className="text-teal-400" />
+                  <span>{t('hero.cvPdf')}</span>
+                </a>
+              </div>
             </motion.div>
 
             {/* Supporting microcopy: what GeoInsights actually contains, since
