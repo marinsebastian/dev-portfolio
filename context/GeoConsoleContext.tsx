@@ -36,6 +36,14 @@ export interface UserLocation {
   accuracyM: number | null;
 }
 
+/**
+ * How Focused Mode was opened. The teaser hands off mid-interaction — the
+ * visitor has just pressed Enter in the composer — so the overlay must not
+ * pull focus onto its close button the way a cold open from the map's IA
+ * button should.
+ */
+export type FocusedOrigin = 'trigger' | 'teaser';
+
 /** Dims blocks outside the range on the active layer instead of hiding them. */
 export interface MetricThreshold {
   min: number;
@@ -81,7 +89,9 @@ interface GeoConsoleValue {
   setUserLocation: (location: UserLocation | null) => void;
 
   focusedMode: boolean;
-  setFocusedMode: (focused: boolean) => void;
+  setFocusedMode: (focused: boolean, origin?: FocusedOrigin) => void;
+  /** Meaningful only while `focusedMode` is true. */
+  focusedOrigin: FocusedOrigin;
 
   visibleStats: VisibleStats | null;
   setVisibleStats: (stats: VisibleStats | null) => void;
@@ -100,8 +110,16 @@ export function GeoConsoleProvider({ children }: { children: React.ReactNode }) 
   const [threshold, setThreshold] = useState<MetricThreshold | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<SelectedBlock | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [focusedMode, setFocusedMode] = useState(false);
+  const [focusedMode, setFocusedModeState] = useState(false);
+  const [focusedOrigin, setFocusedOrigin] = useState<FocusedOrigin>('trigger');
   const [visibleStats, setVisibleStats] = useState<VisibleStats | null>(null);
+
+  const setFocusedMode = useCallback((focused: boolean, origin: FocusedOrigin = 'trigger') => {
+    // The origin is only read on the way in; leaving it untouched on close
+    // keeps the value stable for the duration of the exit animation.
+    if (focused) setFocusedOrigin(origin);
+    setFocusedModeState(focused);
+  }, []);
 
   // A ref, not state: the controller identity changing must not re-render the
   // whole console, and consumers only ever read it inside event handlers.
@@ -130,6 +148,7 @@ export function GeoConsoleProvider({ children }: { children: React.ReactNode }) 
       setUserLocation,
       focusedMode,
       setFocusedMode,
+      focusedOrigin,
       visibleStats,
       setVisibleStats,
       registerMapController,
@@ -142,6 +161,8 @@ export function GeoConsoleProvider({ children }: { children: React.ReactNode }) 
       selectedBlock,
       userLocation,
       focusedMode,
+      setFocusedMode,
+      focusedOrigin,
       visibleStats,
       registerMapController,
       getMapController,

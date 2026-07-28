@@ -14,6 +14,7 @@ import { WorkflowQASection } from '@/components/sections/WorkflowQASection';
 import { InteractiveCVSection } from '@/components/sections/InteractiveCVSection';
 import { ContactSection } from '@/components/sections/ContactSection';
 import { Footer } from '@/components/layout/Footer';
+import CopilotSurface from '@/components/ai/CopilotSurface.client';
 
 // Overlays are only ever shown after an interaction, so they stay out of the
 // initial bundle.
@@ -42,6 +43,9 @@ export default function Home() {
         </main>
         <GeolocationConsent />
         <FocusedConsole />
+        {/* Outside <main> on purpose: it portals to the body and must stay
+            reachable while Focused Mode marks the page content inert. */}
+        <CopilotSurface />
       </GeoConsoleProvider>
     </LanguageProvider>
   );

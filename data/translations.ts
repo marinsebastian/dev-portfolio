@@ -208,6 +208,8 @@ export interface TranslationDictionary {
     thinking: string;
     intro: string;
     introTools: string;
+    teaserGreeting: string;
+    teaserHint: string;
   };
   geo: {
     title: string;
@@ -468,6 +470,8 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       thinking: "Consultando…",
       intro: "Puedo leer el mapa y también moverlo: cambiar de capa, volar a una zona o filtrar manzanos por umbral. Pregúntame en lenguaje natural.",
       introTools: "Los indicadores por manzano provienen del archivo PMTiles del Censo 2024. Las tarjetas de resumen por zona son referencias ilustrativas.",
+      teaserGreeting: "Puedo leer el mapa y también moverlo: cambiar de capa, volar a una zona o filtrar manzanos por umbral.",
+      teaserHint: "Al enviar se abre la consola completa.",
     },
     geo: {
       title: "Centrar el visor en tu zona",
@@ -724,6 +728,8 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       thinking: "Thinking…",
       intro: "I can read the map and drive it too: switch layers, fly to an area, or filter blocks by threshold. Just ask in plain language.",
       introTools: "Per-block indicators come from the 2024 Census PMTiles archive. The zone summary cards are illustrative references.",
+      teaserGreeting: "I can read the map and drive it too: switch layers, fly to an area, or filter blocks by threshold.",
+      teaserHint: "Sending opens the full console.",
     },
     geo: {
       title: "Centre the viewer on your area",

@@ -5,7 +5,8 @@ import { SectionReveal } from '../motion/SectionReveal';
 import { CASE_STUDIES } from '@/data/portfolioData';
 import { MapPin, Database, Server, CheckCircle2, Globe } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import MapCopilot, { LocationBadge } from '../ai/MapCopilot.client';
+import { LocationBadge } from '../ai/MapCopilot.client';
+import { TEASER_SLOT_ID } from '../ai/CopilotSurface.client';
 
 // Dynamic import for MapLibre GL + PMTiles map component
 const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget.client'), {
@@ -57,30 +58,32 @@ export function FlagshipGeoSection() {
           </p>
         </SectionReveal>
 
-        {/* Main Console Grid: Map Viewer & AI Copilot — both columns stretch
-            to the row's height (the taller of the two) instead of
-            top-aligning at their own natural heights, so the map canvas and
-            the chat panel each grow/shrink to close the gap rather than
-            leaving one column visibly shorter than the other.
+        {/* Main Console Grid: Map Viewer & AI Copilot teaser.
 
             The right column used to show a live-metrics/inspector card and a
             zone comparison chart. Those are hidden for now in favor of the
-            AI copilot inline, right where a visitor already is — the same
+            AI copilot, right where a visitor already is — the same
             selected-block detail they showed is available via the map's own
-            tooltip, so nothing that card said is otherwise lost. This is a
-            separate MapCopilot instance from the one inside Focused Mode
-            (opened via the map's IA button): each keeps its own chat
-            history, so a conversation started here doesn't carry over to
-            that full-screen view, and vice versa. */}
+            tooltip, so nothing that card said is otherwise lost.
+
+            The copilot itself is not rendered here: this column only reserves
+            the space. `CopilotSurface` mounts the single live instance and
+            positions it over this slot, then flies it into Focused Mode when
+            the visitor sends their first message — one instance, so one
+            conversation, rather than the two independent chats this section
+            and Focused Mode used to keep side by side.
+
+            The column stretches to the map's height as before. The teaser is
+            not a stub that needs shrinking to fit: it shows the live
+            conversation once there is one, so it earns the same height the
+            map has, and the two columns stay balanced. */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
           <div className="lg:col-span-7 h-full">
             <RealBlockMapWidgetClient />
           </div>
 
-          <div className="lg:col-span-5 h-full min-h-[480px] overflow-hidden rounded-xl border border-slate-800 shadow-xl">
-            <MapCopilot />
-          </div>
+          <div id={TEASER_SLOT_ID} className="lg:col-span-5 flex h-full min-h-[480px]" />
 
         </div>
 

@@ -69,7 +69,14 @@ const SUGGESTION_SEEDS_EN = [
   'What does this block show?',
 ];
 
-export default function MapCopilot() {
+/**
+ * `teaser` is the compact inline form in the flagship section: a greeting and
+ * a composer, no message log. `cockpit` is the full chat inside Focused Mode.
+ * Both are the same mounted instance — see `CopilotSurface.client.tsx`.
+ */
+export type CopilotMode = 'teaser' | 'cockpit';
+
+export default function MapCopilot({ mode = 'cockpit' }: { mode?: CopilotMode }) {
   const { t, language } = useLanguage();
   const {
     activeScope,
@@ -81,12 +88,16 @@ export default function MapCopilot() {
     selectedBlock,
     userLocation,
     getMapController,
+    setFocusedMode,
   } = useGeoConsole();
+
+  const isCockpit = mode === 'cockpit';
 
   const [providers, setProviders] = useState<AvailableProvider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const prefersReducedMotion = useReducedMotion();
   const { ref: sendIconRef, handlers: sendIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
 
@@ -252,11 +263,40 @@ export default function MapCopilot() {
   const seeds = language === 'es' ? SUGGESTION_SEEDS_ES : SUGGESTION_SEEDS_EN;
   const chips = suggestions.length > 0 ? suggestions : messages.length === 0 ? seeds : [];
 
+  /** The one send path: the composer and the suggestion chips both go here. */
+  const submit = (text: string) => {
+    // Guarded here as well as in `send`: the composer stays editable while a
+    // reply streams, so a second Enter must not clear what was typed only to
+    // have the send itself be dropped.
+    if (!text || isStreaming) return;
+
+    if (!isCockpit) {
+      // Send is the handoff point, not the first keystroke: pressing Enter is
+      // an unambiguous signal of intent, and it starts the expand animation
+      // and the request on the same event, so the flight covers real
+      // first-token latency instead of pretending to.
+      setFocusedMode(true, 'teaser');
+
+    }
+
+    // Submitting by clicking Send moves focus to a button that is about to
+    // disable itself, which drops focus to <body> — leaving a keyboard user
+    // stranded exactly as the cockpit opens. Put focus somewhere real: the
+    // composer on a pointer device, and nowhere on touch, where holding focus
+    // would keep the virtual keyboard over the map the visitor just asked to
+    // see.
+    if (window.matchMedia?.('(pointer: coarse)').matches) inputRef.current?.blur();
+    else inputRef.current?.focus();
+
+    void send(text, selectedProvider);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const text = input;
+    const text = input.trim();
+    if (!text || isStreaming) return;
     setInput('');
-    void send(text, selectedProvider);
+    submit(text);
   };
 
   const providerBadge = useMemo(() => {
@@ -265,8 +305,18 @@ export default function MapCopilot() {
   }, [providers, activeProvider, selectedProvider]);
 
   return (
-    <div className="flex h-full flex-col bg-slate-950/60 font-sans">
+    /* Every slot below is rendered unconditionally (as `false` when hidden) so
+       the composer keeps a stable position in the child list across a mode
+       switch. That is what lets React reuse the same `<input>` DOM node rather
+       than tearing it down and building a new one — which on mobile would
+       close and reopen the virtual keyboard mid-handoff. */
+    <div
+      data-testid="copilot-surface"
+      data-mode={mode}
+      className="flex h-full w-full flex-col bg-slate-950/60 font-sans"
+    >
       {/* Header: provider selector + reset */}
+      {isCockpit && (
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/80 px-3 py-2.5">
         <div className="flex items-center gap-2 min-w-0">
           <Bot className="h-4 w-4 shrink-0 text-teal-400" />
@@ -311,20 +361,41 @@ export default function MapCopilot() {
           )}
         </div>
       </div>
+      )}
 
-      {/* Message list. overscroll-contain stops chat scrolling from bleeding
-          into the page once the list hits its end. */}
+      {/* Message list, shared by both modes. The teaser showed only a greeting
+          at first, which meant closing the cockpit looked like it had thrown
+          the conversation away — the chat was still there, but nothing on the
+          page said so until you reopened it. The teaser is a compact view of
+          the same single conversation; only the empty state differs.
+          overscroll-contain stops chat scrolling from bleeding into the page
+          once the list hits its end. */}
       <div
         ref={scrollRef}
         className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4"
       >
         {messages.length === 0 && !isStreaming && (
-          <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-sm leading-relaxed text-slate-300">{t('copilot.intro')}</p>
-            <p className="font-mono-tech text-[11px] leading-relaxed text-slate-500">
-              {t('copilot.introTools')}
-            </p>
-          </div>
+          isCockpit ? (
+            <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-sm leading-relaxed text-slate-300">{t('copilot.intro')}</p>
+              <p className="font-mono-tech text-[11px] leading-relaxed text-slate-500">
+                {t('copilot.introTools')}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 shrink-0 text-teal-400" />
+                <span className="font-mono-tech text-xs font-bold uppercase text-slate-200">
+                  {t('copilot.title')}
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-300">{t('copilot.teaserGreeting')}</p>
+              <p className="font-mono-tech text-[11px] leading-relaxed text-slate-500">
+                {t('copilot.teaserHint')}
+              </p>
+            </div>
+          )
         )}
 
         {messages.map((message) => (
@@ -394,7 +465,7 @@ export default function MapCopilot() {
             <button
               key={chip}
               type="button"
-              onClick={() => void send(chip, selectedProvider)}
+              onClick={() => submit(chip)}
               className="rounded-full border border-teal-500/40 bg-teal-500/10 px-3 py-2 text-[11px] text-teal-200 transition-colors hover:bg-teal-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
             >
               {chip}
@@ -406,12 +477,17 @@ export default function MapCopilot() {
       {/* Composer */}
       <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t border-slate-800 bg-slate-900/80 p-3">
         <input
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('copilot.placeholder')}
           aria-label={t('copilot.placeholder')}
-          disabled={isStreaming}
-          className="min-h-[44px] flex-1 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 disabled:opacity-60"
+          // Deliberately not disabled while streaming: disabling the focused
+          // element is what throws focus to <body> mid-handoff, and there is
+          // no reason a visitor cannot draft their next question while the
+          // current answer arrives. `handleSubmit` refuses to send until the
+          // stream finishes.
+          className="min-h-[44px] flex-1 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
         />
         <button
           type="submit"
@@ -424,7 +500,7 @@ export default function MapCopilot() {
         </button>
       </form>
 
-      {providerBadge && (
+      {isCockpit && providerBadge && (
         <div className="border-t border-slate-800 px-3 py-1.5 font-mono-tech text-[10px] text-slate-500">
           {providerBadge.label} · {providerBadge.model}
         </div>
