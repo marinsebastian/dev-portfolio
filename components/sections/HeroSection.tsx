@@ -81,23 +81,29 @@ export function HeroSection() {
               </span>
             </motion.div>
 
-            {/* Primary Action Buttons */}
+            {/* Primary Action Buttons — centered as a group below `lg` (the
+                narrative column is full-width and no longer left-anchored by
+                the executive card sitting beside it, so left-aligned buttons
+                read as accidental rather than intentional). The main CTA
+                takes its own full-width row on small screens; flex-wrap's
+                per-line justify-content then centers the two secondary
+                buttons together on the row below it. */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-wrap items-center gap-4 pt-4"
+              className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-4"
             >
               <Link
                 href="#flagship"
-                className="apple-intelligence-glow-btn uppercase tracking-wider min-h-[44px]"
+                className="apple-intelligence-glow-btn uppercase tracking-wider min-h-[44px] w-full sm:w-auto justify-center"
               >
                 <span>{t('hero.launchGeo')}</span>
                 <ArrowRight className="w-4 h-4 text-teal-300" />
               </Link>
               <Link
                 href="#projects"
-                className="flex items-center space-x-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs font-mono-tech transition-all"
+                className="flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs font-mono-tech transition-all"
               >
                 <span>{t('hero.viewProjects')}</span>
               </Link>
@@ -105,7 +111,7 @@ export function HeroSection() {
                 href="/CV Sebastian Marin.pdf"
                 download="CV Sebastian Marin.pdf"
                 {...cvIconHandlers}
-                className="flex items-center space-x-2 px-4 py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-teal-500/40 text-teal-300 font-mono-tech text-xs transition-all"
+                className="flex items-center justify-center space-x-2 px-4 py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-teal-500/40 text-teal-300 font-mono-tech text-xs transition-all"
               >
                 <FileTextIcon ref={cvIconRef} size={16} className="text-teal-400" />
                 <span>{t('hero.cvPdf')}</span>
@@ -118,7 +124,7 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-slate-400 text-xs sm:text-sm max-w-md pt-1"
+              className="text-slate-400 text-xs sm:text-sm max-w-md pt-1 text-center lg:text-left mx-auto lg:mx-0"
             >
               {t('hero.launchGeoMicrocopy')}
             </motion.p>
