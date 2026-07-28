@@ -108,6 +108,9 @@ export interface TranslationDictionary {
     zoomNoticeTitle: string;
     zoomNoticeBody: string;
     zoomNoticeAction: string;
+    thresholdMinLabel: string;
+    thresholdMaxLabel: string;
+    thresholdApply: string;
     blockInspectorTitle: string;
     blockInspectorSubtitle: string;
     blockIndexNote: string;
@@ -331,7 +334,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       scopeCochabamba: "Cochabamba",
       scopeLaPaz: "La Paz",
       scopeOtherDepartments: "Otros departamentos",
-      scopeComingSoon: "sin datos de manzano aún",
+      scopeComingSoon: "solo vista general",
       layerDensity: "Densidad Censo 2024",
       layerTechConn: "Conectividad Digital & Fibra",
       layerHousingServices: "Servicios Básicos & Vivienda",
@@ -366,6 +369,9 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       zoomNoticeTitle: "SIN COBERTURA DE MANZANOS EN ESTE NIVEL DE ZOOM",
       zoomNoticeBody: "El archivo PMTiles del Censo 2024 se genera desde el nivel de zoom 8. En la vista nacional solo se muestra el mapa base.",
       zoomNoticeAction: "Acercar a los manzanos",
+      thresholdMinLabel: "Mín",
+      thresholdMaxLabel: "Máx (opcional)",
+      thresholdApply: "Aplicar filtro",
       blockInspectorTitle: "MANZANO SELECCIONADO",
       blockInspectorSubtitle: "MANZANO REAL — CENSO 2024 INE",
       blockIndexNote: "Valores leídos directamente del archivo PMTiles del Censo 2024: población y densidad son conteos absolutos por manzano; los porcentajes son proporciones de vivienda del propio archivo.",
@@ -379,7 +385,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       blockClose: "Cerrar selección",
       aiNoBlockSelected: "Selecciona un manzano en el mapa para incluir sus indicadores en el análisis.",
       aiTriggerLabel: "IA",
-      aiTriggerExpanded: "Copiloto de Mapa",
+      aiTriggerExpanded: "Modo IA",
       aiTriggerTooltip: "Modo enfocado: pregunta al copiloto y explora el mapa por conversación."
     },
     caseStudies: {
@@ -585,7 +591,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       scopeCochabamba: "Cochabamba",
       scopeLaPaz: "La Paz",
       scopeOtherDepartments: "Other departments",
-      scopeComingSoon: "no block-level data yet",
+      scopeComingSoon: "overview only",
       layerDensity: "2024 Density Layer",
       layerTechConn: "Digital & Fiber Connectivity",
       layerHousingServices: "Basic Services & Housing",
@@ -620,6 +626,9 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       zoomNoticeTitle: "NO BLOCK COVERAGE AT THIS ZOOM LEVEL",
       zoomNoticeBody: "The 2024 Census PMTiles archive is generated from zoom level 8 upward. The national view shows the base map only.",
       zoomNoticeAction: "Zoom in to the blocks",
+      thresholdMinLabel: "Min",
+      thresholdMaxLabel: "Max (optional)",
+      thresholdApply: "Apply filter",
       blockInspectorTitle: "SELECTED BLOCK",
       blockInspectorSubtitle: "REAL CITY BLOCK — 2024 INE CENSUS",
       blockIndexNote: "Read straight from the 2024 Census PMTiles archive: population and density are absolute per-block counts; the percentages are household proportions carried in the archive itself.",
@@ -633,7 +642,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       blockClose: "Close selection",
       aiNoBlockSelected: "Select a block on the map to include its indicators in the analysis.",
       aiTriggerLabel: "AI",
-      aiTriggerExpanded: "Map Copilot",
+      aiTriggerExpanded: "AI Cockpit",
       aiTriggerTooltip: "Focused Mode: ask the copilot and explore the map by conversation."
     },
     caseStudies: {

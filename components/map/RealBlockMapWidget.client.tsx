@@ -7,12 +7,13 @@ import * as pmtiles from 'pmtiles';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { CENSUS_LAYER_GROUPS, SCOPE_CONFIG, ScopeType, LayerCode } from '@/data/mauForondaCensusData';
 import { useLanguage } from '@/context/LanguageContext';
-import { useGeoConsole, type VisibleStats, type SelectedBlock } from '@/context/GeoConsoleContext';
+import { useGeoConsole, type VisibleStats, type SelectedBlock, type MetricThreshold } from '@/context/GeoConsoleContext';
 import { scopeForDepartment } from '@/lib/geolocation';
 import { Layers, ZoomIn, Crosshair, SlidersHorizontal, Info } from 'lucide-react';
 import { XIcon } from '@animateicons/react/lucide';
 import { useIconAnimator } from '@/lib/useIconAnimator';
 import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
 
 const PMTILES_URL = 'https://raw.githubusercontent.com/mauforonda/atlasurbano/pmtiles/atlas.pmtiles';
 
@@ -66,22 +67,32 @@ const METRO_SCOPES: Exclude<ScopeType, 'Nacional'>[] = ['Santa Cruz', 'Cochabamb
 /**
  * Bolivia's remaining six departments — listed under the "Bolivia" scope so
  * the selector is honest about the archive's actual coverage instead of
- * silently pretending the country stops at three metro areas. Disabled: no
- * block-level data exists for them yet.
+ * silently pretending the country stops at three metro areas. Each still
+ * flies the camera to its capital, just at a department-overview zoom below
+ * BLOCK_MIN_ZOOM (8) rather than a metro entry zoom, so the existing "no
+ * block coverage at this zoom" notice explains the gap honestly instead of
+ * the option being a disabled dead end.
+ *
+ * Coordinates are each department capital, in MapLibre's [lng, lat] order.
  */
-const OTHER_DEPARTMENTS = ['Oruro', 'Potosí', 'Chuquisaca', 'Tarija', 'Beni', 'Pando'];
+const OTHER_DEPARTMENT_COORDS: Record<string, [number, number]> = {
+  Oruro: [-67.1121, -17.9647],
+  Potosí: [-65.7531, -19.5836],
+  Chuquisaca: [-65.2627, -19.0333], // Sucre
+  Tarija: [-64.7296, -21.5355],
+  Beni: [-64.9, -14.8333], // Trinidad
+  Pando: [-68.7692, -11.0267], // Cobija
+};
+const OTHER_DEPARTMENTS = Object.keys(OTHER_DEPARTMENT_COORDS);
+const DEPARTMENT_OVERVIEW_ZOOM = 6.5;
 
 const FILL_LAYER = 'ine-manzanos-fill';
 const STROKE_LAYER = 'ine-manzanos-stroke';
 const SELECTED_SOURCE = 'selected-block';
+const SELECTED_FILL_HIGHLIGHT = 'selected-block-fill-highlight';
 const SELECTED_LAYER = 'selected-block-glow';
 const SELECTED_LAYER_HALO = 'selected-block-halo';
 
-/** Fill-opacity applied to every block once one is selected — a small, even
- * dim across the whole layer (there is no per-feature id to exclude just the
- * selected one from), so the gradient-stroked block reads as the one thing
- * still at full strength. */
-const DIMMED_FILL_OPACITY = 0.6;
 const DIMMED_THRESHOLD_MATCH_OPACITY = 0.75;
 
 /**
@@ -118,45 +129,61 @@ interface LayerPaint {
 }
 
 /**
- * Fill ramp per layer. Stops are expressed in each field's own units, so the
- * absolute-count layers ramp over realistic urban values rather than 0–1 (which
- * would saturate every block at the top colour). The archive's maxima are
- * extreme outliers, so the ramps top out at a readable urban range instead.
+ * Fill ramp per layer. Stops are expressed in each field's own units.
+ *
+ * These were originally guessed at "readable urban range" shapes rather than
+ * the archive's actual distribution, which is a real bug, not just an
+ * aesthetic one: internet coverage's old 0–90% scale, for example, compressed
+ * real Bolivia data (which rarely drops below ~70% in urban blocks) into the
+ * top sliver of the ramp, so nearly everything painted the same saturated
+ * colour and the gradient conveyed nothing.
+ *
+ * HEALTH_INSURANCE, TECH_CONN, HOUSING_SERVICES, and DENSITY now use the
+ * exact breakpoints from Mau Foronda's own atlasurbano viewer
+ * (vista/src/components/capas.js in github.com/mauforonda/atlasurbano) for
+ * the same underlying fields — he's already done the work of finding where
+ * this specific dataset's real variation lives, so there's no reason to
+ * re-derive worse numbers. Only the colours are ours, kept consistent with
+ * the site's own palette rather than his. LANDLINE_PHONE has no equivalent
+ * in his viewer (he doesn't visualize that field), so its range is an
+ * inference from the same "minority-access service, likely rarer than
+ * private insurance in 2024" reasoning as HEALTH_INSURANCE, not a verified
+ * number — worth another look if it turns out to still saturate one way.
  */
 const LAYER_PAINT: Record<LayerCode, LayerPaint> = {
   HEALTH_INSURANCE: {
     field: ATLAS_FIELDS.seguro_privado,
-    stops: [0.0, '#0f172a', 0.05, '#0369a1', 0.15, '#0284c7', 0.35, '#38bdf8', 0.6, '#7dd3fc'],
+    stops: [0.0, '#0f172a', 0.03, '#0369a1', 0.06, '#0284c7', 0.09, '#38bdf8', 0.12, '#7dd3fc'],
     unitScale: 100,
     unitLabel: '%',
   },
   TECH_CONN: {
     field: ATLAS_FIELDS.tics_internet,
-    stops: [0.0, '#0f172a', 0.2, '#155e75', 0.4, '#0e7490', 0.65, '#06b6d4', 0.9, '#22d3ee'],
+    stops: [0.68, '#0f172a', 0.76, '#155e75', 0.84, '#0e7490', 0.92, '#06b6d4', 1.0, '#22d3ee'],
     unitScale: 100,
     unitLabel: '%',
   },
   LANDLINE_PHONE: {
     field: ATLAS_FIELDS.telefonia_fija,
-    stops: [0.0, '#0f172a', 0.05, '#4c1d95', 0.15, '#6d28d9', 0.3, '#8b5cf6', 0.5, '#a78bfa'],
+    stops: [0.0, '#0f172a', 0.03, '#4c1d95', 0.08, '#6d28d9', 0.15, '#8b5cf6', 0.25, '#a78bfa'],
     unitScale: 100,
     unitLabel: '%',
   },
   DENSITY: {
     field: ATLAS_FIELDS.personas_por_hectarea,
-    stops: [0, '#0f172a', 50, '#047857', 120, '#059669', 250, '#10b981', 450, '#34d399'],
+    stops: [0, '#0f172a', 50, '#047857', 100, '#059669', 150, '#10b981', 200, '#34d399'],
     unitScale: 1,
     unitLabel: 'hab/ha',
   },
   HOUSING_SERVICES: {
     field: ATLAS_FIELDS.agua_caneria,
-    stops: [0.0, '#0f172a', 0.25, '#b45309', 0.5, '#d97706', 0.75, '#f59e0b', 0.95, '#fbbf24'],
+    stops: [0.6, '#0f172a', 0.7, '#b45309', 0.8, '#d97706', 0.9, '#f59e0b', 1.0, '#fbbf24'],
     unitScale: 100,
     unitLabel: '%',
   },
   ECONOMIC_HUBS: {
     field: ATLAS_FIELDS.personas,
-    stops: [0, '#0f172a', 80, '#0d9488', 200, '#14b8a6', 400, '#2dd4bf', 800, '#5eead4'],
+    stops: [0, '#0f172a', 50, '#0d9488', 100, '#14b8a6', 200, '#2dd4bf', 500, '#5eead4'],
     unitScale: 1,
     unitLabel: 'hab',
   },
@@ -226,7 +253,7 @@ function SelectedBlockTooltip({
         visible={Boolean(block && position)}
         interactive
         placement="top"
-        offset={[0, 14]}
+        offset={[0, 20]}
         appendTo={() => document.body}
         render={(attrs) =>
           block ? (
@@ -248,7 +275,7 @@ function SelectedBlockTooltip({
                       paragraph, taking up half the tooltip's height for text
                       most visitors don't need on every single click — now
                       it's a click/hover-away instead of always-on. */}
-                  <Tippy content={t('flagship.blockIndexNote')} interactive placement="left" maxWidth={200}>
+                  <Tippy content={t('flagship.blockIndexNote')} interactive placement="left" maxWidth={200} theme="geoinsights">
                     <button
                       type="button"
                       aria-label={t('flagship.blockInfoLabel')}
@@ -328,15 +355,20 @@ function LocateMeButton({
 }) {
   if (!visible) return null;
   return (
-    <div className="absolute bottom-20 right-3 z-10">
-      <Tippy content={label} placement="left">
+    // MapLibre's own NavigationControl (showCompass: false) is a 29px-wide
+    // button stack with a 10px margin from the map edge -- matching that
+    // exactly (rather than an arbitrary size/offset) is what actually reads
+    // as "part of the same control cluster" instead of a nearby but
+    // unrelated floating button.
+    <div className="absolute bottom-[76px] right-2.5 z-10">
+      <Tippy content={label} placement="left" theme="geoinsights">
         <button
           type="button"
           onClick={onClick}
           aria-label={label}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-teal-500/40 bg-slate-900/90 text-teal-300 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+          className="flex h-[29px] w-[29px] items-center justify-center rounded-lg border border-teal-500/40 bg-slate-900/90 text-teal-300 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
         >
-          <Crosshair className="h-4 w-4" />
+          <Crosshair className="h-3.5 w-3.5" />
         </button>
       </Tippy>
     </div>
@@ -365,7 +397,7 @@ function LayerSelectorButton({
 }) {
   return (
     <div className="absolute bottom-3 left-3 z-10">
-      <Tippy content={label} placement="right">
+      <Tippy content={label} placement="right" theme="geoinsights">
         <div className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-teal-400 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800">
           <Layers className="h-4 w-4 pointer-events-none" />
           <select
@@ -444,6 +476,97 @@ function MapLegend({
   );
 }
 
+/**
+ * The metric-range filter used to be AI-only: `set_metric_threshold` could
+ * set it, but a human only ever got a read-only badge and a clear button.
+ * These two number inputs use exactly the same {min, max} shape the AI tool
+ * does (min required, max blank = no upper bound = "above X"), so whichever
+ * one drives it, the other reads and clears it identically.
+ */
+function ThresholdControl({
+  threshold,
+  unitLabel,
+  onApply,
+  onClear,
+  labels,
+}: {
+  threshold: MetricThreshold | null;
+  unitLabel: string;
+  onApply: (threshold: MetricThreshold) => void;
+  onClear: () => void;
+  labels: { min: string; max: string; apply: string; clear: string };
+}) {
+  // A threshold set from elsewhere (the AI copilot, or cleared externally)
+  // needs to reset these inputs. Rather than syncing via an effect, the
+  // parent keys this component by the threshold's own value, so React just
+  // remounts it with fresh initial state instead — see the `key` prop where
+  // this is rendered below.
+  const [minInput, setMinInput] = useState(threshold?.min?.toString() ?? '');
+  const [maxInput, setMaxInput] = useState(threshold?.max != null ? threshold.max.toString() : '');
+
+  const handleApply = () => {
+    const min = parseFloat(minInput);
+    if (Number.isNaN(min)) return;
+    const max = maxInput.trim() === '' ? null : parseFloat(maxInput);
+    onApply({ min, max: max !== null && Number.isNaN(max) ? null : max });
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+      <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-teal-400" />
+      <input
+        type="number"
+        inputMode="decimal"
+        value={minInput}
+        onChange={(e) => setMinInput(e.target.value)}
+        placeholder={labels.min}
+        aria-label={labels.min}
+        className="w-16 min-h-[36px] rounded border border-slate-700 bg-slate-900 px-2 text-xs font-mono-tech text-slate-100 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+      />
+      <span className="text-slate-500">–</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        value={maxInput}
+        onChange={(e) => setMaxInput(e.target.value)}
+        placeholder={labels.max}
+        aria-label={labels.max}
+        className="w-20 min-h-[36px] rounded border border-slate-700 bg-slate-900 px-2 text-xs font-mono-tech text-slate-100 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+      />
+      <span className="text-[11px] text-slate-500">{unitLabel}</span>
+      <button
+        type="button"
+        onClick={handleApply}
+        disabled={minInput.trim() === ''}
+        className="min-h-[36px] rounded-lg bg-teal-500/20 border border-teal-500/40 px-3 text-[11px] font-mono-tech font-bold text-teal-200 transition-colors hover:bg-teal-500/30 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+      >
+        {labels.apply}
+      </button>
+      {threshold && (
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label={labels.clear}
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+        >
+          <XMarkIcon />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Small inline X so ThresholdControl doesn't need the icon-animator ref
+ * plumbing the rest of the file's close buttons use for a control this
+ * minor. */
+function XMarkIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
 export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBlockMapWidgetProps) {
   const { t, language } = useLanguage();
   const {
@@ -469,6 +592,16 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
   const [styleReady, setStyleReady] = useState(false);
   const [belowDataZoom, setBelowDataZoom] = useState(SCOPE_CONFIG[activeScope].zoom < BLOCK_MIN_ZOOM);
 
+  // Drives the "Bolivia" dropdown's own displayed value. It's deliberately
+  // separate from `activeScope` (which never becomes one of the six
+  // uncovered departments -- there's no real scope/content tied to them,
+  // just a camera position) so the select has a real, reactive value instead
+  // of a hardcoded one. A hardcoded value here was the actual bug: with only
+  // one truly distinguishable value, the browser never sees a "change" when
+  // re-picking the option that's already shown, so onChange silently never
+  // fired -- the exact same class of bug as the earlier hash-nav issue.
+  const [otherScopeSelection, setOtherScopeSelection] = useState<string>('Nacional');
+
   const isFocused = variant === 'focused';
 
   const prefersReducedMotion = useReducedMotion();
@@ -485,12 +618,6 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
   useEffect(() => {
     layerRef.current = activeLayer;
   }, [activeLayer]);
-
-  // Tracks which vector-tile feature currently carries `feature-state:
-  // {selected: true}`, so a later click (or a clear from elsewhere) can turn
-  // it back off before the next one is set — MapLibre never does this for
-  // you, and leaving a stale flag on would light up two blocks at once.
-  const selectedFeatureIdRef = useRef<string | number | null>(null);
 
   // Initialize the MapLibre GL map with the PMTiles vector source.
   useEffect(() => {
@@ -553,9 +680,19 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             paint: { 'line-color': '#020617', 'line-width': 0.7, 'line-opacity': 0.7 },
           },
           {
-            // The vector layer carries no id field, so the selected block is
-            // highlighted by copying its geometry into a small GeoJSON source
-            // rather than by filtering on a key that does not exist.
+            // The vector layer carries no stable feature id, so there's no
+            // reliable way to single the selected block out from the base
+            // fill layer with a filter or feature-state expression. Instead,
+            // its geometry is copied into a small GeoJSON source (below) and
+            // redrawn here as its own bright fill — a highlight duplicate
+            // layered on top, rather than an attempt to dim every other
+            // block relative to it.
+            id: SELECTED_FILL_HIGHLIGHT,
+            type: 'fill',
+            source: SELECTED_SOURCE,
+            paint: { 'fill-color': '#22d3ee', 'fill-opacity': 0.3 },
+          },
+          {
             // A soft, wide, blurred halo sits under the crisp gradient line
             // (below) so the selection reads clearly even against a bright
             // fill colour, rather than just a thin outline competing with it.
@@ -651,23 +788,16 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
         features: [{ type: 'Feature', properties: {}, geometry: feature.geometry }],
       });
 
-      // Per-feature dimming (see the fill-opacity effect below) needs a
-      // stable feature id, which vector-tile features carry only if the
-      // tileset was built with them (tippecanoe's default). When it's
-      // missing, `feature.id` is undefined, no feature ever gets flagged
-      // selected, and the paint expression's `false` branch applies to
-      // every block equally — the same flat dim as before, not a crash.
-      if (selectedFeatureIdRef.current !== null) {
-        map.setFeatureState(
-          { source: 'atlas-pmtiles', sourceLayer: 'manzanos', id: selectedFeatureIdRef.current },
-          { selected: false }
-        );
-      }
-      if (feature.id !== undefined) {
-        map.setFeatureState({ source: 'atlas-pmtiles', sourceLayer: 'manzanos', id: feature.id }, { selected: true });
-        selectedFeatureIdRef.current = feature.id;
-      } else {
-        selectedFeatureIdRef.current = null;
+      // The tooltip renders above the clicked point and needs real headroom
+      // to not run off the top edge; a click near any edge (or too close to
+      // the top specifically) eases the camera just enough to bring it into
+      // a comfortable, fully-visible position instead of leaving it there.
+      const point = map.project(e.lngLat);
+      const { clientWidth: w, clientHeight: h } = map.getContainer();
+      const margin = 90;
+      const topMargin = 200; // extra headroom for the tooltip itself
+      if (point.x < margin || point.x > w - margin || point.y < topMargin || point.y > h - margin) {
+        map.easeTo({ center: e.lngLat, duration: 500 });
       }
     });
 
@@ -756,13 +886,6 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       ...stops,
     ]);
 
-    // `['feature-state', 'selected']` reads back whatever the click handler
-    // set via setFeatureState — true for the one feature carrying that flag,
-    // false (the expression's default) for every other feature, and false for
-    // ALL features on tilesets with no per-feature id (nothing was ever
-    // flagged true), which collapses this to the old flat dim automatically.
-    const isSelected = ['boolean', ['feature-state', 'selected'], false] as maplibregl.ExpressionSpecification;
-
     if (threshold) {
       // Dim rather than hide: keeping non-matching blocks faintly visible
       // preserves the street grid, so a filtered view still reads as a city.
@@ -771,19 +894,16 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       map.setPaintProperty(FILL_LAYER, 'fill-opacity', [
         'case',
         ['all', ['>=', ['coalesce', ['get', field], -1], min], ['<=', ['coalesce', ['get', field], -1], max]],
-        ['case', isSelected, 0.98, selectedBlock ? DIMMED_THRESHOLD_MATCH_OPACITY : 0.9],
+        selectedBlock ? DIMMED_THRESHOLD_MATCH_OPACITY : 0.9,
         0.07,
       ]);
     } else {
-      // Selecting a block dims every OTHER block instead of the whole layer
-      // uniformly, so the selected one stays visually at full strength
-      // alongside its gradient-stroked outline rather than dimming with
-      // everything else around it.
-      map.setPaintProperty(
-        FILL_LAYER,
-        'fill-opacity',
-        selectedBlock ? ['case', isSelected, 0.98, DIMMED_FILL_OPACITY] : 0.85
-      );
+      // No per-feature id exists on this tileset to dim every OTHER block
+      // while excluding just the selected one, so the base layer stays at
+      // its normal opacity regardless of selection — the selected block
+      // instead gets its own brighter fill duplicate on top (see
+      // SELECTED_FILL_HIGHLIGHT above), rather than dimming its neighbors.
+      map.setPaintProperty(FILL_LAYER, 'fill-opacity', 0.85);
     }
   }, [activeLayer, threshold, styleReady, selectedBlock]);
 
@@ -794,40 +914,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     if (!map || !styleReady || selectedBlock) return;
     const source = map.getSource(SELECTED_SOURCE) as maplibregl.GeoJSONSource | undefined;
     source?.setData(EMPTY_COLLECTION);
-
-    if (selectedFeatureIdRef.current !== null) {
-      map.setFeatureState(
-        { source: 'atlas-pmtiles', sourceLayer: 'manzanos', id: selectedFeatureIdRef.current },
-        { selected: false }
-      );
-      selectedFeatureIdRef.current = null;
-    }
   }, [selectedBlock, styleReady]);
-
-  // A slow breathing pulse on the halo (not the crisp gradient line itself,
-  // which stays static and legible) — a lighter-weight nod to the glowing
-  // CTA button's language than actually animating the line-gradient stops
-  // every frame would be, and it skips entirely under reduced motion.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !styleReady || !selectedBlock || prefersReducedMotion) return;
-
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const pulse = (Math.sin(((now - start) / 1000) * (Math.PI / 1.2)) + 1) / 2;
-      map.setPaintProperty(SELECTED_LAYER_HALO, 'line-opacity', 0.25 + pulse * 0.25);
-      map.setPaintProperty(SELECTED_LAYER_HALO, 'line-width', 10 + pulse * 4);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      map.setPaintProperty(SELECTED_LAYER_HALO, 'line-opacity', 0.35);
-      map.setPaintProperty(SELECTED_LAYER_HALO, 'line-width', 11);
-    };
-  }, [selectedBlock, styleReady, prefersReducedMotion]);
 
   // Tracks the selected block's on-screen position so the tooltip can follow
   // it — projected fresh on every pan/zoom, not just once at selection time.
@@ -873,6 +960,31 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     });
   }, [userLocation]);
 
+  const handleSelectOtherScope = useCallback(
+    (value: string) => {
+      setOtherScopeSelection(value);
+      setSelectedBlock(null);
+      if (value === 'Nacional') {
+        setActiveScope('Nacional');
+        return;
+      }
+      const coords = OTHER_DEPARTMENT_COORDS[value];
+      if (coords) {
+        mapRef.current?.flyTo({ center: coords, zoom: DEPARTMENT_OVERVIEW_ZOOM, duration: 1400 });
+      }
+    },
+    [setActiveScope, setSelectedBlock]
+  );
+
+  const handleSelectMetroScope = useCallback(
+    (scope: Exclude<ScopeType, 'Nacional'>) => {
+      setActiveScope(scope);
+      setSelectedBlock(null);
+      setOtherScopeSelection('Nacional');
+    },
+    [setActiveScope, setSelectedBlock]
+  );
+
   const activeLayerMeta = useMemo(() => {
     for (const group of CENSUS_LAYER_GROUPS) {
       const found = group.layers.find((l) => l.code === activeLayer);
@@ -915,10 +1027,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
               key={scope}
               type="button"
               aria-pressed={activeScope === scope}
-              onClick={() => {
-                setActiveScope(scope);
-                setSelectedBlock(null);
-              }}
+              onClick={() => handleSelectMetroScope(scope)}
               className={`min-h-[36px] shrink-0 rounded-lg px-2.5 py-1.5 font-mono-tech text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
                 activeScope === scope
                   ? 'bg-teal-500 text-slate-950'
@@ -931,15 +1040,10 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
 
           <select
             aria-label={t('flagship.scopeNacional')}
-            value="Nacional"
-            onChange={(e) => {
-              if (e.target.value === 'Nacional') {
-                setActiveScope('Nacional');
-                setSelectedBlock(null);
-              }
-            }}
+            value={otherScopeSelection}
+            onChange={(e) => handleSelectOtherScope(e.target.value)}
             className={`min-h-[36px] shrink-0 rounded-lg px-2.5 py-1.5 font-mono-tech text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
-              activeScope === 'Nacional'
+              otherScopeSelection === 'Nacional' && activeScope === 'Nacional'
                 ? 'bg-teal-500 text-slate-950'
                 : 'border border-slate-800 bg-slate-950/80 text-slate-300 hover:bg-slate-800'
             }`}
@@ -947,7 +1051,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             <option value="Nacional">{t('flagship.scopeNacional')}</option>
             <optgroup label={t('flagship.scopeOtherDepartments')}>
               {OTHER_DEPARTMENTS.map((dept) => (
-                <option key={dept} value={dept} disabled>
+                <option key={dept} value={dept}>
                   {dept} — {t('flagship.scopeComingSoon')}
                 </option>
               ))}
@@ -1045,14 +1149,14 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             out what clicking actually does (opens Focused Mode), since a bare
             two-letter label gives a first-time visitor nothing to go on. */}
         <div className="absolute top-3 right-3 z-10">
-          <Tippy content={t('flagship.aiTriggerTooltip')} placement="bottom-end" delay={[500, 0]} offset={[0, 10]}>
+          <Tippy content={t('flagship.aiTriggerTooltip')} placement="bottom-end" delay={[500, 0]} offset={[0, 10]} theme="geoinsights">
             <button
               type="button"
               onClick={() => setFocusedMode(true)}
               aria-label={t('flagship.aiTriggerExpanded')}
               className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
             >
-              <div className="inline-flex items-center justify-center shrink-0 text-teal-300">
+              <div className="inline-flex items-center justify-center shrink-0 text-white transition-transform duration-500 ease-out group-hover:rotate-90 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:rotate-0 motion-reduce:group-hover:scale-100">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" opacity="1"></path>
                   <path d="M20 2v4" opacity="0.9"></path>
@@ -1060,7 +1164,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
                   <circle cx="4" cy="20" r="2" opacity="1"></circle>
                 </svg>
               </div>
-              <span className="font-extrabold text-teal-300 group-hover:text-white transition-colors">
+              <span className="font-extrabold text-white">
                 {t('flagship.aiTriggerLabel')}
               </span>
               <span
@@ -1120,10 +1224,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
               key={scope}
               type="button"
               aria-pressed={activeScope === scope}
-              onClick={() => {
-                setActiveScope(scope);
-                setSelectedBlock(null);
-              }}
+              onClick={() => handleSelectMetroScope(scope)}
               className={`min-h-[44px] py-2 px-3 rounded-lg text-xs font-mono-tech font-bold transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
                 activeScope === scope
                   ? 'bg-teal-500 text-slate-950 shadow-lg shadow-teal-500/20'
@@ -1135,20 +1236,16 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
           ))}
 
           {/* "Bolivia" doubles as a dropdown listing the six departments the
-              archive has no block-level coverage for — disabled, so the
-              selector is honest about scope instead of implying nationwide
-              coverage while showing only three metro areas. */}
+              archive has no block-level census coverage for. Picking one
+              still flies the camera there, just at a department-overview
+              zoom below BLOCK_MIN_ZOOM, so the existing "no manzano coverage
+              at this zoom" notice explains the gap honestly. */}
           <select
             aria-label={t('flagship.scopeNacional')}
-            value="Nacional"
-            onChange={(e) => {
-              if (e.target.value === 'Nacional') {
-                setActiveScope('Nacional');
-                setSelectedBlock(null);
-              }
-            }}
+            value={otherScopeSelection}
+            onChange={(e) => handleSelectOtherScope(e.target.value)}
             className={`min-h-[44px] py-2 px-3 rounded-lg text-xs font-mono-tech font-bold transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
-              activeScope === 'Nacional'
+              otherScopeSelection === 'Nacional' && activeScope === 'Nacional'
                 ? 'bg-teal-500 text-slate-950 shadow-lg shadow-teal-500/20'
                 : 'bg-slate-950/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800'
             }`}
@@ -1156,7 +1253,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             <option value="Nacional">{t('flagship.scopeNacional')}</option>
             <optgroup label={t('flagship.scopeOtherDepartments')}>
               {OTHER_DEPARTMENTS.map((dept) => (
-                <option key={dept} value={dept} disabled>
+                <option key={dept} value={dept}>
                   {dept} — {t('flagship.scopeComingSoon')}
                 </option>
               ))}
@@ -1164,25 +1261,19 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
           </select>
         </div>
 
-        {thresholdLabel && (
-          <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-teal-500/10 border border-teal-500/40 text-[11px] font-mono-tech text-teal-200">
-            <span className="flex items-center gap-1.5 min-w-0">
-              <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">
-                {t('flagship.thresholdActive')} {thresholdLabel}
-              </span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setThreshold(null)}
-              aria-label={t('flagship.thresholdClear')}
-              {...clearThresholdIconHandlers}
-              className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center rounded hover:bg-teal-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-            >
-              <XIcon ref={clearThresholdIconRef} size={14} />
-            </button>
-          </div>
-        )}
+        <ThresholdControl
+          key={threshold ? `${threshold.min}:${threshold.max}` : 'none'}
+          threshold={threshold}
+          unitLabel={LAYER_PAINT[activeLayer].unitLabel}
+          onApply={setThreshold}
+          onClear={() => setThreshold(null)}
+          labels={{
+            min: t('flagship.thresholdMinLabel'),
+            max: t('flagship.thresholdMaxLabel'),
+            apply: t('flagship.thresholdApply'),
+            clear: t('flagship.thresholdClear'),
+          }}
+        />
       </div>
     </div>
   );

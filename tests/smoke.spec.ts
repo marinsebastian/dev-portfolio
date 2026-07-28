@@ -431,7 +431,7 @@ test.describe('AI copilot', () => {
 
   test('opens focused mode with the map and chat side by side', async ({ page }) => {
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+    await page.getByRole('button', { name: /Modo IA|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_).toBeVisible();
@@ -451,7 +451,7 @@ test.describe('AI copilot', () => {
     // existed in the main page's layout, so a mobile visitor had no way to
     // see what they had clicked at all once inside this view.
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+    await page.getByRole('button', { name: /Modo IA|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_).toBeVisible();
@@ -488,7 +488,7 @@ test.describe('AI copilot', () => {
 
   test('offers starter suggestion chips', async ({ page }) => {
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+    await page.getByRole('button', { name: /Modo IA|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_.getByRole('button', { name: /fibra > 80%|fibre > 80%/i })).toBeVisible();
@@ -709,7 +709,7 @@ test.describe('Gemini tool-call contract', () => {
     test.skip(!hasGemini, 'GEMINI_API_KEY is not configured in this environment.');
 
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+    await page.getByRole('button', { name: /Modo IA|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await console_.getByRole('combobox', { name: /Proveedor de IA|AI provider/i }).selectOption('gemini');
