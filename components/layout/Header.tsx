@@ -21,6 +21,8 @@ interface NavLink {
   href: string;
   id: string;
   icon: AnimatedIconComponent;
+  featured?: boolean;
+  featuredLabel?: string;
 }
 
 /** Desktop nav item: icon-first, hover-expanding label, active pill + uppercase
@@ -66,7 +68,15 @@ function DesktopNavItem({
           isActive ? 'gap-2' : 'gap-0 group-hover:gap-2'
         }`}
       >
-        <Icon ref={iconRef} size={16} className="text-teal-400 shrink-0" />
+        <span className="relative shrink-0">
+          <Icon ref={iconRef} size={16} className="text-teal-400" />
+          {link.featured && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-teal-400 ring-2 ring-slate-900"
+            />
+          )}
+        </span>
         <span
           className={`transition-all duration-300 ease-out whitespace-nowrap text-xs font-semibold uppercase tracking-wider ${
             isActive ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'
@@ -75,6 +85,7 @@ function DesktopNavItem({
           {link.label}
         </span>
       </span>
+      {link.featured && <span className="sr-only"> ({link.featuredLabel})</span>}
     </Link>
   );
 }
@@ -110,6 +121,11 @@ function MobileNavItem({
     >
       <Icon ref={iconRef} size={16} className="text-teal-400 shrink-0" />
       <span className="uppercase tracking-wider font-semibold">{link.label}</span>
+      {link.featured && (
+        <span className="ml-auto text-[9px] font-bold tracking-wider uppercase text-teal-400 bg-teal-500/10 border border-teal-500/30 rounded-full px-2 py-0.5 shrink-0">
+          {link.featuredLabel}
+        </span>
+      )}
     </Link>
   );
 }
@@ -169,7 +185,7 @@ export function Header() {
 
   const navLinks: NavLink[] = [
     { label: t('nav.overview'), href: '#overview', id: 'overview', icon: DashboardIcon },
-    { label: t('nav.flagship'), href: '#flagship', id: 'flagship', icon: MapPinIcon },
+    { label: t('nav.flagship'), href: '#flagship', id: 'flagship', icon: MapPinIcon, featured: true, featuredLabel: t('nav.flagshipBadge') },
     { label: t('nav.projects'), href: '#projects', id: 'projects', icon: CodeIcon },
     { label: t('nav.stack'), href: '#stack', id: 'stack', icon: TerminalIcon },
     { label: t('nav.cv'), href: '#cv', id: 'cv', icon: FileTextIcon },

@@ -90,7 +90,7 @@ export function HeroSection() {
             >
               <Link
                 href="#flagship"
-                className="apple-intelligence-glow-btn uppercase tracking-wider"
+                className="apple-intelligence-glow-btn uppercase tracking-wider min-h-[44px]"
               >
                 <span>{t('hero.launchGeo')}</span>
                 <ArrowRight className="w-4 h-4 text-teal-300" />
@@ -111,6 +111,17 @@ export function HeroSection() {
                 <span>{t('hero.cvPdf')}</span>
               </a>
             </motion.div>
+
+            {/* Supporting microcopy: what GeoInsights actually contains, since
+                the button label alone leans on the project name to do that work. */}
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="text-slate-400 text-xs sm:text-sm max-w-md pt-1"
+            >
+              {t('hero.launchGeoMicrocopy')}
+            </motion.p>
 
           </div>
 

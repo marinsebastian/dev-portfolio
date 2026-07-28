@@ -2,6 +2,7 @@ export interface TranslationDictionary {
   nav: {
     overview: string;
     flagship: string;
+    flagshipBadge: string;
     projects: string;
     stack: string;
     cv: string;
@@ -16,6 +17,7 @@ export interface TranslationDictionary {
     headlineEs: string;
     headlineEn: string;
     launchGeo: string;
+    launchGeoMicrocopy: string;
     viewProjects: string;
     cvPdf: string;
     badgeNext: string;
@@ -244,6 +246,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
     nav: {
       overview: "Visión General",
       flagship: "GeoInsights Bolivia",
+      flagshipBadge: "Destacado",
       projects: "Casos de Estudio",
       stack: "Herramientas",
       cv: "CV & Resume",
@@ -257,7 +260,8 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       titleAccent: "Interfaces, APIs, Datos Espaciales y Automatización",
       headlineEs: "“Construyo sistemas web que convierten datos, APIs, información espacial y procesos en herramientas operativas simples de usar.”",
       headlineEn: "“I build web systems that turn complex data, APIs, spatial information, and workflows into simple, operational tools.”",
-      launchGeo: "Explorar GeoInsights Bolivia",
+      launchGeo: "Ver GeoInsights: Mapa + IA",
+      launchGeoMicrocopy: "Mapa interactivo con datos reales del Censo 2024 y un copiloto de IA que responde en lenguaje natural.",
       viewProjects: "Ver Casos de Estudio",
       cvPdf: "CV (PDF)",
       badgeNext: "Next.js & TypeScript",
@@ -482,6 +486,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
     nav: {
       overview: "Overview",
       flagship: "GeoInsights Bolivia",
+      flagshipBadge: "Featured",
       projects: "Case Studies",
       stack: "Stack & Tools",
       cv: "CV & Resume",
@@ -495,7 +500,8 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       titleAccent: "Interfaces, APIs, Spatial Data & Automation",
       headlineEs: "“I build web systems that turn complex data, APIs, spatial information, and workflows into simple, operational tools.”",
       headlineEn: "“I build web systems that turn complex data, APIs, spatial information, and workflows into simple, operational tools.”",
-      launchGeo: "Explore GeoInsights Bolivia",
+      launchGeo: "View GeoInsights: Map + AI",
+      launchGeoMicrocopy: "Interactive map with real 2024 Census data and an AI copilot that answers in plain language.",
       viewProjects: "View Case Studies",
       cvPdf: "CV (PDF)",
       badgeNext: "Next.js & TypeScript",
