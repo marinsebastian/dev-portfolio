@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import { RotateCcw, Bot, Cpu, MapPin } from 'lucide-react';
 import { SendIcon, SparklesIcon } from '@animateicons/react/lucide';
 import { useIconAnimator } from '@/lib/useIconAnimator';
@@ -9,6 +10,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole } from '@/context/GeoConsoleContext';
 import { LAYER_DESCRIPTIONS } from '@/lib/copilotTools';
 import { layerUnit } from '@/components/map/RealBlockMapWidget.client';
+import { SCOPE_CONFIG } from '@/data/mauForondaCensusData';
 import type { LayerCode, ScopeType } from '@/data/mauForondaCensusData';
 import type { ProviderId } from '@/lib/aiProviders';
 import { useCopilotChat } from './useCopilotChat';
@@ -17,6 +19,40 @@ interface AvailableProvider {
   id: ProviderId;
   label: string;
   model: string;
+}
+
+/**
+ * Assistant replies render as plain `whitespace-pre-line` text, so any
+ * markdown the model produces (bold, lists) shows as raw asterisks and
+ * dashes instead of formatting. No `@tailwindcss/typography` plugin is
+ * installed, so each element gets its own compact override here rather than
+ * a blanket `prose` class, matching the chat bubble's existing text-sm size.
+ */
+function ChatMarkdown({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+        strong: ({ children }) => <strong className="font-bold text-slate-50">{children}</strong>,
+        em: ({ children }) => <em className="italic">{children}</em>,
+        ul: ({ children }) => <ul className="mb-2 list-disc space-y-0.5 pl-4 last:mb-0">{children}</ul>,
+        ol: ({ children }) => <ol className="mb-2 list-decimal space-y-0.5 pl-4 last:mb-0">{children}</ol>,
+        li: ({ children }) => <li>{children}</li>,
+        a: ({ children, href }) => (
+          <a href={href} target="_blank" rel="noreferrer" className="text-teal-300 underline hover:text-teal-200">
+            {children}
+          </a>
+        ),
+        code: ({ children }) => (
+          <code className="rounded bg-slate-950/70 px-1 py-0.5 font-mono-tech text-[0.85em] text-teal-200">
+            {children}
+          </code>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 const SUGGESTION_SEEDS_ES = [
@@ -96,6 +132,8 @@ export default function MapCopilot() {
           const valid: ScopeType[] = ['Nacional', 'Santa Cruz', 'Cochabamba', 'La Paz'];
           if (!valid.includes(scope)) return { error: `Unknown scope: ${String(args.scope)}` };
           setActiveScope(scope);
+          const config = SCOPE_CONFIG[scope];
+          controller?.flyTo(config.centerLngLat[1], config.centerLngLat[0], config.zoom);
           return {
             ok: true,
             scope,
@@ -303,7 +341,11 @@ export default function MapCopilot() {
                     : 'border border-slate-800 bg-slate-900 text-slate-200'
               }`}
             >
-              <p className="whitespace-pre-line">{message.content}</p>
+              {message.role === 'user' ? (
+                <p className="whitespace-pre-line">{message.content}</p>
+              ) : (
+                <ChatMarkdown content={message.content} />
+              )}
 
               {(message.actions?.length || message.provider) && (
                 <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-800 pt-2">
@@ -333,7 +375,7 @@ export default function MapCopilot() {
                 multi-paragraph text into a broken multi-column layout. */}
             <div className="max-w-[88%] rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-sm leading-relaxed text-slate-200">
               {streamingText ? (
-                <p className="whitespace-pre-line">{streamingText}</p>
+                <ChatMarkdown content={streamingText} />
               ) : (
                 <span className="inline-flex items-center gap-1.5 font-mono-tech text-xs text-slate-400">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-400" />

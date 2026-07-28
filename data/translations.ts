@@ -73,7 +73,6 @@ export interface TranslationDictionary {
     scopeCochabamba: string;
     scopeLaPaz: string;
     scopeOtherDepartments: string;
-    scopeComingSoon: string;
     layerDensity: string;
     layerTechConn: string;
     layerHousingServices: string;
@@ -334,7 +333,6 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       scopeCochabamba: "Cochabamba",
       scopeLaPaz: "La Paz",
       scopeOtherDepartments: "Otros departamentos",
-      scopeComingSoon: "solo vista general",
       layerDensity: "Densidad Censo 2024",
       layerTechConn: "Conectividad Digital & Fibra",
       layerHousingServices: "Servicios Básicos & Vivienda",
@@ -385,7 +383,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       blockClose: "Cerrar selección",
       aiNoBlockSelected: "Selecciona un manzano en el mapa para incluir sus indicadores en el análisis.",
       aiTriggerLabel: "IA",
-      aiTriggerExpanded: "Modo IA",
+      aiTriggerExpanded: "Modo",
       aiTriggerTooltip: "Modo enfocado: pregunta al copiloto y explora el mapa por conversación."
     },
     caseStudies: {
@@ -591,7 +589,6 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       scopeCochabamba: "Cochabamba",
       scopeLaPaz: "La Paz",
       scopeOtherDepartments: "Other departments",
-      scopeComingSoon: "overview only",
       layerDensity: "2024 Density Layer",
       layerTechConn: "Digital & Fiber Connectivity",
       layerHousingServices: "Basic Services & Housing",
@@ -642,7 +639,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       blockClose: "Close selection",
       aiNoBlockSelected: "Select a block on the map to include its indicators in the analysis.",
       aiTriggerLabel: "AI",
-      aiTriggerExpanded: "AI Cockpit",
+      aiTriggerExpanded: "Cockpit",
       aiTriggerTooltip: "Focused Mode: ask the copilot and explore the map by conversation."
     },
     caseStudies: {

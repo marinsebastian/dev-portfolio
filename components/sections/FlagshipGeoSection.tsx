@@ -1,15 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
-import { URBAN_CENSUS_ZONES, CENSUS_LAYER_GROUPS } from '@/data/mauForondaCensusData';
 import { CASE_STUDIES } from '@/data/portfolioData';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { MapPin, Database, Server, CheckCircle2, Globe, Info } from 'lucide-react';
+import { MapPin, Database, Server, CheckCircle2, Globe } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useGeoConsole } from '@/context/GeoConsoleContext';
-import { LocationBadge } from '../ai/MapCopilot.client';
+import MapCopilot, { LocationBadge } from '../ai/MapCopilot.client';
 
 // Dynamic import for MapLibre GL + PMTiles map component
 const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget.client'), {
@@ -24,7 +20,6 @@ const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget
 
 export function FlagshipGeoSection() {
   const { t, language } = useLanguage();
-  const { activeScope, activeLayer, visibleStats, selectedBlock, setSelectedBlock } = useGeoConsole();
 
   const flagshipData = CASE_STUDIES.find((c) => c.id === 'geoinsights-bolivia')!;
 
@@ -35,38 +30,6 @@ export function FlagshipGeoSection() {
     language === 'es' && flagshipData.geolabsRelevanceEs
       ? flagshipData.geolabsRelevanceEs
       : flagshipData.geolabsRelevance;
-
-  const formatNumber = (num: number) => {
-    const separator = language === 'es' ? '.' : ',';
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);
-  };
-
-  const scopeZones = useMemo(
-    () => URBAN_CENSUS_ZONES.filter((z) => z.metroArea === activeScope),
-    [activeScope]
-  );
-
-  // Drives the live-metrics card's labels/units below, so a switch to e.g.
-  // internet coverage doesn't keep showing "Densidad ... hab/ha" over a
-  // percentage that has nothing to do with density.
-  const activeLayerMeta = useMemo(() => {
-    for (const group of CENSUS_LAYER_GROUPS) {
-      const found = group.layers.find((l) => l.code === activeLayer);
-      if (found) return found;
-    }
-    return CENSUS_LAYER_GROUPS[0].layers[0];
-  }, [activeLayer]);
-
-  // The reference card follows the scope rather than a separate selection, so
-  // the panel and the map can never disagree about which area is in view.
-  const referenceZone = scopeZones[0] ?? URBAN_CENSUS_ZONES[0];
-
-  const chartData = scopeZones.map((z) => ({
-    name: z.name.split(' ')[0],
-    Connectivity: z.metrics.internetCoveragePct,
-    Services: z.metrics.basicServicesIndex,
-    DensityIndex: Math.min(100, Math.round((z.metrics.densityHabKm2 / 8000) * 100)),
-  }));
 
   return (
     <section id="flagship" className="py-20 bg-[#070a11] relative border-t border-slate-800">
@@ -94,270 +57,29 @@ export function FlagshipGeoSection() {
           </p>
         </SectionReveal>
 
-        {/* Main Console Grid: Map Viewer & Urban Analytics — both columns
-            stretch to the row's height (the taller of the two) instead of
+        {/* Main Console Grid: Map Viewer & AI Copilot — both columns stretch
+            to the row's height (the taller of the two) instead of
             top-aligning at their own natural heights, so the map canvas and
-            comparison chart each grow/shrink to close the gap rather than
-            leaving one column visibly shorter than the other. */}
+            the chat panel each grow/shrink to close the gap rather than
+            leaving one column visibly shorter than the other.
+
+            The right column used to show a live-metrics/inspector card and a
+            zone comparison chart. Those are hidden for now in favor of the
+            AI copilot inline, right where a visitor already is — the same
+            selected-block detail they showed is available via the map's own
+            tooltip, so nothing that card said is otherwise lost. This is a
+            separate MapCopilot instance from the one inside Focused Mode
+            (opened via the map's IA button): each keeps its own chat
+            history, so a conversation started here doesn't carry over to
+            that full-screen view, and vice versa. */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
           <div className="lg:col-span-7 h-full">
             <RealBlockMapWidgetClient />
           </div>
 
-          {/* Right Column: Zone reference card & comparative chart */}
-          <div className="lg:col-span-5 flex h-full flex-col gap-6">
-
-            <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl shrink-0">
-              {selectedBlock ? (
-                /* Selected Block Inspection Card */
-                <>
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div>
-                      <span className="text-[10px] font-mono-tech text-teal-400 uppercase font-bold tracking-wider">
-                        {t('flagship.blockInspectorTitle')}
-                      </span>
-                      <h3 className="text-sm font-bold text-white font-mono-tech">{selectedBlock.lngLat}</h3>
-                    </div>
-                    <button
-                      onClick={() => setSelectedBlock(null)}
-                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-mono-tech text-slate-300 border border-slate-700 transition-colors"
-                    >
-                      {t('flagship.blockClose')}
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {t('flagship.blockPopulationLabel')}
-                      </span>
-                      <span className="text-white font-bold text-sm">
-                        {selectedBlock.population !== null ? `${formatNumber(selectedBlock.population)} hab.` : '—'}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {t('flagship.blockDensityLabel')}
-                      </span>
-                      <span className="text-emerald-400 font-bold text-sm">
-                        {selectedBlock.densityPerHa !== null ? `${formatNumber(selectedBlock.densityPerHa)} hab/ha` : '—'}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {t('flagship.blockInternetLabel')}
-                      </span>
-                      <span className="text-cyan-400 font-bold text-sm">
-                        {selectedBlock.internetPct !== null ? `${selectedBlock.internetPct}%` : '—'}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {t('flagship.blockWaterLabel')}
-                      </span>
-                      <span className="text-amber-400 font-bold text-sm">
-                        {selectedBlock.waterPct !== null ? `${selectedBlock.waterPct}%` : '—'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="flex items-start gap-2 text-[10px] font-mono-tech text-teal-400/90 leading-relaxed pt-2 border-t border-slate-800/80">
-                    <Info className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-px" />
-                    <span>
-                      {language === 'es'
-                        ? 'Datos reales por manzano del Censo 2024 (INE / @mauforonda). Densidad en hab/ha (Sistema Métrico SI: 1 ha = 10.000 m²).'
-                        : 'Real block-level Censo 2024 data (INE / @mauforonda). Density in hab/ha (SI Metric System: 1 ha = 10,000 m²).'}
-                    </span>
-                  </p>
-                </>
-              ) : visibleStats ? (
-                /* Live Viewport Aggregate Stats Card */
-                <>
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div>
-                      <span className="text-[10px] font-mono-tech text-cyan-400 uppercase font-bold tracking-wider">
-                        {language === 'es' ? 'MÉTRICAS DE VISTA EN VIVO' : 'LIVE VIEWPORT METRICS'}
-                      </span>
-                      <h3 className="text-lg font-bold text-teal-300">{activeScope}</h3>
-                      <span className="text-[11px] font-mono-tech text-slate-400">
-                        {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
-                      </span>
-                    </div>
-                    <span className="px-2.5 py-1 bg-slate-800 rounded text-xs font-mono-tech text-cyan-300 border border-cyan-500/30">
-                      {formatNumber(visibleStats.count)} {t('flagship.blocksInViewSuffix')}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">{t('flagship.metricMin')}</span>
-                      <span className="text-sky-400 font-bold text-sm">
-                        {formatNumber(visibleStats.min)} {activeLayerMeta.unitLabel}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">{t('flagship.metricMedian')}</span>
-                      <span className="text-emerald-400 font-bold text-sm">
-                        {formatNumber(visibleStats.median)} {activeLayerMeta.unitLabel}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">{t('flagship.metricTop10')}</span>
-                      <span className="text-teal-300 font-bold text-sm">
-                        {formatNumber(visibleStats.p90)} {activeLayerMeta.unitLabel}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">{t('flagship.metricMax')}</span>
-                      <span className="text-cyan-400 font-bold text-sm">
-                        {formatNumber(visibleStats.max)} {activeLayerMeta.unitLabel}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="flex items-start gap-2 text-[10px] font-mono-tech text-slate-400 leading-relaxed pt-2 border-t border-slate-800/80">
-                    <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-px" />
-                    <span>
-                      {language === 'es'
-                        ? 'Estadísticas agregadas en tiempo real sobre los manzanos visibles en pantalla.'
-                        : 'Real-time aggregate statistics over the blocks currently visible on screen.'}
-                    </span>
-                  </p>
-                </>
-              ) : (
-                /* Fallback Reference Card with SI Metric System Standard */
-                <>
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div>
-                      <span className="text-[10px] font-mono-tech text-slate-400 uppercase">
-                        {t('flagship.activeZone')}
-                      </span>
-                      <h3 className="text-lg font-bold text-teal-300">{referenceZone.name}</h3>
-                    </div>
-                    <span className="px-2.5 py-1 bg-slate-800 rounded text-xs font-mono-tech text-teal-400 border border-teal-500/30">
-                      {referenceZone.metroArea}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {t('flagship.population')}
-                      </span>
-                      <span className="text-white font-bold text-sm">
-                        {formatNumber(referenceZone.metrics.population2024)} hab.
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {t('flagship.densityBadge')}
-                      </span>
-                      <span className="text-emerald-400 font-bold text-sm">
-                        {formatNumber(Math.round(referenceZone.metrics.densityHabKm2 / 100))} hab/ha
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {t('flagship.connectivityBadge')}
-                      </span>
-                      <span className="text-cyan-400 font-bold text-sm">
-                        {referenceZone.metrics.internetCoveragePct}%
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {t('flagship.servicesBadge')}
-                      </span>
-                      <span className="text-amber-400 font-bold text-sm">
-                        {referenceZone.metrics.basicServicesIndex} / 100
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 text-xs">
-                    <span className="font-mono-tech text-slate-400 block text-[10px] uppercase">
-                      {t('flagship.sectorBadge')}:
-                    </span>
-                    <span className="px-2.5 py-1 rounded bg-slate-800 text-teal-300 font-mono-tech text-xs inline-block border border-slate-700">
-                      {referenceZone.metrics.primarySector}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-300 leading-relaxed pt-1 border-t border-slate-800/80">
-                    {language === 'es' ? referenceZone.narrativeEs : referenceZone.narrativeEn}
-                  </p>
-
-                  <p className="flex items-start gap-2 text-[10px] text-slate-500 leading-relaxed pt-3 border-t border-slate-800/80 font-mono-tech">
-                    <Info className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-px" />
-                    <span>{t('flagship.provenanceNote')} · Densidad expresada en el Sistema Métrico SI (hab/ha).</span>
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Scope Comparison Bar Chart — flex-1 so it absorbs whatever
-                extra height the row picked up from the map/inspector card,
-                with Recharts' own ResponsiveContainer (height 100%) filling
-                whatever that ends up being instead of a fixed h-44. */}
-            <div className="flex min-h-0 flex-1 flex-col space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-xl">
-              <div className="flex shrink-0 items-center justify-between border-b border-slate-800 pb-2">
-                <span className="text-xs font-mono-tech text-slate-300 font-bold uppercase">
-                  {t('flagship.comparisonTitle')}
-                </span>
-                <span className="text-[10px] font-mono-tech text-teal-400 font-bold">
-                  {activeScope} ({scopeZones.length} {t('flagship.zonesSuffix')})
-                </span>
-              </div>
-              <div className="min-h-[140px] w-full flex-1 pt-1">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} />
-                    <YAxis stroke="#64748b" fontSize={10} domain={[0, 100]} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontFamily: 'monospace',
-                      }}
-                    />
-                    {activeLayer === 'DENSITY' ? (
-                      <>
-                        <Bar dataKey="DensityIndex" fill="#10b981" name="Densidad Index" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="Connectivity" fill="#06b6d4" name="Internet %" radius={[4, 4, 0, 0]} />
-                      </>
-                    ) : activeLayer === 'HOUSING_SERVICES' ? (
-                      <>
-                        <Bar dataKey="Services" fill="#f59e0b" name="Servicios Index" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="Connectivity" fill="#06b6d4" name="Internet %" radius={[4, 4, 0, 0]} />
-                      </>
-                    ) : activeLayer === 'ECONOMIC_HUBS' ? (
-                      <>
-                        <Bar dataKey="Services" fill="#14b8a6" name="Nodos Index" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="DensityIndex" fill="#10b981" name="Densidad Index" radius={[4, 4, 0, 0]} />
-                      </>
-                    ) : (
-                      <>
-                        <Bar dataKey="Connectivity" fill="#06b6d4" name="Internet %" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="Services" fill="#f59e0b" name="Servicios Index" radius={[4, 4, 0, 0]} />
-                      </>
-                    )}
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
+          <div className="lg:col-span-5 h-full min-h-[480px] overflow-hidden rounded-xl border border-slate-800 shadow-xl">
+            <MapCopilot />
           </div>
 
         </div>

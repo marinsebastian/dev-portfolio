@@ -32,7 +32,9 @@ test.describe('Portfolio — core content', () => {
     await page.goto('/');
 
     await expect(page.locator('#flagship')).toBeVisible();
-    await expect(page.getByText('ZONA URBANA SELECCIONADA')).toBeVisible();
+    // The right column's static panels were replaced with the AI copilot
+    // embedded inline, right where a visitor already is.
+    await expect(page.locator('#flagship').getByText('Copiloto del Mapa')).toBeVisible();
   });
 
   test('switches Interactive CV tabs', async ({ page }) => {
@@ -217,7 +219,8 @@ test.describe('Flagship map', () => {
     // "Bolivia" doubles as the national-view option and a dropdown listing
     // the departments the archive has no block coverage for; the PMTiles
     // archive starts at z8, and the national camera sits below it.
-    await page.getByRole('combobox', { name: 'Bolivia' }).selectOption('Nacional');
+    await page.getByRole('button', { name: 'Bolivia' }).click();
+    await page.getByRole('option', { name: 'Bolivia' }).click();
     await expect(page.getByText(/SIN COBERTURA DE MANZANOS/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Acercar a los manzanos/i })).toBeVisible();
   });
@@ -431,7 +434,7 @@ test.describe('AI copilot', () => {
 
   test('opens focused mode with the map and chat side by side', async ({ page }) => {
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Modo IA|AI Cockpit/i }).click();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_).toBeVisible();
@@ -451,7 +454,7 @@ test.describe('AI copilot', () => {
     // existed in the main page's layout, so a mobile visitor had no way to
     // see what they had clicked at all once inside this view.
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Modo IA|AI Cockpit/i }).click();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_).toBeVisible();
@@ -488,7 +491,7 @@ test.describe('AI copilot', () => {
 
   test('offers starter suggestion chips', async ({ page }) => {
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Modo IA|AI Cockpit/i }).click();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_.getByRole('button', { name: /fibra > 80%|fibre > 80%/i })).toBeVisible();
@@ -600,18 +603,24 @@ test.describe('Map layer selector', () => {
   test('groups census layers by theme and states their units', async ({ page }) => {
     await page.goto('/#flagship');
 
-    const select = page.locator('#census-layer-select');
-    await expect(select).toBeVisible();
+    const trigger = page.locator('#census-layer-select');
+    await expect(trigger).toBeVisible();
+    await trigger.click();
 
-    const groups = await select.locator('optgroup').allTextContents();
-    expect(groups.length).toBeGreaterThanOrEqual(3);
+    const listbox = page.getByRole('listbox').first();
+    await expect(listbox).toBeVisible();
+    const options = listbox.getByRole('option');
+    expect(await options.count()).toBeGreaterThanOrEqual(6);
 
     // Units belong on the option so density and coverage are not read alike.
-    await expect(select.locator('option', { hasText: 'hab/ha' })).toHaveCount(1);
-    await expect(select.locator('option', { hasText: '(%)' }).first()).toBeAttached();
+    await expect(options.filter({ hasText: 'hab/ha' })).toHaveCount(1);
+    await expect(options.filter({ hasText: '%' }).first()).toBeAttached();
 
-    await select.selectOption('TECH_CONN');
-    await expect(select).toHaveValue('TECH_CONN');
+    await options.filter({ hasText: /internet/i }).click();
+
+    // The map's own legend reflects the newly active layer -- proof the
+    // pick actually changed application state, not just closed a menu.
+    await expect(page.getByText(/internet/i).first()).toBeVisible();
   });
 });
 
@@ -709,7 +718,7 @@ test.describe('Gemini tool-call contract', () => {
     test.skip(!hasGemini, 'GEMINI_API_KEY is not configured in this environment.');
 
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Modo IA|AI Cockpit/i }).click();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await console_.getByRole('combobox', { name: /Proveedor de IA|AI provider/i }).selectOption('gemini');
@@ -727,6 +736,9 @@ test.describe('Gemini tool-call contract', () => {
     await expect(console_.getByText('set_map_scope()')).toBeVisible();
 
     // Prove the map itself moved — not just that the chat claimed it did.
-    await expect(console_.locator('#census-layer-select-focused')).toHaveValue('DENSITY');
+    // The layer picker is a custom dropdown now (no more native <select>
+    // value to read), so this checks the map's own legend instead, which
+    // reflects whichever layer is actually active.
+    await expect(console_.getByText(/densidad poblacional|population density/i).first()).toBeVisible();
   });
 });

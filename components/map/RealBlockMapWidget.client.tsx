@@ -9,7 +9,7 @@ import { CENSUS_LAYER_GROUPS, SCOPE_CONFIG, ScopeType, LayerCode } from '@/data/
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole, type VisibleStats, type SelectedBlock, type MetricThreshold } from '@/context/GeoConsoleContext';
 import { scopeForDepartment } from '@/lib/geolocation';
-import { Layers, ZoomIn, Crosshair, SlidersHorizontal, Info } from 'lucide-react';
+import { Layers, ZoomIn, Crosshair, SlidersHorizontal, Info, ChevronDown, Check } from 'lucide-react';
 import { XIcon } from '@animateicons/react/lucide';
 import { useIconAnimator } from '@/lib/useIconAnimator';
 import Tippy from '@tippyjs/react';
@@ -65,6 +65,30 @@ const BLOCK_ENTRY_ZOOM = 12;
 const METRO_SCOPES: Exclude<ScopeType, 'Nacional'>[] = ['Santa Cruz', 'Cochabamba', 'La Paz'];
 
 /**
+ * Which scope button should read as "active" for a given camera position —
+ * checked on every pan/zoom settle, not just on explicit navigation, so the
+ * highlighted button reflects wherever the camera actually is (locate-me, a
+ * manual drag, an AI fly-to) instead of going stale the moment the camera
+ * moves there by some other means. Squared-degree cutoff of 0.5 (~50-80km
+ * depending on latitude) is generous enough to cover a metro's greater urban
+ * area without claiming a genuinely different department that just happens
+ * to be the closest of the three covered cities.
+ */
+function metroScopeNearCamera(lat: number, lng: number): Exclude<ScopeType, 'Nacional'> | null {
+  let best: Exclude<ScopeType, 'Nacional'> | null = null;
+  let bestDist = Infinity;
+  for (const scope of METRO_SCOPES) {
+    const [centerLng, centerLat] = SCOPE_CONFIG[scope].centerLngLat;
+    const dist = (centerLat - lat) ** 2 + (centerLng - lng) ** 2;
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = scope;
+    }
+  }
+  return bestDist < 0.5 ? best : null;
+}
+
+/**
  * Bolivia's remaining six departments — listed under the "Bolivia" scope so
  * the selector is honest about the archive's actual coverage instead of
  * silently pretending the country stops at three metro areas. Each still
@@ -84,7 +108,10 @@ const OTHER_DEPARTMENT_COORDS: Record<string, [number, number]> = {
   Pando: [-68.7692, -11.0267], // Cobija
 };
 const OTHER_DEPARTMENTS = Object.keys(OTHER_DEPARTMENT_COORDS);
-const DEPARTMENT_OVERVIEW_ZOOM = 6.5;
+/** City-level zoom, matching the covered metro areas' own entry zoom — a
+ * normal "focus on this place" navigation rather than a washed-out regional
+ * view, even though no block layer renders there either way. */
+const DEPARTMENT_OVERVIEW_ZOOM = 12;
 
 const FILL_LAYER = 'ine-manzanos-fill';
 const STROKE_LAYER = 'ine-manzanos-stroke';
@@ -237,6 +264,11 @@ function SelectedBlockTooltip({
 }) {
   const prefersReducedMotion = useReducedMotion();
   const { ref: closeIconRef, handlers: closeIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+  // Tippy's `<Tippy>{child}</Tippy>` wrapping form clones the child and reads
+  // its `.ref` the pre-React-19 way, which now logs "Accessing element.ref
+  // was removed" on every render. Passing `reference` with a ref we own
+  // avoids that cloning path entirely (same pattern as the tooltip above).
+  const infoButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <>
@@ -275,15 +307,22 @@ function SelectedBlockTooltip({
                       paragraph, taking up half the tooltip's height for text
                       most visitors don't need on every single click — now
                       it's a click/hover-away instead of always-on. */}
-                  <Tippy content={t('flagship.blockIndexNote')} interactive placement="left" maxWidth={200} theme="geoinsights">
-                    <button
-                      type="button"
-                      aria-label={t('flagship.blockInfoLabel')}
-                      className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-teal-500/20 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-                    >
-                      <Info size={13} />
-                    </button>
-                  </Tippy>
+                  <button
+                    ref={infoButtonRef}
+                    type="button"
+                    aria-label={t('flagship.blockInfoLabel')}
+                    className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-teal-500/20 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                  >
+                    <Info size={13} />
+                  </button>
+                  <Tippy
+                    reference={infoButtonRef as React.RefObject<Element>}
+                    content={t('flagship.blockIndexNote')}
+                    interactive
+                    placement="left"
+                    maxWidth={200}
+                    theme="geoinsights"
+                  />
                   <button
                     type="button"
                     onClick={onClose}
@@ -344,6 +383,37 @@ function SelectedBlockTooltip({
  * below-canvas panel — it acts on the same camera those buttons zoom, so it
  * reads as part of the same control cluster instead of an unrelated one.
  */
+/**
+ * Open/close state for a custom dropdown, shared by the layer picker and the
+ * "Bolivia" scope selector below — both used to be native `<select>`
+ * elements, whose OPEN option list can't be styled at all (each browser
+ * renders its own light/dark-agnostic native popup), which is what read as
+ * visually "out of place" against the rest of the dark UI. Closes on an
+ * outside click or Escape.
+ */
+function useDropdown() {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return { open, setOpen, containerRef };
+}
+
 function LocateMeButton({
   visible,
   onClick,
@@ -353,6 +423,7 @@ function LocateMeButton({
   onClick: () => void;
   label: string;
 }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
   if (!visible) return null;
   return (
     // MapLibre's own NavigationControl (showCompass: false) is a 29px-wide
@@ -361,26 +432,28 @@ function LocateMeButton({
     // as "part of the same control cluster" instead of a nearby but
     // unrelated floating button.
     <div className="absolute bottom-[76px] right-2.5 z-10">
-      <Tippy content={label} placement="left" theme="geoinsights">
-        <button
-          type="button"
-          onClick={onClick}
-          aria-label={label}
-          className="flex h-[29px] w-[29px] items-center justify-center rounded-lg border border-teal-500/40 bg-slate-900/90 text-teal-300 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-        >
-          <Crosshair className="h-3.5 w-3.5" />
-        </button>
-      </Tippy>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        className="flex h-[29px] w-[29px] items-center justify-center rounded-lg border border-teal-500/40 bg-slate-900/90 text-teal-300 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+      >
+        <Crosshair className="h-3.5 w-3.5" />
+      </button>
+      {/* `reference` + an owned ref avoids Tippy's child-cloning path (see
+          SelectedBlockTooltip), which triggers React 19's ref-access warning. */}
+      <Tippy reference={buttonRef as React.RefObject<Element>} content={label} placement="left" theme="geoinsights" />
     </div>
   );
 }
 
 /**
- * Census layer picker, disguised as a small icon button rather than the
- * always-visible labeled `<select>` it used to be below the canvas. The real
- * `<select>` still does all the work — it's just made transparent and
- * stretched over the icon, so the control stays a native, fully accessible
- * dropdown instead of a custom-built one.
+ * Census layer picker: a small icon button that opens a custom dark popup
+ * grouped by theme, replacing what used to be a fully transparent `<select>`
+ * stretched over the icon. That approach kept the trigger looking right, but
+ * clicking it still opened the browser's own native (light, unstyled)
+ * option list — this renders the whole thing itself instead.
  */
 function LayerSelectorButton({
   id,
@@ -395,30 +468,157 @@ function LayerSelectorButton({
   language: 'es' | 'en';
   label: string;
 }) {
+  const { open, setOpen, containerRef } = useDropdown();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
   return (
-    <div className="absolute bottom-3 left-3 z-10">
-      <Tippy content={label} placement="right" theme="geoinsights">
-        <div className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-teal-400 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800">
-          <Layers className="h-4 w-4 pointer-events-none" />
-          <select
-            id={id}
-            value={activeLayer}
-            onChange={(e) => onChange(e.target.value as LayerCode)}
-            aria-label={label}
-            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-          >
-            {CENSUS_LAYER_GROUPS.map((group) => (
-              <optgroup key={group.code} label={language === 'es' ? group.labelEs : group.labelEn}>
-                {group.layers.map((layer) => (
-                  <option key={layer.code} value={layer.code}>
-                    {language === 'es' ? layer.labelEs : layer.labelEn} ({layer.unitLabel})
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+    <div ref={containerRef} className="absolute bottom-3 left-3 z-10">
+      <button
+        id={id}
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={label}
+        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-teal-400 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800"
+      >
+        <Layers className="h-4 w-4 pointer-events-none" />
+      </button>
+      <Tippy reference={buttonRef as React.RefObject<Element>} content={label} placement="right" theme="geoinsights" />
+
+      {open && (
+        <div
+          role="listbox"
+          aria-label={label}
+          className="absolute bottom-full left-0 mb-2 max-h-80 w-64 space-y-1 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900 p-1.5 shadow-2xl"
+        >
+          {CENSUS_LAYER_GROUPS.map((group) => (
+            <div key={group.code}>
+              <div className="px-2 pt-1.5 pb-1 font-mono-tech text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                {language === 'es' ? group.labelEs : group.labelEn}
+              </div>
+              {group.layers.map((layer) => (
+                <button
+                  key={layer.code}
+                  type="button"
+                  role="option"
+                  aria-selected={activeLayer === layer.code}
+                  onClick={() => {
+                    onChange(layer.code);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left font-mono-tech text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                    activeLayer === layer.code ? 'bg-teal-500/20 text-teal-200' : 'text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span className="truncate">{language === 'es' ? layer.labelEs : layer.labelEn}</span>
+                  <span className="shrink-0 text-slate-500">{layer.unitLabel}</span>
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
-      </Tippy>
+      )}
+    </div>
+  );
+}
+
+/**
+ * "Bolivia" doubles as the national-view option and a dropdown listing the
+ * six departments the archive has no block-level coverage for. Custom popup
+ * for the same reason as LayerSelectorButton: a native <select>'s open list
+ * can't be styled and looked out of place against the dark button.
+ */
+function ScopeOtherDropdown({
+  value,
+  isActive,
+  onSelect,
+  label,
+  otherDepartmentsLabel,
+  compact,
+}: {
+  value: string;
+  isActive: boolean;
+  onSelect: (value: string) => void;
+  label: string;
+  otherDepartmentsLabel: string;
+  compact?: boolean;
+}) {
+  const { open, setOpen, containerRef } = useDropdown();
+  const triggerLabel = value === 'Nacional' ? label : value;
+
+  const optionClasses = (selected: boolean) =>
+    `flex w-full items-center gap-2 rounded px-2 py-1.5 text-left font-mono-tech text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+      selected ? 'bg-teal-500/20 text-teal-200' : 'text-slate-300 hover:bg-slate-800'
+    }`;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={label}
+        className={
+          compact
+            ? `flex min-h-[36px] shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 font-mono-tech text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                isActive
+                  ? 'bg-teal-500 text-slate-950'
+                  : 'border border-slate-800 bg-slate-950/80 text-slate-300 hover:bg-slate-800'
+              }`
+            : `flex min-h-[44px] items-center justify-center gap-1 rounded-lg px-3 py-2 font-mono-tech text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
+                isActive
+                  ? 'bg-teal-500 text-slate-950 shadow-lg shadow-teal-500/20'
+                  : 'border border-slate-800 bg-slate-950/80 text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`
+        }
+      >
+        <span className="truncate">{triggerLabel}</span>
+        <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          aria-label={label}
+          className="absolute z-20 mt-1 w-56 space-y-1 rounded-lg border border-slate-800 bg-slate-900 p-1.5 shadow-2xl"
+        >
+          <button
+            type="button"
+            role="option"
+            aria-selected={value === 'Nacional'}
+            onClick={() => {
+              onSelect('Nacional');
+              setOpen(false);
+            }}
+            className={optionClasses(value === 'Nacional')}
+          >
+            {value === 'Nacional' && <Check className="h-3 w-3 shrink-0" />}
+            <span>{label}</span>
+          </button>
+          <div className="px-2 pb-1 pt-1.5 font-mono-tech text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            {otherDepartmentsLabel}
+          </div>
+          {OTHER_DEPARTMENTS.map((dept) => (
+            <button
+              key={dept}
+              type="button"
+              role="option"
+              aria-selected={value === dept}
+              onClick={() => {
+                onSelect(dept);
+                setOpen(false);
+              }}
+              className={optionClasses(value === dept)}
+            >
+              {value === dept && <Check className="h-3 w-3 shrink-0" />}
+              <span>{dept}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -485,12 +685,16 @@ function MapLegend({
  */
 function ThresholdControl({
   threshold,
+  sliderMin,
+  sliderMax,
   unitLabel,
   onApply,
   onClear,
   labels,
 }: {
-  threshold: MetricThreshold | null;
+  threshold: MetricThreshold;
+  sliderMin: number;
+  sliderMax: number;
   unitLabel: string;
   onApply: (threshold: MetricThreshold) => void;
   onClear: () => void;
@@ -501,48 +705,64 @@ function ThresholdControl({
   // parent keys this component by the threshold's own value, so React just
   // remounts it with fresh initial state instead — see the `key` prop where
   // this is rendered below.
-  const [minInput, setMinInput] = useState(threshold?.min?.toString() ?? '');
-  const [maxInput, setMaxInput] = useState(threshold?.max != null ? threshold.max.toString() : '');
+  const [minInput, setMinInput] = useState(threshold.min.toString());
+  const [maxInput, setMaxInput] = useState(threshold.max != null ? threshold.max.toString() : '');
 
-  const handleApply = () => {
+  const numberInputClasses =
+    'min-h-[36px] rounded border border-slate-700 bg-slate-900 px-2 text-xs font-mono-tech text-slate-100 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+
+  const handleApply = (nextMin: number, nextMax: number | null) => {
+    onApply({ min: nextMin, max: nextMax });
+  };
+
+  const handleApplyFromInputs = () => {
     const min = parseFloat(minInput);
     if (Number.isNaN(min)) return;
     const max = maxInput.trim() === '' ? null : parseFloat(maxInput);
-    onApply({ min, max: max !== null && Number.isNaN(max) ? null : max });
+    handleApply(min, max !== null && Number.isNaN(max) ? null : max);
   };
 
+  const sliderMinValue = Math.min(parseFloat(minInput) || sliderMin, sliderMax);
+  const sliderMaxValue = Math.min(maxInput.trim() === '' ? sliderMax : parseFloat(maxInput) || sliderMax, sliderMax);
+  // Tailwind's JIT scanner needs every class as a literal string in the
+  // source, so the thumb pseudo-element styling can't be built from an
+  // interpolated variable — it has to be spelled out on each range input.
+  const rangeInputClasses =
+    "pointer-events-none absolute inset-x-0 h-4 w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-slate-950 [&::-webkit-slider-thumb]:bg-teal-400 [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-slate-950 [&::-moz-range-thumb]:bg-teal-400 [&::-moz-range-thumb]:shadow [&::-moz-range-thumb]:cursor-pointer";
+
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-      <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-teal-400" />
-      <input
-        type="number"
-        inputMode="decimal"
-        value={minInput}
-        onChange={(e) => setMinInput(e.target.value)}
-        placeholder={labels.min}
-        aria-label={labels.min}
-        className="w-16 min-h-[36px] rounded border border-slate-700 bg-slate-900 px-2 text-xs font-mono-tech text-slate-100 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-      />
-      <span className="text-slate-500">–</span>
-      <input
-        type="number"
-        inputMode="decimal"
-        value={maxInput}
-        onChange={(e) => setMaxInput(e.target.value)}
-        placeholder={labels.max}
-        aria-label={labels.max}
-        className="w-20 min-h-[36px] rounded border border-slate-700 bg-slate-900 px-2 text-xs font-mono-tech text-slate-100 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-      />
-      <span className="text-[11px] text-slate-500">{unitLabel}</span>
-      <button
-        type="button"
-        onClick={handleApply}
-        disabled={minInput.trim() === ''}
-        className="min-h-[36px] rounded-lg bg-teal-500/20 border border-teal-500/40 px-3 text-[11px] font-mono-tech font-bold text-teal-200 transition-colors hover:bg-teal-500/30 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-      >
-        {labels.apply}
-      </button>
-      {threshold && (
+    <div className="space-y-2.5 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-teal-400" />
+        <input
+          type="number"
+          inputMode="decimal"
+          value={minInput}
+          onChange={(e) => setMinInput(e.target.value)}
+          onBlur={handleApplyFromInputs}
+          placeholder={labels.min}
+          aria-label={labels.min}
+          className={`w-16 ${numberInputClasses}`}
+        />
+        <span className="text-slate-500">–</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          value={maxInput}
+          onChange={(e) => setMaxInput(e.target.value)}
+          onBlur={handleApplyFromInputs}
+          placeholder={labels.max}
+          aria-label={labels.max}
+          className={`w-20 ${numberInputClasses}`}
+        />
+        <span className="text-[11px] text-slate-500">{unitLabel}</span>
+        <button
+          type="button"
+          onClick={handleApplyFromInputs}
+          className="min-h-[36px] rounded-lg border border-teal-500/40 bg-teal-500/20 px-3 font-mono-tech text-[11px] font-bold text-teal-200 transition-colors hover:bg-teal-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+        >
+          {labels.apply}
+        </button>
         <button
           type="button"
           onClick={onClear}
@@ -551,7 +771,48 @@ function ThresholdControl({
         >
           <XMarkIcon />
         </button>
-      )}
+      </div>
+
+      {/* Two overlapping native range inputs sharing one track -- each only
+          pointer-reactive at its own thumb (via the ::-webkit/moz-thumb
+          pseudo-elements below), so both handles stay independently
+          draggable without a drag-handling library. */}
+      <div className="relative flex h-4 items-center">
+        <div className="pointer-events-none absolute inset-x-0 h-1 rounded-full bg-slate-700" />
+        <div
+          className="pointer-events-none absolute h-1 rounded-full bg-teal-500"
+          style={{
+            left: `${((sliderMinValue - sliderMin) / (sliderMax - sliderMin || 1)) * 100}%`,
+            right: `${100 - ((sliderMaxValue - sliderMin) / (sliderMax - sliderMin || 1)) * 100}%`,
+          }}
+        />
+        <input
+          type="range"
+          min={sliderMin}
+          max={sliderMax}
+          value={sliderMinValue}
+          onChange={(e) => {
+            const next = Math.min(Number(e.target.value), sliderMaxValue);
+            setMinInput(next.toString());
+            handleApply(next, maxInput.trim() === '' ? null : sliderMaxValue);
+          }}
+          aria-label={labels.min}
+          className={rangeInputClasses}
+        />
+        <input
+          type="range"
+          min={sliderMin}
+          max={sliderMax}
+          value={sliderMaxValue}
+          onChange={(e) => {
+            const next = Math.max(Number(e.target.value), sliderMinValue);
+            setMaxInput(next.toString());
+            handleApply(sliderMinValue, next);
+          }}
+          aria-label={labels.max}
+          className={rangeInputClasses}
+        />
+      </div>
     </div>
   );
 }
@@ -587,6 +848,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
   } = useGeoConsole();
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const aiTriggerRef = useRef<HTMLButtonElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
   const [styleReady, setStyleReady] = useState(false);
@@ -739,6 +1001,13 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     // The block layer only exists from BLOCK_MIN_ZOOM; surface that to the user.
     const syncZoomState = () => {
       setBelowDataZoom(map.getZoom() < BLOCK_MIN_ZOOM);
+
+      // Passive only: this never moves the camera, just reconciles which
+      // scope button shows as active with wherever the camera already is.
+      const center = map.getCenter();
+      const nearby = metroScopeNearCamera(center.lat, center.lng);
+      if (nearby) setActiveScope(nearby);
+
       if (map.getZoom() >= BLOCK_MIN_ZOOM) {
         const { field, unitScale } = LAYER_PAINT[layerRef.current];
         const values = map
@@ -864,13 +1133,6 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     });
   }, [styleReady, registerMapController]);
 
-  // Move the camera when the scope changes.
-  useEffect(() => {
-    if (!mapRef.current) return;
-    const config = SCOPE_CONFIG[activeScope];
-    mapRef.current.flyTo({ center: config.centerLngLat, zoom: config.zoom, duration: 1200 });
-  }, [activeScope]);
-
   // Repaint the fill ramp whenever the layer or threshold changes — and once
   // the style is ready, so a change made during the initial load is not
   // silently dropped.
@@ -966,6 +1228,8 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       setSelectedBlock(null);
       if (value === 'Nacional') {
         setActiveScope('Nacional');
+        const config = SCOPE_CONFIG.Nacional;
+        mapRef.current?.flyTo({ center: config.centerLngLat, zoom: config.zoom, duration: 1200 });
         return;
       }
       const coords = OTHER_DEPARTMENT_COORDS[value];
@@ -976,11 +1240,19 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     [setActiveScope, setSelectedBlock]
   );
 
+  // Flies the camera imperatively rather than relying on the activeScope
+  // effect below to react to a *change* in value: clicking a scope that's
+  // already marked active (stale after a locate-me or manual pan moved the
+  // camera elsewhere without updating activeScope) would otherwise be a
+  // silent no-op, since React sees no state change to react to. Same bug
+  // class as the earlier hash-nav issue.
   const handleSelectMetroScope = useCallback(
     (scope: Exclude<ScopeType, 'Nacional'>) => {
       setActiveScope(scope);
       setSelectedBlock(null);
       setOtherScopeSelection('Nacional');
+      const config = SCOPE_CONFIG[scope];
+      mapRef.current?.flyTo({ center: config.centerLngLat, zoom: config.zoom, duration: 1200 });
     },
     [setActiveScope, setSelectedBlock]
   );
@@ -1038,25 +1310,14 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             </button>
           ))}
 
-          <select
-            aria-label={t('flagship.scopeNacional')}
+          <ScopeOtherDropdown
             value={otherScopeSelection}
-            onChange={(e) => handleSelectOtherScope(e.target.value)}
-            className={`min-h-[36px] shrink-0 rounded-lg px-2.5 py-1.5 font-mono-tech text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
-              otherScopeSelection === 'Nacional' && activeScope === 'Nacional'
-                ? 'bg-teal-500 text-slate-950'
-                : 'border border-slate-800 bg-slate-950/80 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <option value="Nacional">{t('flagship.scopeNacional')}</option>
-            <optgroup label={t('flagship.scopeOtherDepartments')}>
-              {OTHER_DEPARTMENTS.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept} — {t('flagship.scopeComingSoon')}
-                </option>
-              ))}
-            </optgroup>
-          </select>
+            isActive={otherScopeSelection === 'Nacional' && activeScope === 'Nacional'}
+            onSelect={handleSelectOtherScope}
+            label={t('flagship.scopeNacional')}
+            otherDepartmentsLabel={t('flagship.scopeOtherDepartments')}
+            compact
+          />
         </div>
 
         <div className="relative min-h-0 flex-1">
@@ -1149,31 +1410,38 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             out what clicking actually does (opens Focused Mode), since a bare
             two-letter label gives a first-time visitor nothing to go on. */}
         <div className="absolute top-3 right-3 z-10">
-          <Tippy content={t('flagship.aiTriggerTooltip')} placement="bottom-end" delay={[500, 0]} offset={[0, 10]} theme="geoinsights">
-            <button
-              type="button"
-              onClick={() => setFocusedMode(true)}
-              aria-label={t('flagship.aiTriggerExpanded')}
-              className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
+          <button
+            ref={aiTriggerRef}
+            type="button"
+            onClick={() => setFocusedMode(true)}
+            aria-label={`${t('flagship.aiTriggerLabel')} ${t('flagship.aiTriggerExpanded')}`}
+            className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
+          >
+            <div className="inline-flex items-center justify-center shrink-0 text-white transition-transform duration-500 ease-out group-hover:rotate-90 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:rotate-0 motion-reduce:group-hover:scale-100">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" opacity="1"></path>
+                <path d="M20 2v4" opacity="0.9"></path>
+                <path d="M22 4h-4" opacity="0.9"></path>
+                <circle cx="4" cy="20" r="2" opacity="1"></circle>
+              </svg>
+            </div>
+            <span className="font-extrabold text-white">
+              {t('flagship.aiTriggerLabel')}
+            </span>
+            <span
+              className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:ml-1.5 group-hover:max-w-[140px] group-hover:opacity-100 motion-reduce:transition-none"
             >
-              <div className="inline-flex items-center justify-center shrink-0 text-white transition-transform duration-500 ease-out group-hover:rotate-90 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:rotate-0 motion-reduce:group-hover:scale-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" opacity="1"></path>
-                  <path d="M20 2v4" opacity="0.9"></path>
-                  <path d="M22 4h-4" opacity="0.9"></path>
-                  <circle cx="4" cy="20" r="2" opacity="1"></circle>
-                </svg>
-              </div>
-              <span className="font-extrabold text-white">
-                {t('flagship.aiTriggerLabel')}
-              </span>
-              <span
-                className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:ml-1.5 group-hover:max-w-[140px] group-hover:opacity-100 motion-reduce:transition-none"
-              >
-                {t('flagship.aiTriggerExpanded')}
-              </span>
-            </button>
-          </Tippy>
+              {t('flagship.aiTriggerExpanded')}
+            </span>
+          </button>
+          <Tippy
+            reference={aiTriggerRef as React.RefObject<Element>}
+            content={t('flagship.aiTriggerTooltip')}
+            placement="bottom-end"
+            delay={[500, 0]}
+            offset={[0, 10]}
+            theme="geoinsights"
+          />
         </div>
 
         <MapLegend
@@ -1240,40 +1508,41 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
               still flies the camera there, just at a department-overview
               zoom below BLOCK_MIN_ZOOM, so the existing "no manzano coverage
               at this zoom" notice explains the gap honestly. */}
-          <select
-            aria-label={t('flagship.scopeNacional')}
+          <ScopeOtherDropdown
             value={otherScopeSelection}
-            onChange={(e) => handleSelectOtherScope(e.target.value)}
-            className={`min-h-[44px] py-2 px-3 rounded-lg text-xs font-mono-tech font-bold transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
-              otherScopeSelection === 'Nacional' && activeScope === 'Nacional'
-                ? 'bg-teal-500 text-slate-950 shadow-lg shadow-teal-500/20'
-                : 'bg-slate-950/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800'
-            }`}
-          >
-            <option value="Nacional">{t('flagship.scopeNacional')}</option>
-            <optgroup label={t('flagship.scopeOtherDepartments')}>
-              {OTHER_DEPARTMENTS.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept} — {t('flagship.scopeComingSoon')}
-                </option>
-              ))}
-            </optgroup>
-          </select>
+            isActive={otherScopeSelection === 'Nacional' && activeScope === 'Nacional'}
+            onSelect={handleSelectOtherScope}
+            label={t('flagship.scopeNacional')}
+            otherDepartmentsLabel={t('flagship.scopeOtherDepartments')}
+          />
         </div>
 
-        <ThresholdControl
-          key={threshold ? `${threshold.min}:${threshold.max}` : 'none'}
-          threshold={threshold}
-          unitLabel={LAYER_PAINT[activeLayer].unitLabel}
-          onApply={setThreshold}
-          onClear={() => setThreshold(null)}
-          labels={{
-            min: t('flagship.thresholdMinLabel'),
-            max: t('flagship.thresholdMaxLabel'),
-            apply: t('flagship.thresholdApply'),
-            clear: t('flagship.thresholdClear'),
-          }}
-        />
+        {/* Shown only once a threshold actually exists (set by the AI, or by
+            a previous use of this same control) rather than an always-on
+            control with empty inputs most visitors never touch. */}
+        {threshold &&
+          (() => {
+            const meta = LAYER_PAINT[activeLayer];
+            const legendMax = (meta.stops[meta.stops.length - 2] as number) * meta.unitScale;
+            const sliderMax = Math.max(legendMax, threshold.max ?? 0, threshold.min) * 1.1 || 100;
+            return (
+              <ThresholdControl
+                key={`${activeLayer}:${threshold.min}:${threshold.max}`}
+                threshold={threshold}
+                sliderMin={0}
+                sliderMax={Math.round(sliderMax)}
+                unitLabel={meta.unitLabel}
+                onApply={setThreshold}
+                onClear={() => setThreshold(null)}
+                labels={{
+                  min: t('flagship.thresholdMinLabel'),
+                  max: t('flagship.thresholdMaxLabel'),
+                  apply: t('flagship.thresholdApply'),
+                  clear: t('flagship.thresholdClear'),
+                }}
+              />
+            );
+          })()}
       </div>
     </div>
   );
