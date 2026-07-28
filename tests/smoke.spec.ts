@@ -123,6 +123,7 @@ test.describe('Portfolio — bilingual behaviour', () => {
       'ZONA URBANA SELECCIONADA',
       'ALCANCE ESPACIAL',
       'Consume directamente los archivos',
+      'Seguro Privado',
     ];
 
     const body = await page.locator('body').innerText();
@@ -213,8 +214,10 @@ test.describe('Flagship map', () => {
   test('explains the empty national view instead of showing a blank map', async ({ page }) => {
     await page.goto('/#flagship');
 
-    // The PMTiles archive starts at z8; the national camera sits below it.
-    await page.getByRole('button', { name: /Bolivia Nacional/i }).click();
+    // "Bolivia" doubles as the national-view option and a dropdown listing
+    // the departments the archive has no block coverage for; the PMTiles
+    // archive starts at z8, and the national camera sits below it.
+    await page.getByRole('combobox', { name: 'Bolivia' }).selectOption('Nacional');
     await expect(page.getByText(/SIN COBERTURA DE MANZANOS/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Acercar a los manzanos/i })).toBeVisible();
   });
@@ -222,19 +225,19 @@ test.describe('Flagship map', () => {
   test('hides the zoom notice once a city scope is selected', async ({ page }) => {
     await page.goto('/#flagship');
 
-    await page.getByRole('button', { name: /ZM Cochabamba/i }).click();
+    await page.getByRole('button', { name: 'Cochabamba', exact: true }).click();
     await expect(page.getByText(/SIN COBERTURA DE MANZANOS/i)).toBeHidden({ timeout: 15000 });
   });
 
   test('marks the active scope for assistive technology', async ({ page }) => {
     await page.goto('/#flagship');
 
-    const santaCruz = page.getByRole('button', { name: /ZM Santa Cruz/i });
+    const santaCruz = page.getByRole('button', { name: 'Santa Cruz', exact: true });
     await santaCruz.click();
     await expect(santaCruz).toHaveAttribute('aria-pressed', 'true');
 
-    const nacional = page.getByRole('button', { name: /Bolivia Nacional/i });
-    await expect(nacional).toHaveAttribute('aria-pressed', 'false');
+    const cochabamba = page.getByRole('button', { name: 'Cochabamba', exact: true });
+    await expect(cochabamba).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('credits CARTO, OSM and the dataset author without a canvas watermark', async ({ page }) => {
@@ -724,6 +727,6 @@ test.describe('Gemini tool-call contract', () => {
     await expect(console_.getByText('set_map_scope()')).toBeVisible();
 
     // Prove the map itself moved — not just that the chat claimed it did.
-    await expect(console_.locator('select').first()).toHaveValue('DENSITY');
+    await expect(console_.locator('#census-layer-select-focused')).toHaveValue('DENSITY');
   });
 });

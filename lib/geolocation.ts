@@ -61,7 +61,13 @@ export function scopeForDepartment(department: string | null): Exclude<ScopeType
   return null;
 }
 
-/** Browser geolocation as a promise, with an explicit timeout and no retries. */
+/**
+ * Browser geolocation as a promise, with an explicit timeout and no retries.
+ *
+ * `enableHighAccuracy: true` — this used to request the coarse (WiFi/cell)
+ * fix even when the visitor had already granted precise location, so a
+ * return visit with GPS permission still only ever got a city-level fix.
+ */
 export function requestBrowserLocation(timeoutMs = 10_000): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -69,7 +75,7 @@ export function requestBrowserLocation(timeoutMs = 10_000): Promise<GeolocationP
       return;
     }
     navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: false,
+      enableHighAccuracy: true,
       timeout: timeoutMs,
       maximumAge: 300_000,
     });

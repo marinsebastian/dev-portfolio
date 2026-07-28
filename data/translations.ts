@@ -11,7 +11,6 @@ export interface TranslationDictionary {
     operationalStatus: string;
   };
   hero: {
-    tag: string;
     titleStart: string;
     titleAccent: string;
     headlineEs: string;
@@ -51,6 +50,7 @@ export interface TranslationDictionary {
   };
   flagship: {
     badge: string;
+    liveMapBadge: string;
     title: string;
     subtitle: string;
     summary: string;
@@ -72,6 +72,8 @@ export interface TranslationDictionary {
     scopeSantaCruz: string;
     scopeCochabamba: string;
     scopeLaPaz: string;
+    scopeOtherDepartments: string;
+    scopeComingSoon: string;
     layerDensity: string;
     layerTechConn: string;
     layerHousingServices: string;
@@ -84,8 +86,7 @@ export interface TranslationDictionary {
     aiHeaderTitle: string;
     activeZone: string;
     legendTitle: string;
-    legendLow: string;
-    legendHigh: string;
+    legendCurrentView: string;
     geoBoliviaTitle: string;
     geoBoliviaProvider: string;
     geoBoliviaDesc: string;
@@ -94,7 +95,15 @@ export interface TranslationDictionary {
     scopeSelectorLabel: string;
     atlasLinkLabel: string;
     legendLayerTitle: string;
+    blocksInViewSuffix: string;
+    metricMin: string;
+    metricMedian: string;
+    metricTop10: string;
+    metricMax: string;
     zonesSuffix: string;
+    centerOnMe: string;
+    thresholdActive: string;
+    thresholdClear: string;
     provenanceNote: string;
     zoomNoticeTitle: string;
     zoomNoticeBody: string;
@@ -107,8 +116,13 @@ export interface TranslationDictionary {
     blockInternetLabel: string;
     blockWaterLabel: string;
     blockEducationLabel: string;
+    blockHealthInsuranceLabel: string;
+    blockInfoLabel: string;
     blockClose: string;
     aiNoBlockSelected: string;
+    aiTriggerLabel: string;
+    aiTriggerExpanded: string;
+    aiTriggerTooltip: string;
   };
   caseStudies: {
     tag: string;
@@ -255,7 +269,6 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       operationalStatus: "DISPONIBLE / OPERATIVO"
     },
     hero: {
-      tag: "SEBASTIAN MARIN | INGENIERO DE SISTEMAS",
       titleStart: "Desarrollador Full-Stack enfocado en ",
       titleAccent: "Interfaces, APIs, Datos Espaciales y Automatización",
       headlineEs: "“Construyo sistemas web que convierten datos, APIs, información espacial y procesos en herramientas operativas simples de usar.”",
@@ -295,6 +308,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
     },
     flagship: {
       badge: "PROYECTO DESTACADO GIS Y DATOS",
+      liveMapBadge: "Mapa interactivo en vivo",
       title: "GeoInsights Bolivia",
       subtitle: "Plataforma de Exploración de Datos Públicos y Mapeo Espacial Interactivo",
       summary: "Panel de mapas interactivos que transforma datos socio-demográficos y urbanos de Bolivia en una consola de análisis visual.",
@@ -312,10 +326,12 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       scopeLabel: "NIVEL DE COBERTURA ESPACIAL:",
       layerLabel: "CAPA CENSAL 2024 / URBANA:",
       sourceAttribution: "Inspirado en datos abiertos de Mauricio Foronda (@mauforonda — Censo 2024, Atlas Urbano & Geodatos)",
-      scopeNacional: "Bolivia Nacional (9 Dptos)",
-      scopeSantaCruz: "ZM Santa Cruz de la Sierra",
-      scopeCochabamba: "ZM Cochabamba / Valle",
-      scopeLaPaz: "ZM La Paz / El Alto",
+      scopeNacional: "Bolivia",
+      scopeSantaCruz: "Santa Cruz",
+      scopeCochabamba: "Cochabamba",
+      scopeLaPaz: "La Paz",
+      scopeOtherDepartments: "Otros departamentos",
+      scopeComingSoon: "sin datos de manzano aún",
       layerDensity: "Densidad Censo 2024",
       layerTechConn: "Conectividad Digital & Fibra",
       layerHousingServices: "Servicios Básicos & Vivienda",
@@ -328,8 +344,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       aiHeaderTitle: "RESUMEN ESPACIAL GEMINI AI (CENSO 2024)",
       activeZone: "ZONA URBANA SELECCIONADA:",
       legendTitle: "ESCALA DE INTENSIDAD",
-      legendLow: "Bajo / En Crecimiento",
-      legendHigh: "Alto / Consolidado",
+      legendCurrentView: "Vista actual — máx.",
       geoBoliviaTitle: "Límite Referencial Departamentos del Estado Plurinacional de Bolivia 2015",
       geoBoliviaProvider: "GeoBolivia / Viceministerio de Autonomías (339 Municipios)",
       geoBoliviaDesc: "Muestra la división política-administrativa de los 9 departamentos de Bolivia, entidades subnacionales mayores en las que se subdivide el territorio del Estado Plurinacional, que cuentan con autonomía reconocida a nivel ejecutivo y legislativo. Dato referencial de GeoBolivia y Censo 2024 de Mauricio Foronda (@mauforonda).",
@@ -338,7 +353,15 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       scopeSelectorLabel: "ALCANCE ESPACIAL (MANZANOS REALES PMTILES):",
       atlasLinkLabel: "Atlas Urbano Censo 2024 (@mauforonda)",
       legendLayerTitle: "MANZANOS REALES INE (PMTILES)",
+      blocksInViewSuffix: "MANZANOS",
+      metricMin: "Mínimo",
+      metricMedian: "Mediana",
+      metricTop10: "Top 10%",
+      metricMax: "Máximo",
       zonesSuffix: "ZONAS",
+      centerOnMe: "Centrar en mi ubicación",
+      thresholdActive: "Filtro activo:",
+      thresholdClear: "Quitar filtro",
       provenanceNote: "Los polígonos y los indicadores por manzano provienen del archivo PMTiles del Censo 2024 (haz clic en un manzano para verlos). Las cifras agregadas de esta tarjeta son referencias ilustrativas de zona, no lecturas oficiales del INE.",
       zoomNoticeTitle: "SIN COBERTURA DE MANZANOS EN ESTE NIVEL DE ZOOM",
       zoomNoticeBody: "El archivo PMTiles del Censo 2024 se genera desde el nivel de zoom 8. En la vista nacional solo se muestra el mapa base.",
@@ -351,8 +374,13 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       blockInternetLabel: "Internet/TIC",
       blockWaterLabel: "Agua por cañería",
       blockEducationLabel: "Educación superior",
+      blockHealthInsuranceLabel: "Seguro privado",
+      blockInfoLabel: "¿De dónde vienen estos datos?",
       blockClose: "Cerrar selección",
-      aiNoBlockSelected: "Selecciona un manzano en el mapa para incluir sus indicadores en el análisis."
+      aiNoBlockSelected: "Selecciona un manzano en el mapa para incluir sus indicadores en el análisis.",
+      aiTriggerLabel: "IA",
+      aiTriggerExpanded: "Copiloto de Mapa",
+      aiTriggerTooltip: "Modo enfocado: pregunta al copiloto y explora el mapa por conversación."
     },
     caseStudies: {
       tag: "EJECUCIÓN TÉCNICA DEMOSTRADA",
@@ -495,7 +523,6 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       operationalStatus: "AVAILABLE / OPERATIONAL"
     },
     hero: {
-      tag: "SEBASTIAN MARIN | SYSTEMS ENGINEER",
       titleStart: "Full-Stack Developer focused on ",
       titleAccent: "Interfaces, APIs, Spatial Data & Automation",
       headlineEs: "“I build web systems that turn complex data, APIs, spatial information, and workflows into simple, operational tools.”",
@@ -535,6 +562,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
     },
     flagship: {
       badge: "FLAGSHIP GIS & DATA EXPLORER",
+      liveMapBadge: "Live interactive map",
       title: "GeoInsights Bolivia",
       subtitle: "Public Data Exploration Platform & Interactive Spatial Mapping",
       summary: "Interactive map dashboard transforming Bolivian socio-demographic and urban public datasets into a visual analysis console.",
@@ -552,10 +580,12 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       scopeLabel: "SPATIAL SCOPE LEVEL:",
       layerLabel: "2024 CENSUS / URBAN LAYER:",
       sourceAttribution: "Inspired by open datasets from Mauricio Foronda (@mauforonda — 2024 Census, Atlas Urbano & Geodatos)",
-      scopeNacional: "National Bolivia (9 Depts)",
-      scopeSantaCruz: "Santa Cruz Metro Area",
-      scopeCochabamba: "Cochabamba Metro Area",
-      scopeLaPaz: "La Paz / El Alto Metro Area",
+      scopeNacional: "Bolivia",
+      scopeSantaCruz: "Santa Cruz",
+      scopeCochabamba: "Cochabamba",
+      scopeLaPaz: "La Paz",
+      scopeOtherDepartments: "Other departments",
+      scopeComingSoon: "no block-level data yet",
       layerDensity: "2024 Density Layer",
       layerTechConn: "Digital & Fiber Connectivity",
       layerHousingServices: "Basic Services & Housing",
@@ -568,8 +598,7 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       aiHeaderTitle: "GEMINI AI SPATIAL SUMMARY (2024 CENSUS)",
       activeZone: "SELECTED URBAN ZONE:",
       legendTitle: "METRIC INTENSITY SCALE",
-      legendLow: "Low / Developing",
-      legendHigh: "High / Consolidated",
+      legendCurrentView: "Current view — max",
       geoBoliviaTitle: "Referential Boundary of Departments of the Plurinational State of Bolivia 2015",
       geoBoliviaProvider: "GeoBolivia / Viceministerio de Autonomías (339 Municipalities)",
       geoBoliviaDesc: "Displays the political-administrative division of the 9 departments of Bolivia, major subnational entities with executive and legislative autonomy. Sourced from GeoBolivia referential datasets & Mauricio Foronda (@mauforonda) 2024 Census open data.",
@@ -578,7 +607,15 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       scopeSelectorLabel: "SPATIAL SCOPE (REAL PMTILES BLOCKS):",
       atlasLinkLabel: "Atlas Urbano 2024 Census (@mauforonda)",
       legendLayerTitle: "REAL INE BLOCKS (PMTILES)",
+      blocksInViewSuffix: "BLOCKS",
+      metricMin: "Minimum",
+      metricMedian: "Median",
+      metricTop10: "Top 10%",
+      metricMax: "Maximum",
       zonesSuffix: "ZONES",
+      centerOnMe: "Center on my location",
+      thresholdActive: "Active filter:",
+      thresholdClear: "Clear filter",
       provenanceNote: "Polygons and per-block indicators come from the 2024 Census PMTiles archive (click a block to see them). The aggregate figures on this card are illustrative zone references, not official INE readings.",
       zoomNoticeTitle: "NO BLOCK COVERAGE AT THIS ZOOM LEVEL",
       zoomNoticeBody: "The 2024 Census PMTiles archive is generated from zoom level 8 upward. The national view shows the base map only.",
@@ -591,8 +628,13 @@ export const TRANSLATIONS: Record<'es' | 'en', TranslationDictionary> = {
       blockInternetLabel: "Internet/ICT",
       blockWaterLabel: "Piped water",
       blockEducationLabel: "Higher education",
+      blockHealthInsuranceLabel: "Private insurance",
+      blockInfoLabel: "Where does this data come from?",
       blockClose: "Close selection",
-      aiNoBlockSelected: "Select a block on the map to include its indicators in the analysis."
+      aiNoBlockSelected: "Select a block on the map to include its indicators in the analysis.",
+      aiTriggerLabel: "AI",
+      aiTriggerExpanded: "Map Copilot",
+      aiTriggerTooltip: "Focused Mode: ask the copilot and explore the map by conversation."
     },
     caseStudies: {
       tag: "PROVEN TECHNICAL EXECUTION",

@@ -3,13 +3,13 @@
 import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { SectionReveal } from '../motion/SectionReveal';
-import { URBAN_CENSUS_ZONES } from '@/data/mauForondaCensusData';
+import { URBAN_CENSUS_ZONES, CENSUS_LAYER_GROUPS } from '@/data/mauForondaCensusData';
 import { CASE_STUDIES } from '@/data/portfolioData';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { MapPin, Database, Server, CheckCircle2, Globe, Info } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole } from '@/context/GeoConsoleContext';
-import { CopilotTrigger, LocationBadge } from '../ai/MapCopilot.client';
+import { LocationBadge } from '../ai/MapCopilot.client';
 
 // Dynamic import for MapLibre GL + PMTiles map component
 const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget.client'), {
@@ -24,7 +24,7 @@ const RealBlockMapWidgetClient = dynamic(() => import('../map/RealBlockMapWidget
 
 export function FlagshipGeoSection() {
   const { t, language } = useLanguage();
-  const { activeScope, activeLayer, setFocusedMode, visibleStats, selectedBlock, setSelectedBlock } = useGeoConsole();
+  const { activeScope, activeLayer, visibleStats, selectedBlock, setSelectedBlock } = useGeoConsole();
 
   const flagshipData = CASE_STUDIES.find((c) => c.id === 'geoinsights-bolivia')!;
 
@@ -45,6 +45,17 @@ export function FlagshipGeoSection() {
     () => URBAN_CENSUS_ZONES.filter((z) => z.metroArea === activeScope),
     [activeScope]
   );
+
+  // Drives the live-metrics card's labels/units below, so a switch to e.g.
+  // internet coverage doesn't keep showing "Densidad ... hab/ha" over a
+  // percentage that has nothing to do with density.
+  const activeLayerMeta = useMemo(() => {
+    for (const group of CENSUS_LAYER_GROUPS) {
+      const found = group.layers.find((l) => l.code === activeLayer);
+      if (found) return found;
+    }
+    return CENSUS_LAYER_GROUPS[0].layers[0];
+  }, [activeLayer]);
 
   // The reference card follows the scope rather than a separate selection, so
   // the panel and the map can never disagree about which area is in view.
@@ -70,7 +81,7 @@ export function FlagshipGeoSection() {
             </div>
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono-tech text-xs">
               <Globe className="w-3.5 h-3.5 text-cyan-400" />
-              <span>MapLibre GL · PMTiles</span>
+              <span>{t('flagship.liveMapBadge')}</span>
             </div>
             <LocationBadge />
           </div>
@@ -83,17 +94,21 @@ export function FlagshipGeoSection() {
           </p>
         </SectionReveal>
 
-        {/* Main Console Grid: Map Viewer & Urban Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Main Console Grid: Map Viewer & Urban Analytics — both columns
+            stretch to the row's height (the taller of the two) instead of
+            top-aligning at their own natural heights, so the map canvas and
+            comparison chart each grow/shrink to close the gap rather than
+            leaving one column visibly shorter than the other. */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 h-full">
             <RealBlockMapWidgetClient />
           </div>
 
           {/* Right Column: Zone reference card & comparative chart */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 flex h-full flex-col gap-6">
 
-            <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+            <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl shrink-0">
               {selectedBlock ? (
                 /* Selected Block Inspection Card */
                 <>
@@ -165,49 +180,44 @@ export function FlagshipGeoSection() {
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div>
                       <span className="text-[10px] font-mono-tech text-cyan-400 uppercase font-bold tracking-wider">
-                        {language === 'es' ? 'MÉTRICAS DE VISTA EN VIVO (MAPLIBRE GL)' : 'LIVE VIEWPORT ANALYTICS (MAPLIBRE GL)'}
+                        {language === 'es' ? 'MÉTRICAS DE VISTA EN VIVO' : 'LIVE VIEWPORT METRICS'}
                       </span>
                       <h3 className="text-lg font-bold text-teal-300">{activeScope}</h3>
+                      <span className="text-[11px] font-mono-tech text-slate-400">
+                        {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
+                      </span>
                     </div>
                     <span className="px-2.5 py-1 bg-slate-800 rounded text-xs font-mono-tech text-cyan-300 border border-cyan-500/30">
-                      {formatNumber(visibleStats.count)} {t('flagship.zonesSuffix')}
+                      {formatNumber(visibleStats.count)} {t('flagship.blocksInViewSuffix')}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 font-mono-tech text-xs">
                     <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {language === 'es' ? 'Densidad Mediana' : 'Median Density'}
+                      <span className="text-slate-400 block text-[10px] uppercase">{t('flagship.metricMin')}</span>
+                      <span className="text-sky-400 font-bold text-sm">
+                        {formatNumber(visibleStats.min)} {activeLayerMeta.unitLabel}
                       </span>
+                    </div>
+
+                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
+                      <span className="text-slate-400 block text-[10px] uppercase">{t('flagship.metricMedian')}</span>
                       <span className="text-emerald-400 font-bold text-sm">
-                        {formatNumber(visibleStats.median)} hab/ha
+                        {formatNumber(visibleStats.median)} {activeLayerMeta.unitLabel}
                       </span>
                     </div>
 
                     <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {language === 'es' ? 'Densidad P90' : 'P90 Density'}
-                      </span>
+                      <span className="text-slate-400 block text-[10px] uppercase">{t('flagship.metricTop10')}</span>
                       <span className="text-teal-300 font-bold text-sm">
-                        {formatNumber(visibleStats.p90)} hab/ha
+                        {formatNumber(visibleStats.p90)} {activeLayerMeta.unitLabel}
                       </span>
                     </div>
 
                     <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {language === 'es' ? 'Densidad Máxima' : 'Max Density'}
-                      </span>
+                      <span className="text-slate-400 block text-[10px] uppercase">{t('flagship.metricMax')}</span>
                       <span className="text-cyan-400 font-bold text-sm">
-                        {formatNumber(visibleStats.max)} hab/ha
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded bg-slate-950/70 border border-slate-800">
-                      <span className="text-slate-400 block text-[10px] uppercase">
-                        {language === 'es' ? 'Manzanos en Pantalla' : 'Blocks in View'}
-                      </span>
-                      <span className="text-amber-400 font-bold text-sm">
-                        {formatNumber(visibleStats.count)}
+                        {formatNumber(visibleStats.max)} {activeLayerMeta.unitLabel}
                       </span>
                     </div>
                   </div>
@@ -216,8 +226,8 @@ export function FlagshipGeoSection() {
                     <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-px" />
                     <span>
                       {language === 'es'
-                        ? 'Estadísticas agregadas en tiempo real cliente mediante MapLibre queryRenderedFeatures() sobre los manzanos visibles. Unidades en hab/ha (1 ha = 10.000 m²).'
-                        : 'Real-time client aggregate stats computed via MapLibre queryRenderedFeatures() on visible blocks. Units in hab/ha (1 ha = 10,000 m²).'}
+                        ? 'Estadísticas agregadas en tiempo real sobre los manzanos visibles en pantalla.'
+                        : 'Real-time aggregate statistics over the blocks currently visible on screen.'}
                     </span>
                   </p>
                 </>
@@ -295,9 +305,12 @@ export function FlagshipGeoSection() {
               )}
             </div>
 
-            {/* Scope Comparison Bar Chart */}
-            <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            {/* Scope Comparison Bar Chart — flex-1 so it absorbs whatever
+                extra height the row picked up from the map/inspector card,
+                with Recharts' own ResponsiveContainer (height 100%) filling
+                whatever that ends up being instead of a fixed h-44. */}
+            <div className="flex min-h-0 flex-1 flex-col space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-xl">
+              <div className="flex shrink-0 items-center justify-between border-b border-slate-800 pb-2">
                 <span className="text-xs font-mono-tech text-slate-300 font-bold uppercase">
                   {t('flagship.comparisonTitle')}
                 </span>
@@ -305,7 +318,7 @@ export function FlagshipGeoSection() {
                   {activeScope} ({scopeZones.length} {t('flagship.zonesSuffix')})
                 </span>
               </div>
-              <div className="h-44 w-full pt-1">
+              <div className="min-h-[140px] w-full flex-1 pt-1">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} />

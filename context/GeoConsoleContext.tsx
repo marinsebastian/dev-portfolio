@@ -44,6 +44,7 @@ export interface MetricThreshold {
 
 export interface VisibleStats {
   count: number;
+  min: number;
   median: number;
   p90: number;
   max: number;

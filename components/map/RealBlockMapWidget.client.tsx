@@ -8,7 +8,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { CENSUS_LAYER_GROUPS, SCOPE_CONFIG, ScopeType, LayerCode } from '@/data/mauForondaCensusData';
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole, type VisibleStats, type SelectedBlock } from '@/context/GeoConsoleContext';
-import { Layers, ZoomIn, Crosshair, SlidersHorizontal } from 'lucide-react';
+import { scopeForDepartment } from '@/lib/geolocation';
+import { Layers, ZoomIn, Crosshair, SlidersHorizontal, Info } from 'lucide-react';
 import { XIcon } from '@animateicons/react/lucide';
 import { useIconAnimator } from '@/lib/useIconAnimator';
 import Tippy from '@tippyjs/react';
@@ -58,6 +59,17 @@ const BLOCK_MIN_ZOOM = 8;
 
 /** Zoom used when the user asks to jump from the national view down to real blocks. */
 const BLOCK_ENTRY_ZOOM = 12;
+
+/** The three metro areas the census archive has block-level coverage for. */
+const METRO_SCOPES: Exclude<ScopeType, 'Nacional'>[] = ['Santa Cruz', 'Cochabamba', 'La Paz'];
+
+/**
+ * Bolivia's remaining six departments — listed under the "Bolivia" scope so
+ * the selector is honest about the archive's actual coverage instead of
+ * silently pretending the country stops at three metro areas. Disabled: no
+ * block-level data exists for them yet.
+ */
+const OTHER_DEPARTMENTS = ['Oruro', 'Potosí', 'Chuquisaca', 'Tarija', 'Beni', 'Pando'];
 
 const FILL_LAYER = 'ine-manzanos-fill';
 const STROKE_LAYER = 'ine-manzanos-stroke';
@@ -231,53 +243,64 @@ function SelectedBlockTooltip({
                     {t('flagship.blockInspectorSubtitle')}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label={t('flagship.blockClose')}
-                  {...closeIconHandlers}
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-teal-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-                >
-                  <XIcon ref={closeIconRef} size={12} />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  {/* The provenance disclaimer used to sit below as its own
+                      paragraph, taking up half the tooltip's height for text
+                      most visitors don't need on every single click — now
+                      it's a click/hover-away instead of always-on. */}
+                  <Tippy content={t('flagship.blockIndexNote')} interactive placement="left" maxWidth={200}>
+                    <button
+                      type="button"
+                      aria-label={t('flagship.blockInfoLabel')}
+                      className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-teal-500/20 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                    >
+                      <Info size={13} />
+                    </button>
+                  </Tippy>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label={t('flagship.blockClose')}
+                    {...closeIconHandlers}
+                    className="flex h-6 w-6 items-center justify-center rounded hover:bg-teal-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                  >
+                    <XIcon ref={closeIconRef} size={12} />
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
-                <div>
-                  {t('flagship.blockPopulationLabel')}:{' '}
+              <div className="space-y-1 text-[11px]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-400">{t('flagship.blockPopulationLabel')}</span>
                   <strong className="text-slate-100">
                     {block.population !== null ? `${block.population} hab.` : '—'}
                   </strong>
                 </div>
-                <div>
-                  {t('flagship.blockDensityLabel')}:{' '}
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-400">{t('flagship.blockDensityLabel')}</span>
                   <strong className="text-emerald-400">
                     {block.densityPerHa !== null ? `${block.densityPerHa} hab/ha` : '—'}
                   </strong>
                 </div>
-                <div>
-                  {t('flagship.blockInternetLabel')}:{' '}
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-400">{t('flagship.blockInternetLabel')}</span>
                   <strong className="text-cyan-300">
                     {block.internetPct !== null ? `${block.internetPct}%` : '—'}
                   </strong>
                 </div>
-                <div>
-                  Seguro Privado:{' '}
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-400">{t('flagship.blockHealthInsuranceLabel')}</span>
                   <strong className="text-sky-300">
                     {block.healthInsurancePct !== null ? `${block.healthInsurancePct}%` : '—'}
                   </strong>
                 </div>
-                <div>
-                  {t('flagship.blockEducationLabel')}:{' '}
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-400">{t('flagship.blockEducationLabel')}</span>
                   <strong className="text-teal-300">
                     {block.educationPct !== null ? `${block.educationPct}%` : '—'}
                   </strong>
                 </div>
               </div>
-
-              <p className="border-t border-slate-800 pt-1.5 font-sans text-[10px] leading-relaxed text-slate-500">
-                {t('flagship.blockIndexNote')}
-              </p>
             </div>
           ) : (
             <></>
@@ -285,6 +308,139 @@ function SelectedBlockTooltip({
         }
       />
     </>
+  );
+}
+
+/**
+ * Floating "locate me" control, positioned to sit just above MapLibre's own
+ * native zoom buttons (added at 'bottom-right') rather than buried in the
+ * below-canvas panel — it acts on the same camera those buttons zoom, so it
+ * reads as part of the same control cluster instead of an unrelated one.
+ */
+function LocateMeButton({
+  visible,
+  onClick,
+  label,
+}: {
+  visible: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  if (!visible) return null;
+  return (
+    <div className="absolute bottom-20 right-3 z-10">
+      <Tippy content={label} placement="left">
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-teal-500/40 bg-slate-900/90 text-teal-300 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+        >
+          <Crosshair className="h-4 w-4" />
+        </button>
+      </Tippy>
+    </div>
+  );
+}
+
+/**
+ * Census layer picker, disguised as a small icon button rather than the
+ * always-visible labeled `<select>` it used to be below the canvas. The real
+ * `<select>` still does all the work — it's just made transparent and
+ * stretched over the icon, so the control stays a native, fully accessible
+ * dropdown instead of a custom-built one.
+ */
+function LayerSelectorButton({
+  id,
+  activeLayer,
+  onChange,
+  language,
+  label,
+}: {
+  id?: string;
+  activeLayer: LayerCode;
+  onChange: (layer: LayerCode) => void;
+  language: 'es' | 'en';
+  label: string;
+}) {
+  return (
+    <div className="absolute bottom-3 left-3 z-10">
+      <Tippy content={label} placement="right">
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-teal-400 shadow-lg backdrop-blur-md transition-colors hover:bg-slate-800">
+          <Layers className="h-4 w-4 pointer-events-none" />
+          <select
+            id={id}
+            value={activeLayer}
+            onChange={(e) => onChange(e.target.value as LayerCode)}
+            aria-label={label}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          >
+            {CENSUS_LAYER_GROUPS.map((group) => (
+              <optgroup key={group.code} label={language === 'es' ? group.labelEs : group.labelEn}>
+                {group.layers.map((layer) => (
+                  <option key={layer.code} value={layer.code}>
+                    {language === 'es' ? layer.labelEs : layer.labelEn} ({layer.unitLabel})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+      </Tippy>
+    </div>
+  );
+}
+
+function legendValueLabel(rawStopValue: number, unitScale: number, unitLabel: string): string {
+  const value = Math.round(rawStopValue * unitScale);
+  return unitLabel === '%' ? `${value}%` : `${value} ${unitLabel}`;
+}
+
+/**
+ * The legend used to be a generic 2-stop dark→color gradient with static
+ * "Low"/"High" text for every layer, regardless of what was actually being
+ * measured or what range it covered. This renders the SAME 5-stop ramp the
+ * fill layer itself uses (LAYER_PAINT), with the real min/max it represents,
+ * plus — when live viewport stats for this exact layer are available — the
+ * actual highest value currently on screen, since a hand-tuned static ramp
+ * still doesn't say what's really in view right now.
+ */
+function MapLegend({
+  activeLayer,
+  layerLabel,
+  visibleStats,
+  t,
+}: {
+  activeLayer: LayerCode;
+  layerLabel: string;
+  visibleStats: VisibleStats | null;
+  t: (key: string) => string;
+}) {
+  const meta = LAYER_PAINT[activeLayer];
+  const colors = meta.stops.filter((_, i) => i % 2 === 1) as string[];
+  const minLabel = legendValueLabel(meta.stops[0] as number, meta.unitScale, meta.unitLabel);
+  const maxLabel = legendValueLabel(meta.stops[meta.stops.length - 2] as number, meta.unitScale, meta.unitLabel);
+  const liveMax =
+    visibleStats && visibleStats.field === meta.field
+      ? meta.unitLabel === '%'
+        ? `${visibleStats.max}%`
+        : `${visibleStats.max} ${meta.unitLabel}`
+      : null;
+
+  return (
+    <div className="absolute top-3 left-3 z-10 block max-w-[190px] sm:max-w-xs bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl">
+      <div className="text-teal-400 font-bold tracking-wider uppercase truncate">{layerLabel}</div>
+      <div className="flex items-center space-x-2">
+        <span className="text-slate-400">{minLabel}</span>
+        <div className="h-2 flex-1 min-w-[64px] rounded" style={{ background: `linear-gradient(to right, ${colors.join(', ')})` }} />
+        <span className="text-slate-200 font-bold">{maxLabel}</span>
+      </div>
+      {liveMax && (
+        <div className="text-slate-500 truncate">
+          {t('flagship.legendCurrentView')} {liveMax}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -303,6 +459,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     registerMapController,
     focusedMode,
     setFocusedMode,
+    visibleStats,
     setVisibleStats,
   } = useGeoConsole();
 
@@ -328,6 +485,12 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
   useEffect(() => {
     layerRef.current = activeLayer;
   }, [activeLayer]);
+
+  // Tracks which vector-tile feature currently carries `feature-state:
+  // {selected: true}`, so a later click (or a clear from elsewhere) can turn
+  // it back off before the next one is set — MapLibre never does this for
+  // you, and leaving a stale flag on would light up two blocks at once.
+  const selectedFeatureIdRef = useRef<string | number | null>(null);
 
   // Initialize the MapLibre GL map with the PMTiles vector source.
   useEffect(() => {
@@ -450,6 +613,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
         if (values.length > 0) {
           setVisibleStats({
             count: values.length,
+            min: Math.round(values[0]),
             median: Math.round(percentile(values, 0.5)),
             p90: Math.round(percentile(values, 0.9)),
             max: Math.round(values[values.length - 1]),
@@ -486,6 +650,25 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
         type: 'FeatureCollection',
         features: [{ type: 'Feature', properties: {}, geometry: feature.geometry }],
       });
+
+      // Per-feature dimming (see the fill-opacity effect below) needs a
+      // stable feature id, which vector-tile features carry only if the
+      // tileset was built with them (tippecanoe's default). When it's
+      // missing, `feature.id` is undefined, no feature ever gets flagged
+      // selected, and the paint expression's `false` branch applies to
+      // every block equally — the same flat dim as before, not a crash.
+      if (selectedFeatureIdRef.current !== null) {
+        map.setFeatureState(
+          { source: 'atlas-pmtiles', sourceLayer: 'manzanos', id: selectedFeatureIdRef.current },
+          { selected: false }
+        );
+      }
+      if (feature.id !== undefined) {
+        map.setFeatureState({ source: 'atlas-pmtiles', sourceLayer: 'manzanos', id: feature.id }, { selected: true });
+        selectedFeatureIdRef.current = feature.id;
+      } else {
+        selectedFeatureIdRef.current = null;
+      }
     });
 
     map.on('mouseenter', FILL_LAYER, () => {
@@ -541,6 +724,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
         if (values.length === 0) return null;
         return {
           count: values.length,
+          min: Math.round(values[0]),
           median: Math.round(percentile(values, 0.5)),
           p90: Math.round(percentile(values, 0.9)),
           max: Math.round(values[values.length - 1]),
@@ -572,6 +756,13 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       ...stops,
     ]);
 
+    // `['feature-state', 'selected']` reads back whatever the click handler
+    // set via setFeatureState — true for the one feature carrying that flag,
+    // false (the expression's default) for every other feature, and false for
+    // ALL features on tilesets with no per-feature id (nothing was ever
+    // flagged true), which collapses this to the old flat dim automatically.
+    const isSelected = ['boolean', ['feature-state', 'selected'], false] as maplibregl.ExpressionSpecification;
+
     if (threshold) {
       // Dim rather than hide: keeping non-matching blocks faintly visible
       // preserves the street grid, so a filtered view still reads as a city.
@@ -580,25 +771,63 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
       map.setPaintProperty(FILL_LAYER, 'fill-opacity', [
         'case',
         ['all', ['>=', ['coalesce', ['get', field], -1], min], ['<=', ['coalesce', ['get', field], -1], max]],
-        selectedBlock ? DIMMED_THRESHOLD_MATCH_OPACITY : 0.9,
+        ['case', isSelected, 0.98, selectedBlock ? DIMMED_THRESHOLD_MATCH_OPACITY : 0.9],
         0.07,
       ]);
     } else {
-      // A block selection dims the whole layer a little so the gradient-
-      // stroked outline reads as the one thing still at full strength —
-      // there is no per-feature id to exclude just that block from the dim.
-      map.setPaintProperty(FILL_LAYER, 'fill-opacity', selectedBlock ? DIMMED_FILL_OPACITY : 0.85);
+      // Selecting a block dims every OTHER block instead of the whole layer
+      // uniformly, so the selected one stays visually at full strength
+      // alongside its gradient-stroked outline rather than dimming with
+      // everything else around it.
+      map.setPaintProperty(
+        FILL_LAYER,
+        'fill-opacity',
+        selectedBlock ? ['case', isSelected, 0.98, DIMMED_FILL_OPACITY] : 0.85
+      );
     }
   }, [activeLayer, threshold, styleReady, selectedBlock]);
 
   // Clearing the selection from elsewhere (scope change, copilot) must also
-  // clear the highlight geometry.
+  // clear the highlight geometry and the feature-state flag driving the dim.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady || selectedBlock) return;
     const source = map.getSource(SELECTED_SOURCE) as maplibregl.GeoJSONSource | undefined;
     source?.setData(EMPTY_COLLECTION);
+
+    if (selectedFeatureIdRef.current !== null) {
+      map.setFeatureState(
+        { source: 'atlas-pmtiles', sourceLayer: 'manzanos', id: selectedFeatureIdRef.current },
+        { selected: false }
+      );
+      selectedFeatureIdRef.current = null;
+    }
   }, [selectedBlock, styleReady]);
+
+  // A slow breathing pulse on the halo (not the crisp gradient line itself,
+  // which stays static and legible) — a lighter-weight nod to the glowing
+  // CTA button's language than actually animating the line-gradient stops
+  // every frame would be, and it skips entirely under reduced motion.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady || !selectedBlock || prefersReducedMotion) return;
+
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const pulse = (Math.sin(((now - start) / 1000) * (Math.PI / 1.2)) + 1) / 2;
+      map.setPaintProperty(SELECTED_LAYER_HALO, 'line-opacity', 0.25 + pulse * 0.25);
+      map.setPaintProperty(SELECTED_LAYER_HALO, 'line-width', 10 + pulse * 4);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      map.setPaintProperty(SELECTED_LAYER_HALO, 'line-opacity', 0.35);
+      map.setPaintProperty(SELECTED_LAYER_HALO, 'line-width', 11);
+    };
+  }, [selectedBlock, styleReady, prefersReducedMotion]);
 
   // Tracks the selected block's on-screen position so the tooltip can follow
   // it — projected fresh on every pan/zoom, not just once at selection time.
@@ -652,6 +881,24 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     return CENSUS_LAYER_GROUPS[0].layers[0];
   }, [activeLayer]);
 
+  // Puts the visitor's own detected department first in the scope row instead
+  // of a fixed order, so the metro area they're actually in is the obvious
+  // first choice rather than one of four equal-weight buttons.
+  const orderedMetroScopes = useMemo(() => {
+    const detected = scopeForDepartment(userLocation?.department ?? null);
+    return detected ? [detected, ...METRO_SCOPES.filter((s) => s !== detected)] : METRO_SCOPES;
+  }, [userLocation]);
+
+  const scopeLabel = useCallback(
+    (scope: Exclude<ScopeType, 'Nacional'>) =>
+      scope === 'Santa Cruz'
+        ? t('flagship.scopeSantaCruz')
+        : scope === 'Cochabamba'
+        ? t('flagship.scopeCochabamba')
+        : t('flagship.scopeLaPaz'),
+    [t]
+  );
+
   const thresholdLabel = threshold
     ? `${threshold.min}${threshold.max !== null ? `–${threshold.max}` : '+'} ${LAYER_PAINT[activeLayer].unitLabel}`
     : null;
@@ -663,7 +910,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
     return (
       <div className="flex h-full flex-col font-sans">
         <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900 px-3 py-2">
-          {(['Nacional', 'Santa Cruz', 'Cochabamba', 'La Paz'] as ScopeType[]).map((scope) => (
+          {orderedMetroScopes.map((scope) => (
             <button
               key={scope}
               type="button"
@@ -678,30 +925,48 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
                   : 'border border-slate-800 bg-slate-950/80 text-slate-300 hover:bg-slate-800'
               }`}
             >
-              {scope === 'Nacional' ? t('flagship.scopeNacional').split(' ')[1] ?? 'Nacional' : scope}
+              {scopeLabel(scope)}
             </button>
           ))}
 
           <select
-            value={activeLayer}
-            onChange={(e) => setActiveLayer(e.target.value as LayerCode)}
-            aria-label={t('flagship.layerLabel')}
-            className="ml-auto min-h-[36px] shrink-0 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 font-mono-tech text-[11px] text-slate-200 focus:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            aria-label={t('flagship.scopeNacional')}
+            value="Nacional"
+            onChange={(e) => {
+              if (e.target.value === 'Nacional') {
+                setActiveScope('Nacional');
+                setSelectedBlock(null);
+              }
+            }}
+            className={`min-h-[36px] shrink-0 rounded-lg px-2.5 py-1.5 font-mono-tech text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+              activeScope === 'Nacional'
+                ? 'bg-teal-500 text-slate-950'
+                : 'border border-slate-800 bg-slate-950/80 text-slate-300 hover:bg-slate-800'
+            }`}
           >
-            {CENSUS_LAYER_GROUPS.map((group) => (
-              <optgroup key={group.code} label={language === 'es' ? group.labelEs : group.labelEn}>
-                {group.layers.map((layer) => (
-                  <option key={layer.code} value={layer.code}>
-                    {language === 'es' ? layer.labelEs : layer.labelEn} ({layer.unitLabel})
-                  </option>
-                ))}
-              </optgroup>
-            ))}
+            <option value="Nacional">{t('flagship.scopeNacional')}</option>
+            <optgroup label={t('flagship.scopeOtherDepartments')}>
+              {OTHER_DEPARTMENTS.map((dept) => (
+                <option key={dept} value={dept} disabled>
+                  {dept} — {t('flagship.scopeComingSoon')}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </div>
 
         <div className="relative min-h-0 flex-1">
           <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
+
+          {!belowDataZoom && (
+            <LayerSelectorButton
+              id="census-layer-select-focused"
+              activeLayer={activeLayer}
+              onChange={setActiveLayer}
+              language={language}
+              label={t('flagship.layerLabel')}
+            />
+          )}
 
           <SelectedBlockTooltip
             anchorRef={tooltipAnchorRef}
@@ -711,21 +976,12 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             onClose={() => setSelectedBlock(null)}
           />
 
-          {/* Legend overlay in Focused Mode */}
-          <div className="absolute top-3 left-3 z-10 block max-w-[190px] sm:max-w-xs bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl">
-            <div className="text-teal-400 font-bold tracking-wider uppercase">
-              {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-400">{t('flagship.legendLow')}</span>
-              <div
-                className="h-2 w-16 sm:w-20 rounded"
-                style={{ background: `linear-gradient(to right, #0f172a, ${activeLayerMeta.primaryColor})` }}
-              />
-              <span className="text-slate-200 font-bold">{t('flagship.legendHigh')}</span>
-            </div>
-            <div className="text-slate-500">{activeLayerMeta.unitLabel}</div>
-          </div>
+          <MapLegend
+            activeLayer={activeLayer}
+            layerLabel={language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
+            visibleStats={visibleStats}
+            t={t}
+          />
 
           {thresholdLabel && (
             <div className="absolute left-3 top-20 z-10 flex items-center gap-2 rounded-lg border border-teal-500/40 bg-slate-900/90 px-2.5 py-1.5 font-mono-tech text-[10px] text-teal-200 backdrop-blur-md">
@@ -756,15 +1012,20 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
               </button>
             </div>
           )}
+
+          <LocateMeButton visible={!!userLocation} onClick={handleCenterOnUser} label={t('flagship.centerOnMe')} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="font-sans">
-      {/* Map canvas (Top) */}
-      <div className="relative h-[460px] w-full overflow-hidden rounded-t-xl border border-slate-800 shadow-2xl sm:h-[520px]">
+    <div className="flex h-full flex-col font-sans">
+      {/* Map canvas (Top) — flex-1 so it grows or shrinks to match whatever
+          height the flagship section's grid row ends up with (driven by the
+          taller of the map vs. the side panels), with a floor so it never
+          gets uncomfortably short. */}
+      <div className="relative min-h-[420px] w-full flex-1 overflow-hidden rounded-t-xl border border-slate-800 shadow-2xl">
         <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
 
         <SelectedBlockTooltip
@@ -779,41 +1040,44 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
           onClose={() => setSelectedBlock(null)}
         />
 
-        {/* Top Right Floating IA Copilot Button */}
+        {/* Top Right Floating AI Copilot Button — expands on desktop hover to
+            name the destination ("Map Copilot"), and a delayed tooltip spells
+            out what clicking actually does (opens Focused Mode), since a bare
+            two-letter label gives a first-time visitor nothing to go on. */}
         <div className="absolute top-3 right-3 z-10">
-          <button
-            type="button"
-            onClick={() => setFocusedMode(true)}
-            aria-label="Abrir Copiloto IA del mapa"
-            className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
-          >
-            <div className="inline-flex items-center justify-center shrink-0 text-teal-300">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" opacity="1"></path>
-                <path d="M20 2v4" opacity="0.9"></path>
-                <path d="M22 4h-4" opacity="0.9"></path>
-                <circle cx="4" cy="20" r="2" opacity="1"></circle>
-              </svg>
-            </div>
-            <span className="font-extrabold text-teal-300 group-hover:text-white transition-colors">IA</span>
-          </button>
+          <Tippy content={t('flagship.aiTriggerTooltip')} placement="bottom-end" delay={[500, 0]} offset={[0, 10]}>
+            <button
+              type="button"
+              onClick={() => setFocusedMode(true)}
+              aria-label={t('flagship.aiTriggerExpanded')}
+              className="apple-intelligence-glow-btn group uppercase tracking-wider text-xs font-extrabold text-white"
+            >
+              <div className="inline-flex items-center justify-center shrink-0 text-teal-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" opacity="1"></path>
+                  <path d="M20 2v4" opacity="0.9"></path>
+                  <path d="M22 4h-4" opacity="0.9"></path>
+                  <circle cx="4" cy="20" r="2" opacity="1"></circle>
+                </svg>
+              </div>
+              <span className="font-extrabold text-teal-300 group-hover:text-white transition-colors">
+                {t('flagship.aiTriggerLabel')}
+              </span>
+              <span
+                className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:ml-1.5 group-hover:max-w-[140px] group-hover:opacity-100 motion-reduce:transition-none"
+              >
+                {t('flagship.aiTriggerExpanded')}
+              </span>
+            </button>
+          </Tippy>
         </div>
 
-        {/* Legend — visible on both desktop and mobile, and in Focused Mode */}
-        <div className="absolute top-3 left-3 z-10 block max-w-[190px] sm:max-w-xs bg-slate-900/90 backdrop-blur-md p-2 rounded-lg border border-slate-800 font-mono-tech text-[10px] space-y-1 shadow-xl">
-          <div className="text-teal-400 font-bold tracking-wider uppercase">
-            {language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-slate-400">{t('flagship.legendLow')}</span>
-            <div
-              className="h-2 w-20 rounded"
-              style={{ background: `linear-gradient(to right, #0f172a, ${activeLayerMeta.primaryColor})` }}
-            />
-            <span className="text-slate-200 font-bold">{t('flagship.legendHigh')}</span>
-          </div>
-          <div className="text-slate-500">{activeLayerMeta.unitLabel}</div>
-        </div>
+        <MapLegend
+          activeLayer={activeLayer}
+          layerLabel={language === 'es' ? activeLayerMeta.labelEs : activeLayerMeta.labelEn}
+          visibleStats={visibleStats}
+          t={t}
+        />
 
         {/* Honest empty state: the archive has no geometry below zoom 8. */}
         {belowDataZoom && (
@@ -834,32 +1098,24 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
             </button>
           </div>
         )}
+
+        {!belowDataZoom && (
+          <LayerSelectorButton
+            id="census-layer-select"
+            activeLayer={activeLayer}
+            onChange={setActiveLayer}
+            language={language}
+            label={t('flagship.layerLabel')}
+          />
+        )}
+
+        <LocateMeButton visible={!!userLocation} onClick={handleCenterOnUser} label={t('flagship.centerOnMe')} />
       </div>
 
       {/* Scope + layer controls (Bottom) */}
-      <div className="space-y-3 rounded-b-xl border border-t-0 border-slate-800 bg-slate-900 p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
-          <div className="flex items-center space-x-2 min-w-0">
-            <Layers className="w-4 h-4 text-teal-400 shrink-0" />
-            <span className="text-xs font-mono-tech text-slate-300 font-bold uppercase truncate">
-              {t('flagship.scopeSelectorLabel')}
-            </span>
-          </div>
-
-          {userLocation && (
-            <button
-              type="button"
-              onClick={handleCenterOnUser}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-950/80 border border-teal-500/40 text-teal-300 hover:bg-slate-800 text-[11px] font-mono-tech transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-            >
-              <Crosshair className="w-3.5 h-3.5 shrink-0" />
-              <span>{t('flagship.centerOnMe')}</span>
-            </button>
-          )}
-        </div>
-
+      <div className="shrink-0 space-y-3 rounded-b-xl border border-t-0 border-slate-800 bg-slate-900 p-3">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="group" aria-label={t('flagship.scopeSelectorLabel')}>
-          {(['Nacional', 'Santa Cruz', 'Cochabamba', 'La Paz'] as ScopeType[]).map((scope) => (
+          {orderedMetroScopes.map((scope) => (
             <button
               key={scope}
               type="button"
@@ -874,40 +1130,37 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
                   : 'bg-slate-950/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800'
               }`}
             >
-              {scope === 'Nacional'
-                ? t('flagship.scopeNacional')
-                : scope === 'Santa Cruz'
-                ? t('flagship.scopeSantaCruz')
-                : scope === 'Cochabamba'
-                ? t('flagship.scopeCochabamba')
-                : t('flagship.scopeLaPaz')}
+              {scopeLabel(scope)}
             </button>
           ))}
-        </div>
 
-        {/* Categorized census layer selector */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <label
-            htmlFor="census-layer-select"
-            className="text-[10px] font-mono-tech text-slate-400 uppercase"
-          >
-            {t('flagship.layerLabel')}
-          </label>
+          {/* "Bolivia" doubles as a dropdown listing the six departments the
+              archive has no block-level coverage for — disabled, so the
+              selector is honest about scope instead of implying nationwide
+              coverage while showing only three metro areas. */}
           <select
-            id="census-layer-select"
-            value={activeLayer}
-            onChange={(e) => setActiveLayer(e.target.value as LayerCode)}
-            className="flex-1 min-w-[200px] min-h-[44px] px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 text-xs font-mono-tech focus:outline-none focus:border-teal-500 focus-visible:ring-2 focus-visible:ring-teal-400"
+            aria-label={t('flagship.scopeNacional')}
+            value="Nacional"
+            onChange={(e) => {
+              if (e.target.value === 'Nacional') {
+                setActiveScope('Nacional');
+                setSelectedBlock(null);
+              }
+            }}
+            className={`min-h-[44px] py-2 px-3 rounded-lg text-xs font-mono-tech font-bold transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
+              activeScope === 'Nacional'
+                ? 'bg-teal-500 text-slate-950 shadow-lg shadow-teal-500/20'
+                : 'bg-slate-950/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800'
+            }`}
           >
-            {CENSUS_LAYER_GROUPS.map((group) => (
-              <optgroup key={group.code} label={language === 'es' ? group.labelEs : group.labelEn}>
-                {group.layers.map((layer) => (
-                  <option key={layer.code} value={layer.code}>
-                    {language === 'es' ? layer.labelEs : layer.labelEn} ({layer.unitLabel})
-                  </option>
-                ))}
-              </optgroup>
-            ))}
+            <option value="Nacional">{t('flagship.scopeNacional')}</option>
+            <optgroup label={t('flagship.scopeOtherDepartments')}>
+              {OTHER_DEPARTMENTS.map((dept) => (
+                <option key={dept} value={dept} disabled>
+                  {dept} — {t('flagship.scopeComingSoon')}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </div>
 

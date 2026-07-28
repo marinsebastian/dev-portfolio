@@ -21,17 +21,6 @@ export function HeroSection() {
           
           {/* Left Column: Core Positioning Narrative */}
           <div className="lg:col-span-7 space-y-6">
-            
-            {/* Candidate Positioning Tag */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 font-mono-tech text-xs text-slate-300 shadow-inner"
-            >
-              <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
-              <span className="text-teal-400 font-bold tracking-wide uppercase">{t('hero.tag')}</span>
-            </motion.div>
 
             {/* Main Title Headline */}
             <motion.h1
