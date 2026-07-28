@@ -41,9 +41,9 @@ export const COPILOT_TOOLS = [
         properties: {
           layer: {
             type: 'string',
-            enum: ['DENSITY', 'TECH_CONN', 'LANDLINE_PHONE', 'HOUSING_SERVICES', 'ECONOMIC_HUBS'],
+            enum: ['HEALTH_INSURANCE', 'DENSITY', 'TECH_CONN', 'LANDLINE_PHONE', 'HOUSING_SERVICES', 'ECONOMIC_HUBS'],
             description:
-              'DENSITY = inhabitants per hectare (b1). TECH_CONN = internet/ICT coverage (x1). LANDLINE_PHONE = fixed telephone line (v1). HOUSING_SERVICES = piped water coverage (y1). ECONOMIC_HUBS = inhabitants per block (a1).',
+              'HEALTH_INSURANCE = private health insurance (i1). DENSITY = inhabitants per hectare (b1). TECH_CONN = internet/ICT coverage (x1). LANDLINE_PHONE = fixed telephone line (v1). HOUSING_SERVICES = piped water coverage (y1). ECONOMIC_HUBS = inhabitants per block (a1).',
           },
         },
         required: ['layer'],
@@ -160,6 +160,7 @@ export interface MapStateSnapshot {
 }
 
 export const LAYER_DESCRIPTIONS: Record<LayerCode, string> = {
+  HEALTH_INSURANCE: 'Seguro de salud privado — cobertura de seguro de salud privado por manzano (campo i1, proporción 0–1)',
   DENSITY: 'Densidad poblacional — habitantes por hectárea (campo b1, valor absoluto)',
   TECH_CONN: 'Conectividad — cobertura de internet/TIC por manzano (campo x1, proporción 0–1)',
   LANDLINE_PHONE: 'Telefonía fija — cobertura de línea telefónica fija por manzano (campo v1, proporción 0–1)',

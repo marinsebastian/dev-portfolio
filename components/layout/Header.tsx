@@ -205,8 +205,8 @@ export function Header() {
           
           {/* Main Name & Irrefutable Title Branding */}
           <Link href="#overview" className="flex items-center space-x-3 group min-w-0 flex-1">
-            <div className="w-9 h-9 rounded-lg bg-slate-900 border border-teal-500/50 flex items-center justify-center text-teal-400 font-mono-tech font-extrabold text-sm shrink-0 group-hover:border-teal-400 group-hover:shadow-[0_0_15px_rgba(20,184,166,0.4)] transition-all">
-              SM
+            <div className="apple-intelligence-glow-btn !p-0 !min-h-0 w-9 h-9 rounded-lg flex items-center justify-center text-teal-300 font-mono-tech font-extrabold text-sm shrink-0 shadow-lg">
+              <span>SM</span>
             </div>
             <div className="flex flex-col min-w-0">
               <span className="truncate text-base sm:text-lg font-extrabold tracking-tight text-white group-hover:text-teal-400 transition-colors leading-none">

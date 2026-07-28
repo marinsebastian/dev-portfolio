@@ -22,6 +22,7 @@ export interface SelectedBlock {
   internetPct: number | null;
   waterPct: number | null;
   educationPct: number | null;
+  healthInsurancePct: number | null;
 }
 
 export interface UserLocation {
@@ -94,7 +95,7 @@ const GeoConsoleContext = createContext<GeoConsoleValue | undefined>(undefined);
 
 export function GeoConsoleProvider({ children }: { children: React.ReactNode }) {
   const [activeScope, setActiveScope] = useState<ScopeType>('Santa Cruz');
-  const [activeLayer, setActiveLayer] = useState<LayerCode>('DENSITY');
+  const [activeLayer, setActiveLayer] = useState<LayerCode>('HEALTH_INSURANCE');
   const [threshold, setThreshold] = useState<MetricThreshold | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<SelectedBlock | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);

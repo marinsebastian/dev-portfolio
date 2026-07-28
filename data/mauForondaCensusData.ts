@@ -46,7 +46,7 @@ export const GEOBOLIVIA_DATASET_METADATA = {
 };
 
 export type ScopeType = 'Nacional' | 'Santa Cruz' | 'Cochabamba' | 'La Paz';
-export type LayerCode = 'DENSITY' | 'TECH_CONN' | 'LANDLINE_PHONE' | 'HOUSING_SERVICES' | 'ECONOMIC_HUBS';
+export type LayerCode = 'HEALTH_INSURANCE' | 'DENSITY' | 'TECH_CONN' | 'LANDLINE_PHONE' | 'HOUSING_SERVICES' | 'ECONOMIC_HUBS';
 
 export interface LayerConfig {
   code: LayerCode;
@@ -115,6 +115,22 @@ export interface CensusLayerGroup {
 }
 
 export const CENSUS_LAYER_GROUPS: CensusLayerGroup[] = [
+  {
+    code: 'SALUD',
+    labelEs: 'Salud y Cobertura',
+    labelEn: 'Health & Coverage',
+    layers: [
+      {
+        code: 'HEALTH_INSURANCE',
+        labelEs: 'Seguro de salud privado',
+        labelEn: 'Private health insurance',
+        descriptionEs: 'Proporción de población con cobertura de seguro de salud privado por manzano urbano (campo i1).',
+        descriptionEn: 'Share of population with private health insurance coverage per urban block (field i1).',
+        primaryColor: '#38bdf8',
+        unitLabel: '%',
+      },
+    ],
+  },
   {
     code: 'DEMOGRAFIA',
     labelEs: 'Demografía y Densidad',
