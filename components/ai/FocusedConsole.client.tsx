@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { XIcon } from '@animateicons/react/lucide';
 import { useIconAnimator } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole } from '@/context/GeoConsoleContext';
-import MapCopilot, { LocationBadge } from './MapCopilot.client';
+import { LocationBadge } from './MapCopilot.client';
+import { COCKPIT_SLOT_ID } from './CopilotSurface.client';
 
 const RealBlockMapWidget = dynamic(() => import('../map/RealBlockMapWidget.client'), {
   ssr: false,
@@ -30,10 +31,14 @@ const RealBlockMapWidget = dynamic(() => import('../map/RealBlockMapWidget.clien
  * relocating a live canvas across React trees loses WebGL context. Both share
  * the same GeoConsole state, so scope, layer, threshold and selection stay in
  * sync when the overlay closes.
+ *
+ * The chat half is *not* rendered here. `CopilotSurface` owns the only
+ * copilot instance and flies it into the slot this leaves for it, so the
+ * conversation survives the trip between the inline teaser and this overlay.
  */
 export default function FocusedConsole() {
   const { t } = useLanguage();
-  const { focusedMode, setFocusedMode } = useGeoConsole();
+  const { focusedMode, setFocusedMode, focusedOrigin } = useGeoConsole();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<Element | null>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -43,7 +48,10 @@ export default function FocusedConsole() {
     if (!focusedMode) return;
 
     previouslyFocused.current = document.activeElement;
-    closeButtonRef.current?.focus();
+    // A teaser handoff fires while the visitor is still in the composer,
+    // having just pressed Enter. Grabbing focus for the close button here
+    // would yank it straight back out of the input they are using.
+    if (focusedOrigin !== 'teaser') closeButtonRef.current?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setFocusedMode(false);
@@ -54,21 +62,38 @@ export default function FocusedConsole() {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    // `aria-modal` is only advice to assistive tech; the page behind stays in
+    // the tab order regardless. Marking it inert is what actually takes it out
+    // of reach — including the flagship section, which is where the copilot
+    // was a moment ago and must not still be tabbable from.
+    const main = document.querySelector('main');
+    main?.setAttribute('inert', '');
+
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
+      main?.removeAttribute('inert');
       (previouslyFocused.current as HTMLElement | null)?.focus?.();
     };
-  }, [focusedMode, setFocusedMode]);
+  }, [focusedMode, focusedOrigin, setFocusedMode]);
 
   if (!focusedMode) return null;
 
   return (
-    <div
+    /* The backdrop fades rather than cutting in. The copilot flies from the
+       teaser into this overlay at the same moment, and it is a dark panel on a
+       dark background — against an instant cut there is nothing to perceive
+       that motion against, so the handoff reads as a hard jump even though it
+       is animating. Letting the page behind stay briefly visible gives the
+       flight something to move over. */
+    <motion.div
       role="dialog"
       aria-modal="true"
       aria-label={t('copilot.focusedTitle')}
       data-testid="focused-console"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.22, ease: 'easeOut' }}
       className="fixed inset-0 z-[2000] flex flex-col bg-[#0b0f17]"
     >
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/90 px-4 py-2.5">
@@ -95,10 +120,10 @@ export default function FocusedConsole() {
         <div className="h-[calc(50dvh-2rem)] min-h-0 shrink-0 lg:h-auto lg:w-1/2 lg:flex-1">
           <RealBlockMapWidget variant="focused" />
         </div>
-        <div className="min-h-0 flex-1 border-t border-slate-800 lg:w-1/2 lg:border-l lg:border-t-0">
-          <MapCopilot />
-        </div>
+        {/* Anchor only: CopilotSurface measures this and flies the live
+            copilot into it. Left empty on purpose. */}
+        <div id={COCKPIT_SLOT_ID} className="flex min-h-0 flex-1 p-2 lg:w-1/2" />
       </div>
-    </div>
+    </motion.div>
   );
 }

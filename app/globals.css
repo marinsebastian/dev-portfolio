@@ -140,6 +140,36 @@ html {
   scroll-padding-top: 80px;
 }
 
+/* Tippy.js's own theme CSS was never imported, so every tooltip using the
+   plain `content` prop (map controls, the block tooltip's info icon) rendered
+   with no background at all -- just inherited text floating unreadably over
+   whatever was behind it. This theme matches the site's dark slate/teal
+   panels instead. */
+.tippy-box[data-theme~='geoinsights'] {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid rgba(20, 184, 166, 0.4);
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+}
+.tippy-box[data-theme~='geoinsights'] .tippy-content {
+  padding: 0.4rem 0.6rem;
+}
+.tippy-box[data-theme~='geoinsights'][data-placement^='top'] > .tippy-arrow::before {
+  border-top-color: #0f172a;
+}
+.tippy-box[data-theme~='geoinsights'][data-placement^='bottom'] > .tippy-arrow::before {
+  border-bottom-color: #0f172a;
+}
+.tippy-box[data-theme~='geoinsights'][data-placement^='left'] > .tippy-arrow::before {
+  border-left-color: #0f172a;
+}
+.tippy-box[data-theme~='geoinsights'][data-placement^='right'] > .tippy-arrow::before {
+  border-right-color: #0f172a;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

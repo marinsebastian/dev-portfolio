@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { FileText } from 'lucide-react';
 import {
@@ -12,15 +12,17 @@ import {
 } from '@animateicons/react/lucide';
 import UseAnimations from 'react-useanimations';
 import menuAnimation from 'react-useanimations/lib/menu';
-import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useIconAnimator, type AnimatedIconComponent } from '@/lib/useIconAnimator';
+import { scrollToSection } from '@/lib/scrollToSection';
 
 interface NavLink {
   label: string;
   href: string;
   id: string;
   icon: AnimatedIconComponent;
+  featured?: boolean;
+  featuredLabel?: string;
 }
 
 /** Desktop nav item: icon-first, hover-expanding label, active pill + uppercase
@@ -41,8 +43,12 @@ function DesktopNavItem({
   const { ref: iconRef, handlers } = useIconAnimator(prefersReducedMotion, index * 400);
 
   return (
-    <Link
+    <a
       href={link.href}
+      onClick={(e) => {
+        e.preventDefault();
+        scrollToSection(link.id, prefersReducedMotion ? 'auto' : 'smooth');
+      }}
       aria-current={isActive ? 'true' : undefined}
       {...handlers}
       className={`group relative flex items-center px-3 py-2 rounded-lg border transition-colors duration-300 ease-out overflow-hidden ${
@@ -66,7 +72,15 @@ function DesktopNavItem({
           isActive ? 'gap-2' : 'gap-0 group-hover:gap-2'
         }`}
       >
-        <Icon ref={iconRef} size={16} className="text-teal-400 shrink-0" />
+        <span className="relative shrink-0">
+          <Icon ref={iconRef} size={16} className="text-teal-400" />
+          {link.featured && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-teal-400 ring-2 ring-slate-900"
+            />
+          )}
+        </span>
         <span
           className={`transition-all duration-300 ease-out whitespace-nowrap text-xs font-semibold uppercase tracking-wider ${
             isActive ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'
@@ -75,7 +89,8 @@ function DesktopNavItem({
           {link.label}
         </span>
       </span>
-    </Link>
+      {link.featured && <span className="sr-only"> ({link.featuredLabel})</span>}
+    </a>
   );
 }
 
@@ -97,9 +112,13 @@ function MobileNavItem({
   const { ref: iconRef, handlers } = useIconAnimator(prefersReducedMotion, index * 400);
 
   return (
-    <Link
+    <a
       href={link.href}
-      onClick={onNavigate}
+      onClick={(e) => {
+        e.preventDefault();
+        scrollToSection(link.id, prefersReducedMotion ? 'auto' : 'smooth');
+        onNavigate();
+      }}
       aria-current={isActive ? 'true' : undefined}
       {...handlers}
       className={`flex items-center space-x-3 px-3.5 py-3 min-h-[44px] rounded-lg text-sm transition-colors border font-medium ${
@@ -110,7 +129,12 @@ function MobileNavItem({
     >
       <Icon ref={iconRef} size={16} className="text-teal-400 shrink-0" />
       <span className="uppercase tracking-wider font-semibold">{link.label}</span>
-    </Link>
+      {link.featured && (
+        <span className="ml-auto text-[9px] font-bold tracking-wider uppercase text-teal-400 bg-teal-500/10 border border-teal-500/30 rounded-full px-2 py-0.5 shrink-0">
+          {link.featuredLabel}
+        </span>
+      )}
+    </a>
   );
 }
 
@@ -126,6 +150,7 @@ const SECTION_IDS = ['overview', 'flagship', 'projects', 'stack', 'cv', 'contact
  */
 function useActiveSection(): string {
   const [active, setActive] = useState(SECTION_IDS[0]);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     const sections = SECTION_IDS.map((id) => document.getElementById(id)).filter(
@@ -149,6 +174,19 @@ function useActiveSection(): string {
     return () => observer.disconnect();
   }, []);
 
+  // Keeps the address bar's hash in sync with whatever section is actually
+  // in view, so a stale hash never blocks re-clicking a nav item (see
+  // scrollToSection). Skips the initial mount so loading the bare "/" URL
+  // doesn't immediately rewrite it to "#overview" with no user action, and
+  // uses replaceState so organic scrolling never adds history entries.
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    window.history.replaceState(null, '', `#${active}`);
+  }, [active]);
+
   return active;
 }
 
@@ -169,7 +207,7 @@ export function Header() {
 
   const navLinks: NavLink[] = [
     { label: t('nav.overview'), href: '#overview', id: 'overview', icon: DashboardIcon },
-    { label: t('nav.flagship'), href: '#flagship', id: 'flagship', icon: MapPinIcon },
+    { label: t('nav.flagship'), href: '#flagship', id: 'flagship', icon: MapPinIcon, featured: true, featuredLabel: t('nav.flagshipBadge') },
     { label: t('nav.projects'), href: '#projects', id: 'projects', icon: CodeIcon },
     { label: t('nav.stack'), href: '#stack', id: 'stack', icon: TerminalIcon },
     { label: t('nav.cv'), href: '#cv', id: 'cv', icon: FileTextIcon },
@@ -185,10 +223,17 @@ export function Header() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-11">
-          
+        <div className="relative flex items-center h-11">
+
           {/* Main Name & Irrefutable Title Branding */}
-          <Link href="#overview" className="flex items-center space-x-3 group min-w-0 flex-1">
+          <a
+            href="#overview"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection('overview', prefersReducedMotion ? 'auto' : 'smooth');
+            }}
+            className="flex items-center space-x-3 group min-w-0"
+          >
             <div className="apple-intelligence-glow-btn !p-0 !min-h-0 w-9 h-9 rounded-lg flex items-center justify-center text-teal-300 font-mono-tech font-extrabold text-sm shrink-0 shadow-lg">
               <span>SM</span>
             </div>
@@ -200,12 +245,15 @@ export function Header() {
                 {language === 'es' ? 'Ingeniero de Sistemas | Full-Stack' : 'Systems Engineer | Full-Stack'}
               </span>
             </div>
-          </Link>
+          </a>
 
           {/* Desktop Nav Links (Icon-focused, smoothly expands text on hover).
-              The active section's pill is a single shared-layout element that
-              glides between icons as you scroll, via framer-motion's layoutId. */}
-          <nav className="hidden lg:flex items-center space-x-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800/90 text-xs font-medium">
+              Centered independently of the branding/actions on either side via
+              absolute positioning, so it stays centered regardless of how
+              wide either sibling is. The active section's pill is a single
+              shared-layout element that glides between icons as you scroll,
+              via framer-motion's layoutId. */}
+          <nav className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center space-x-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800/90 text-xs font-medium">
             {navLinks.map((link, index) => (
               <DesktopNavItem
                 key={link.href}
@@ -217,18 +265,9 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Right Actions: Language Switcher & CV Download */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Right Actions: Language Switcher */}
+          <div className="ml-auto flex items-center gap-2.5 shrink-0">
             <LanguageSwitcher language={language} setLanguage={setLanguage} />
-
-            <a
-              href="/CV Sebastian Marin.pdf"
-              download="CV Sebastian Marin.pdf"
-              className="hidden sm:flex items-center space-x-2 px-3.5 py-2 min-h-[40px] rounded-lg bg-teal-500/10 border border-teal-500/40 text-teal-300 hover:bg-teal-500/20 text-xs font-mono-tech font-bold transition-all shadow-sm whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-            >
-              <FileText className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-              <span>{t('nav.downloadCv')}</span>
-            </a>
 
             {/* Mobile Drawer Trigger — a Lottie-driven hamburger-to-X morph
                 (react-useanimations). The `render` prop lets the library's own

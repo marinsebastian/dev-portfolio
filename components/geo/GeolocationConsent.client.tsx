@@ -7,6 +7,7 @@ import { XIcon } from '@animateicons/react/lucide';
 import { useIconAnimator } from '@/lib/useIconAnimator';
 import { useLanguage } from '@/context/LanguageContext';
 import { useGeoConsole } from '@/context/GeoConsoleContext';
+import { SCOPE_CONFIG, type ScopeType } from '@/data/mauForondaCensusData';
 import {
   locationFromIp,
   locationFromPosition,
@@ -30,13 +31,27 @@ type Phase = 'hidden' | 'asking' | 'locating';
  */
 export default function GeolocationConsent() {
   const { t } = useLanguage();
-  const { setUserLocation, setActiveScope } = useGeoConsole();
+  const { setUserLocation, setActiveScope, getMapController } = useGeoConsole();
   const [phase, setPhase] = useState<Phase>('hidden');
   const [error, setError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
   const prefersReducedMotion = useReducedMotion();
   const { ref: dismissIconRef, handlers: dismissIconHandlers } = useIconAnimator(prefersReducedMotion ?? false);
+
+  // setActiveScope alone only updates which scope button looks active — the
+  // camera move itself is each caller's own responsibility (see
+  // RealBlockMapWidget's handleSelectMetroScope for why: a reactive
+  // "flyTo on activeScope change" effect can't tell a real navigation apart
+  // from the map's own camera-position sync, and moves the camera when it
+  // shouldn't).
+  const flyToScope = useCallback(
+    (scope: Exclude<ScopeType, 'Nacional'>) => {
+      const config = SCOPE_CONFIG[scope];
+      getMapController()?.flyTo(config.centerLngLat[1], config.centerLngLat[0], config.zoom);
+    },
+    [getMapController]
+  );
 
   const applyIpFallback = useCallback(async () => {
     const result = await lookupIpLocation();
@@ -48,9 +63,10 @@ export default function GeolocationConsent() {
     if (result.inBolivia) {
       const scope = scopeForDepartment(result.department) ?? nearestScope(result.lat, result.lng);
       setActiveScope(scope);
+      flyToScope(scope);
     }
     return true;
-  }, [setActiveScope, setUserLocation]);
+  }, [flyToScope, setActiveScope, setUserLocation]);
 
   // Re-apply a previous decision silently; only a first-time visitor is asked.
   useEffect(() => {
@@ -65,7 +81,9 @@ export default function GeolocationConsent() {
             const position = await requestBrowserLocation(8000);
             const location = locationFromPosition(position);
             setUserLocation(location);
-            setActiveScope(nearestScope(location.lat, location.lng));
+            const scope = nearestScope(location.lat, location.lng);
+            setActiveScope(scope);
+            flyToScope(scope);
             return;
           } catch {
             // Permission was revoked since last visit — fall through to IP.
@@ -79,7 +97,7 @@ export default function GeolocationConsent() {
     // First visit: let the page settle before interrupting.
     const timer = setTimeout(() => setPhase('asking'), 2500);
     return () => clearTimeout(timer);
-  }, [applyIpFallback, setActiveScope, setUserLocation]);
+  }, [applyIpFallback, flyToScope, setActiveScope, setUserLocation]);
 
 
   const handleAllow = async () => {
@@ -90,7 +108,9 @@ export default function GeolocationConsent() {
       const position = await requestBrowserLocation();
       const location = locationFromPosition(position);
       setUserLocation(location);
-      setActiveScope(nearestScope(location.lat, location.lng));
+      const scope = nearestScope(location.lat, location.lng);
+      setActiveScope(scope);
+      flyToScope(scope);
       storeConsent('granted');
       setPhase('hidden');
       return;

@@ -32,7 +32,9 @@ test.describe('Portfolio — core content', () => {
     await page.goto('/');
 
     await expect(page.locator('#flagship')).toBeVisible();
-    await expect(page.getByText('ZONA URBANA SELECCIONADA')).toBeVisible();
+    // The right column's static panels were replaced with the AI copilot's
+    // teaser, right where a visitor already is.
+    await expect(page.locator('#flagship').getByText('Copiloto del Mapa')).toBeVisible();
   });
 
   test('switches Interactive CV tabs', async ({ page }) => {
@@ -123,6 +125,7 @@ test.describe('Portfolio — bilingual behaviour', () => {
       'ZONA URBANA SELECCIONADA',
       'ALCANCE ESPACIAL',
       'Consume directamente los archivos',
+      'Seguro Privado',
     ];
 
     const body = await page.locator('body').innerText();
@@ -213,8 +216,11 @@ test.describe('Flagship map', () => {
   test('explains the empty national view instead of showing a blank map', async ({ page }) => {
     await page.goto('/#flagship');
 
-    // The PMTiles archive starts at z8; the national camera sits below it.
-    await page.getByRole('button', { name: /Bolivia Nacional/i }).click();
+    // "Bolivia" doubles as the national-view option and a dropdown listing
+    // the departments the archive has no block coverage for; the PMTiles
+    // archive starts at z8, and the national camera sits below it.
+    await page.getByRole('button', { name: 'Bolivia' }).click();
+    await page.getByRole('option', { name: 'Bolivia' }).click();
     await expect(page.getByText(/SIN COBERTURA DE MANZANOS/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Acercar a los manzanos/i })).toBeVisible();
   });
@@ -222,19 +228,19 @@ test.describe('Flagship map', () => {
   test('hides the zoom notice once a city scope is selected', async ({ page }) => {
     await page.goto('/#flagship');
 
-    await page.getByRole('button', { name: /ZM Cochabamba/i }).click();
+    await page.getByRole('button', { name: 'Cochabamba', exact: true }).click();
     await expect(page.getByText(/SIN COBERTURA DE MANZANOS/i)).toBeHidden({ timeout: 15000 });
   });
 
   test('marks the active scope for assistive technology', async ({ page }) => {
     await page.goto('/#flagship');
 
-    const santaCruz = page.getByRole('button', { name: /ZM Santa Cruz/i });
+    const santaCruz = page.getByRole('button', { name: 'Santa Cruz', exact: true });
     await santaCruz.click();
     await expect(santaCruz).toHaveAttribute('aria-pressed', 'true');
 
-    const nacional = page.getByRole('button', { name: /Bolivia Nacional/i });
-    await expect(nacional).toHaveAttribute('aria-pressed', 'false');
+    const cochabamba = page.getByRole('button', { name: 'Cochabamba', exact: true });
+    await expect(cochabamba).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('credits CARTO, OSM and the dataset author without a canvas watermark', async ({ page }) => {
@@ -428,7 +434,7 @@ test.describe('AI copilot', () => {
 
   test('opens focused mode with the map and chat side by side', async ({ page }) => {
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_).toBeVisible();
@@ -448,7 +454,7 @@ test.describe('AI copilot', () => {
     // existed in the main page's layout, so a mobile visitor had no way to
     // see what they had clicked at all once inside this view.
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_).toBeVisible();
@@ -485,10 +491,221 @@ test.describe('AI copilot', () => {
 
   test('offers starter suggestion chips', async ({ page }) => {
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await expect(console_.getByRole('button', { name: /fibra > 80%|fibre > 80%/i })).toBeVisible();
+  });
+});
+
+/**
+ * The flagship section used to embed a second, fully independent `MapCopilot`
+ * beside the map: its own `useCopilotChat`, its own history, its own composer.
+ * A visitor could hold an entire conversation inline, open Focused Mode, and
+ * find an empty chat — two surfaces both presenting themselves as "the AI"
+ * while sharing nothing.
+ *
+ * There is now exactly one copilot instance. It lives in a host element that
+ * is reparented between the inline teaser slot and Focused Mode's chat slot,
+ * so these tests are really assertions about instance identity: one composer
+ * on the page at any time, and one conversation that outlives the trip.
+ */
+test.describe('Copilot teaser → cockpit handoff', () => {
+  const composer = /Pregunta sobre|Ask about/i;
+
+  test('shows a compact teaser inline, not a second chat surface', async ({ page }) => {
+    await page.goto('/#flagship');
+
+    const flagship = page.locator('#flagship');
+    await expect(flagship.getByTestId('copilot-surface')).toHaveAttribute('data-mode', 'teaser');
+    await expect(flagship.getByPlaceholder(composer)).toBeVisible();
+
+    // The teaser is a greeting and a composer. The message log, the provider
+    // selector and the reset control belong to the cockpit.
+    await expect(flagship.getByRole('combobox', { name: /Proveedor de IA|AI provider/i })).toHaveCount(0);
+    await expect(flagship.getByRole('button', { name: /Reiniciar conversación|Reset conversation/i })).toHaveCount(0);
+  });
+
+  test('there is only ever one composer on the page', async ({ page }) => {
+    await page.goto('/#flagship');
+    await expect(page.getByPlaceholder(composer)).toHaveCount(1);
+
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
+    await expect(page.getByTestId('focused-console')).toBeVisible();
+    await expect(page.getByPlaceholder(composer)).toHaveCount(1);
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('focused-console')).toBeHidden();
+    await expect(page.getByPlaceholder(composer)).toHaveCount(1);
+  });
+
+  test('sending from the teaser opens the cockpit and carries the message into it', async ({ page }) => {
+    await page.goto('/#flagship');
+
+    // Typing alone must not open anything — the handoff is on send, so that
+    // it is a deliberate act rather than something a stray keystroke springs.
+    await page.locator('#flagship').getByPlaceholder(composer).fill('cuantos manzanos hay');
+    await expect(page.getByTestId('focused-console')).toHaveCount(0);
+
+    await page.locator('#flagship').getByPlaceholder(composer).press('Enter');
+
+    const console_ = page.getByTestId('focused-console');
+    await expect(console_).toBeVisible();
+    await expect(console_.getByTestId('copilot-surface')).toHaveAttribute('data-mode', 'cockpit');
+    // The message went into the cockpit's real conversation, rather than into
+    // a parallel one the visitor can no longer see.
+    await expect(console_.getByText('cuantos manzanos hay')).toBeVisible();
+    await expect(page.getByPlaceholder(composer)).toHaveCount(1);
+  });
+
+  test('keeps one conversation across the round trip', async ({ page }) => {
+    await page.goto('/#flagship');
+
+    await page.locator('#flagship').getByPlaceholder(composer).fill('hola copiloto');
+    await page.locator('#flagship').getByPlaceholder(composer).press('Enter');
+
+    const console_ = page.getByTestId('focused-console');
+    await expect(console_.getByText('hola copiloto')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(console_).toBeHidden();
+
+    // Reopening cold, from the map's own trigger, must land in the same
+    // conversation — this is the regression the single instance exists for.
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
+    await expect(console_.getByText('hola copiloto')).toBeVisible();
+  });
+
+  test('the teaser keeps showing the conversation after the cockpit closes', async ({ page }) => {
+    await page.goto('/#flagship');
+    const flagship = page.locator('#flagship');
+
+    await flagship.getByPlaceholder(composer).fill('hola desde el teaser');
+    await flagship.getByPlaceholder(composer).press('Enter');
+    await expect(page.getByTestId('focused-console')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('focused-console')).toBeHidden();
+
+    // Closing used to drop the teaser back to its generic greeting. The chat
+    // was still there — reopening proved it — but nothing on the page said so,
+    // so closing read as throwing the conversation away.
+    await expect(flagship.getByText('hola desde el teaser')).toBeVisible();
+    await expect(flagship.getByText(/Puedo leer el mapa/)).toHaveCount(0);
+  });
+
+  test('the teaser column stands level with the map beside it', async ({ page }) => {
+    await page.goto('/#flagship');
+    await expect(page.locator('#copilot-slot-teaser')).toBeVisible();
+
+    const columns = await page.evaluate(() => {
+      const slot = document.getElementById('copilot-slot-teaser')!;
+      const grid = slot.parentElement!;
+      return [...grid.children].map((c) => Math.round(c.getBoundingClientRect().height));
+    });
+
+    // A teaser that sizes to its own content leaves a few hundred pixels of
+    // dead space under it while the map towers alongside.
+    expect(columns).toHaveLength(2);
+    expect(Math.abs(columns[0] - columns[1])).toBeLessThanOrEqual(2);
+  });
+
+  test('does not strand focus when the teaser hands off', async ({ page }) => {
+    await page.goto('/#flagship');
+
+    const teaserInput = page.locator('#flagship').getByPlaceholder(composer);
+    await teaserInput.fill('que capa esta activa');
+    await teaserInput.press('Enter');
+
+    await expect(page.getByTestId('focused-console')).toBeVisible();
+    // Reparenting the host blurs whatever it contained, and the page behind
+    // is marked inert in the same commit; either alone would drop a keyboard
+    // visitor onto <body> at the exact moment the cockpit opens.
+    await expect(page.getByPlaceholder(composer)).toBeFocused();
+  });
+
+  test('a cold open still moves focus into the dialog', async ({ page }) => {
+    await page.goto('/#flagship');
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
+
+    // Opening from the map's button is not a mid-typing handoff, so the
+    // overlay should take focus the way any modal does.
+    await expect(page.getByRole('button', { name: /Salir|Exit/i })).toBeFocused();
+  });
+
+  /**
+   * The copilot flies between the two slots by being pinned back over where it
+   * was and released. Closing is the awkward direction: React unmounts the
+   * overlay — and the slot the copilot is sitting in — in the commit before
+   * the move runs, so measuring the host at that point reports a zero-size box
+   * at the origin, and the flight home starts from the top-left corner of the
+   * screen. The last resting position is remembered for exactly this reason.
+   */
+  test('flies between the two slots without collapsing to the origin', async ({ page }) => {
+    await page.goto('/#flagship');
+
+    type Frame = { top: number; left: number; width: number; height: number };
+
+    // Sampling is armed first and the interaction driven from the test, so the
+    // very first frames of the flight are captured rather than whatever the
+    // layout had already settled into.
+    const armSampler = () =>
+      page.evaluate(() => {
+        const frames: Frame[] = [];
+        const started = performance.now();
+
+        (window as unknown as { __flight: Promise<Frame[]> }).__flight = new Promise((resolve) => {
+          const finish = () => resolve(frames);
+          const tick = () => {
+            // The copilot is briefly detached while it is reparented between
+            // slots; that frame has no geometry to judge, so it is skipped
+            // rather than allowed to throw and strand the sampler.
+            const node = document.querySelector('[data-testid="copilot-surface"]')?.parentElement;
+            if (node?.isConnected) {
+              const r = node.getBoundingClientRect();
+              frames.push({ top: r.top, left: r.left, width: r.width, height: r.height });
+            }
+            if (performance.now() - started < 550) requestAnimationFrame(tick);
+            else finish();
+          };
+          requestAnimationFrame(tick);
+          // Belt and braces: never let a stalled frame loop hang the test.
+          window.setTimeout(finish, 3000);
+        });
+      });
+
+    const collect = () =>
+      page.evaluate(() => (window as unknown as { __flight: Promise<Frame[]> }).__flight);
+
+    const assertNeverCollapsed = (frames: Frame[]) => {
+      expect(frames.length).toBeGreaterThan(3);
+      for (const frame of frames) {
+        // A zero-size box at the origin is the signature of measuring a
+        // detached node; a real flight keeps its shape the whole way across.
+        expect(frame.width).toBeGreaterThan(120);
+        expect(frame.height).toBeGreaterThan(80);
+        expect(frame.top).toBeGreaterThanOrEqual(0);
+      }
+    };
+
+    await armSampler();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
+    assertNeverCollapsed(await collect());
+
+    await expect(page.getByTestId('focused-console')).toBeVisible();
+
+    await armSampler();
+    await page.keyboard.press('Escape');
+    assertNeverCollapsed(await collect());
+  });
+
+  test('takes the page behind the cockpit out of the tab order', async ({ page }) => {
+    await page.goto('/#flagship');
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
+    await expect(page.locator('main')).toHaveAttribute('inert', '');
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('main')).not.toHaveAttribute('inert', '');
   });
 });
 
@@ -597,18 +814,24 @@ test.describe('Map layer selector', () => {
   test('groups census layers by theme and states their units', async ({ page }) => {
     await page.goto('/#flagship');
 
-    const select = page.locator('#census-layer-select');
-    await expect(select).toBeVisible();
+    const trigger = page.locator('#census-layer-select');
+    await expect(trigger).toBeVisible();
+    await trigger.click();
 
-    const groups = await select.locator('optgroup').allTextContents();
-    expect(groups.length).toBeGreaterThanOrEqual(3);
+    const listbox = page.getByRole('listbox').first();
+    await expect(listbox).toBeVisible();
+    const options = listbox.getByRole('option');
+    expect(await options.count()).toBeGreaterThanOrEqual(6);
 
     // Units belong on the option so density and coverage are not read alike.
-    await expect(select.locator('option', { hasText: 'hab/ha' })).toHaveCount(1);
-    await expect(select.locator('option', { hasText: '(%)' }).first()).toBeAttached();
+    await expect(options.filter({ hasText: 'hab/ha' })).toHaveCount(1);
+    await expect(options.filter({ hasText: '%' }).first()).toBeAttached();
 
-    await select.selectOption('TECH_CONN');
-    await expect(select).toHaveValue('TECH_CONN');
+    await options.filter({ hasText: /internet/i }).click();
+
+    // The map's own legend reflects the newly active layer -- proof the
+    // pick actually changed application state, not just closed a menu.
+    await expect(page.getByText(/internet/i).first()).toBeVisible();
   });
 });
 
@@ -706,7 +929,7 @@ test.describe('Gemini tool-call contract', () => {
     test.skip(!hasGemini, 'GEMINI_API_KEY is not configured in this environment.');
 
     await page.goto('/#flagship');
-    await page.getByRole('button', { name: /Copiloto|Copilot/i }).click();
+    await page.getByRole('button', { name: /IA Modo|AI Cockpit/i }).click();
 
     const console_ = page.getByTestId('focused-console');
     await console_.getByRole('combobox', { name: /Proveedor de IA|AI provider/i }).selectOption('gemini');
@@ -724,6 +947,9 @@ test.describe('Gemini tool-call contract', () => {
     await expect(console_.getByText('set_map_scope()')).toBeVisible();
 
     // Prove the map itself moved — not just that the chat claimed it did.
-    await expect(console_.locator('select').first()).toHaveValue('DENSITY');
+    // The layer picker is a custom dropdown now (no more native <select>
+    // value to read), so this checks the map's own legend instead, which
+    // reflects whichever layer is actually active.
+    await expect(console_.getByText(/densidad poblacional|population density/i).first()).toBeVisible();
   });
 });
