@@ -131,7 +131,7 @@ export default function CopilotSurface() {
   const [host] = useState<HTMLDivElement | null>(() => {
     if (typeof document === 'undefined') return null;
     const el = document.createElement('div');
-    el.className = 'flex-1 min-w-0 overflow-hidden rounded-xl border border-slate-800 shadow-xl';
+    el.className = 'flex-1 min-w-0 min-h-0 h-full overflow-hidden rounded-xl border border-slate-800 shadow-xl';
     return el;
   });
   const inFlightRef = useRef<(() => void) | null>(null);

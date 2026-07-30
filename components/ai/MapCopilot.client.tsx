@@ -313,7 +313,7 @@ export default function MapCopilot({ mode = 'cockpit' }: { mode?: CopilotMode })
     <div
       data-testid="copilot-surface"
       data-mode={mode}
-      className="flex h-full w-full flex-col bg-slate-950/60 font-sans"
+      className="flex h-full w-full min-h-0 flex-col bg-slate-950/60 font-sans"
     >
       {/* Header: provider selector + reset */}
       {isCockpit && (
@@ -372,7 +372,7 @@ export default function MapCopilot({ mode = 'cockpit' }: { mode?: CopilotMode })
           once the list hits its end. */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4"
+        className="flex-1 space-y-3 overflow-y-auto overscroll-contain pl-3 pr-2 py-4"
       >
         {messages.length === 0 && !isStreaming && (
           isCockpit ? (

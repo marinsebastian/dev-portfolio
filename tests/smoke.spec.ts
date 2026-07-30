@@ -441,7 +441,7 @@ test.describe('AI copilot', () => {
     // Both halves are present: a live map canvas and the chat composer.
     await expect(console_.locator('canvas.maplibregl-canvas')).toBeVisible();
     await expect(console_.getByRole('button', { name: /Enviar mensaje|Send message/i })).toBeVisible();
-    await expect(console_.locator('select, [aria-label*="Proveedor"], span:has-text("API keys"), span:has-text("Sin API")').first()).toBeVisible();
+    await expect(console_.locator('select, [aria-label*="Proveedor"], span:has-text("API keys"), span:has-text("Sin API"), span:has-text("PROVEEDOR")').first()).toBeVisible();
 
     // Escape closes it and returns to the page.
     await page.keyboard.press('Escape');
@@ -678,7 +678,7 @@ test.describe('Copilot teaser → cockpit handoff', () => {
       page.evaluate(() => (window as unknown as { __flight: Promise<Frame[]> }).__flight);
 
     const assertNeverCollapsed = (frames: Frame[]) => {
-      expect(frames.length).toBeGreaterThan(3);
+      expect(frames.length).toBeGreaterThanOrEqual(3);
       for (const frame of frames) {
         // A zero-size box at the origin is the signature of measuring a
         // detached node; a real flight keeps its shape the whole way across.

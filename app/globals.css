@@ -134,10 +134,41 @@
   font-family: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Modern smooth scrolling */
+/* Modern smooth scrolling & dark color scheme */
+:root {
+  color-scheme: dark;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
+  color-scheme: dark;
+}
+
+/* Custom Sleek Dark Scrollbars (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.7);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 184, 166, 0.8);
+}
+
+/* Firefox custom scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(51, 65, 85, 0.7) rgba(15, 23, 42, 0.5);
 }
 
 /* Tippy.js's own theme CSS was never imported, so every tooltip using the

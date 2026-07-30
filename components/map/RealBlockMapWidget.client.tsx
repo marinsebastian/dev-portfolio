@@ -1390,7 +1390,7 @@ export default function RealBlockMapWidgetClient({ variant = 'panel' }: RealBloc
           height the flagship section's grid row ends up with (driven by the
           taller of the map vs. the side panels), with a floor so it never
           gets uncomfortably short. */}
-      <div className="relative min-h-[420px] w-full flex-1 overflow-hidden rounded-t-xl border border-slate-800 shadow-2xl">
+      <div className="relative h-[340px] sm:h-[380px] lg:h-full min-h-[300px] w-full flex-1 overflow-hidden rounded-t-xl border border-slate-800 shadow-2xl">
         <div ref={mapContainerRef} className="h-full w-full bg-slate-950" />
 
         <SelectedBlockTooltip

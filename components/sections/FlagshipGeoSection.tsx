@@ -77,13 +77,13 @@ export function FlagshipGeoSection() {
             not a stub that needs shrinking to fit: it shows the live
             conversation once there is one, so it earns the same height the
             map has, and the two columns stay balanced. */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:h-[540px]">
 
-          <div className="lg:col-span-7 h-full">
+          <div className="lg:col-span-7 h-auto lg:h-full flex flex-col">
             <RealBlockMapWidgetClient />
           </div>
 
-          <div id={TEASER_SLOT_ID} className="lg:col-span-5 flex h-full min-h-[480px]" />
+          <div id={TEASER_SLOT_ID} className="lg:col-span-5 flex flex-col h-[460px] lg:h-full min-h-0 overflow-hidden" />
 
         </div>
 
